@@ -2,17 +2,20 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useRef } from 'react';
 import {
   Animated,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from 'react-native';
+import { BlurView } from 'expo-blur';
+import { LinearGradient } from 'expo-linear-gradient';
 
 import BackgroundScreen from '../components/BackgroundScreen';
 import FeatureItem from '../components/FeatureItem';
 import GlassCard from '../components/GlassCard';
-import PrimaryButton from '../components/PrimaryButton';
+import PrimaryGlassButton from '../components/PrimaryGlassButton';
 import SecondaryLink from '../components/SecondaryLink';
 import { useUser } from '../contexts/UserContext';
 import {
@@ -71,9 +74,13 @@ export default function ResultScreen() {
     // TODO: Naviguer vers le paiement / onboarding
   };
 
-  const handleAlternativePress = () => {
+  // Navigation vers la version mensuelle du programme
+  const handleMonthlyVersionPress = () => {
     if (alternativePlan) {
-      handleSelectPlan(alternativePlan);
+      router.push({
+        pathname: '/programs',
+        params: { highlightPlan: alternativePlan.id },
+      });
     }
   };
 
@@ -86,6 +93,39 @@ export default function ResultScreen() {
       </BackgroundScreen>
     );
   }
+
+  // Composant pour le bloc prix avec effet glass
+  const PriceBlock = () => {
+    if (!plan.priceInfo) return null;
+
+    const content = (
+      <View style={styles.priceContent}>
+        <Text style={styles.priceLabel}>Tarif indicatif</Text>
+        <Text style={styles.priceValue}>{plan.priceInfo}</Text>
+      </View>
+    );
+
+    if (Platform.OS === 'ios') {
+      return (
+        <View style={styles.priceWrapper}>
+          <BlurView intensity={30} tint="dark" style={styles.priceBlur}>
+            <LinearGradient
+              colors={['rgba(255, 255, 255, 0.08)', 'rgba(255, 255, 255, 0.02)']}
+              style={styles.priceGradient}
+            >
+              {content}
+            </LinearGradient>
+          </BlurView>
+        </View>
+      );
+    }
+
+    return (
+      <View style={[styles.priceWrapper, styles.priceAndroid]}>
+        {content}
+      </View>
+    );
+  };
 
   return (
     <BackgroundScreen centered={false}>
@@ -106,7 +146,7 @@ export default function ResultScreen() {
           </Text>
 
           {/* Carte principale - Programme recommande */}
-          <GlassCard>
+          <GlassCard opaque>
             {/* Badge recommande */}
             <View style={styles.tagContainer}>
               <Text style={styles.tag}>Programme recommande pour toi</Text>
@@ -127,19 +167,15 @@ export default function ResultScreen() {
             </View>
 
             {/* Prix indicatif */}
-            {plan.priceInfo && (
-              <View style={styles.priceContainer}>
-                <Text style={styles.priceLabel}>Tarif indicatif</Text>
-                <Text style={styles.priceValue}>{plan.priceInfo}</Text>
-              </View>
-            )}
+            <PriceBlock />
 
             {/* Bouton CTA */}
-            <PrimaryButton
-              title="Continuer avec ce programme"
-              onPress={() => handleSelectPlan(plan)}
-              style={styles.mainButton}
-            />
+            <View style={styles.buttonContainer}>
+              <PrimaryGlassButton
+                title="Continuer avec ce programme"
+                onPress={() => handleSelectPlan(plan)}
+              />
+            </View>
           </GlassCard>
 
           {/* Alternative mensuelle - discret */}
@@ -147,13 +183,12 @@ export default function ResultScreen() {
             <View style={styles.alternativeSection}>
               <Text style={styles.alternativeLabel}>
                 Tu preferes payer au mois ?{' '}
-                <Text
-                  style={styles.alternativeLink}
-                  onPress={handleAlternativePress}
-                >
+              </Text>
+              <TouchableOpacity onPress={handleMonthlyVersionPress}>
+                <Text style={styles.alternativeLink}>
                   Decouvre la version mensuelle.
                 </Text>
-              </Text>
+              </TouchableOpacity>
             </View>
           )}
 
@@ -174,7 +209,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingTop: 50,
+    paddingTop: 40,
     paddingBottom: 40,
   },
   message: {
@@ -219,46 +254,61 @@ const styles = StyleSheet.create({
     color: '#D1D5DB',
     fontSize: 15,
     lineHeight: 23,
-    marginBottom: 20,
+    marginBottom: 24,
     textAlign: 'center',
   },
   featuresContainer: {
     alignSelf: 'stretch',
-    marginBottom: 20,
+    marginBottom: 24,
     paddingHorizontal: 4,
   },
-  priceContainer: {
+  priceWrapper: {
     alignSelf: 'stretch',
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-    borderRadius: 14,
-    paddingVertical: 14,
-    paddingHorizontal: 18,
-    marginBottom: 20,
+    borderRadius: 16,
+    overflow: 'hidden',
+    marginBottom: 24,
     borderWidth: 0.5,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
+    borderColor: 'rgba(255, 255, 255, 0.12)',
+  },
+  priceBlur: {
+    overflow: 'hidden',
+  },
+  priceGradient: {
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+  },
+  priceAndroid: {
+    backgroundColor: 'rgba(40, 40, 50, 0.6)',
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+  },
+  priceContent: {
+    alignItems: 'center',
   },
   priceLabel: {
     color: '#9CA3AF',
     fontSize: 12,
     fontWeight: '500',
     textAlign: 'center',
-    marginBottom: 4,
+    marginBottom: 6,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
   priceValue: {
     color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: 18,
+    fontWeight: '700',
     textAlign: 'center',
   },
-  mainButton: {
-    marginTop: 4,
+  buttonContainer: {
     width: '100%',
   },
   alternativeSection: {
     marginTop: 28,
     paddingHorizontal: 20,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
   },
   alternativeLabel: {
     color: '#6B7280',
@@ -268,7 +318,9 @@ const styles = StyleSheet.create({
   },
   alternativeLink: {
     color: '#60A5FA',
+    fontSize: 14,
     textDecorationLine: 'underline',
+    lineHeight: 22,
   },
   allProgramsLink: {
     marginTop: 20,

@@ -4,7 +4,7 @@ import { StyleSheet, Text, View } from 'react-native';
 
 import BackgroundScreen from '../components/BackgroundScreen';
 import GlassCard from '../components/GlassCard';
-import PrimaryButton from '../components/PrimaryButton';
+import PrimaryGlassButton from '../components/PrimaryGlassButton';
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -12,28 +12,34 @@ export default function HomeScreen() {
   return (
     <BackgroundScreen>
       <View style={styles.container}>
+        {/* Header avec nom de l'app */}
         <View style={styles.header}>
           <Text style={styles.appName}>Fitness Face</Text>
         </View>
 
-        <GlassCard>
-          <Text style={styles.title}>
-            Transforme ton visage en 5 minutes par jour
-          </Text>
-          <Text style={styles.subtitle}>
-            Programmes guidés pour jawline, double menton et visage plus net.
-          </Text>
+        {/* Contenu central */}
+        <View style={styles.centerContent}>
+          <GlassCard style={styles.mainCard}>
+            <Text style={styles.title}>
+              Transforme ton visage{'\n'}en 5 minutes par jour
+            </Text>
 
-          <PrimaryButton
-            title="Commencer"
-            onPress={() => router.push('/auth')}
-            style={styles.button}
-          />
+            <Text style={styles.subtitle}>
+              Programmes guides pour jawline, double menton et visage plus net.
+            </Text>
 
-          <Text style={styles.smallText}>
-            Pas de matériel. Pas de bullshit.{'\n'}Juste des routines guidées.
-          </Text>
-        </GlassCard>
+            <View style={styles.buttonContainer}>
+              <PrimaryGlassButton
+                title="Commencer"
+                onPress={() => router.push('/auth')}
+              />
+            </View>
+
+            <Text style={styles.smallText}>
+              Pas de materiel. Pas de bullshit.{'\n'}Juste des routines guidees.
+            </Text>
+          </GlassCard>
+        </View>
       </View>
     </BackgroundScreen>
   );
@@ -42,43 +48,48 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
   },
   header: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
+    paddingTop: 16,
+    paddingBottom: 24,
     alignItems: 'center',
-    paddingTop: 20,
   },
   appName: {
-    color: '#9CA3AF',
-    fontSize: 16,
+    color: 'rgba(255, 255, 255, 0.5)',
+    fontSize: 14,
     fontWeight: '600',
-    letterSpacing: 1.5,
+    letterSpacing: 2,
     textTransform: 'uppercase',
     textAlign: 'center',
+  },
+  centerContent: {
+    flex: 1,
+    justifyContent: 'center',
+    paddingBottom: 40,
+  },
+  mainCard: {
+    paddingVertical: 36,
+    paddingHorizontal: 28,
   },
   title: {
     color: '#FFFFFF',
     fontSize: 28,
     fontWeight: '700',
     textAlign: 'center',
-    marginBottom: 16,
-    lineHeight: 36,
+    marginBottom: 20,
+    lineHeight: 38,
   },
   subtitle: {
     color: '#9CA3AF',
     fontSize: 16,
     textAlign: 'center',
-    marginBottom: 32,
+    marginBottom: 36,
     lineHeight: 24,
+    paddingHorizontal: 8,
   },
-  button: {
+  buttonContainer: {
     width: '100%',
-    marginBottom: 24,
+    marginBottom: 28,
   },
   smallText: {
     color: '#6B7280',

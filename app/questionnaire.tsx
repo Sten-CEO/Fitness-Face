@@ -13,7 +13,7 @@ import {
 import { BlurView } from 'expo-blur';
 
 import BackgroundScreen from '../components/BackgroundScreen';
-import PrimaryButton from '../components/PrimaryButton';
+import PrimaryGlassButton from '../components/PrimaryGlassButton';
 import {
   addScores,
   calculateRecommendedPlan,
@@ -192,7 +192,7 @@ export default function QuestionnaireScreen() {
             </TouchableOpacity>
           )}
           <View style={styles.nextButtonContainer}>
-            <PrimaryButton
+            <PrimaryGlassButton
               title={currentIndex === questions.length - 1 ? 'Voir mon resultat' : 'Suivant'}
               onPress={handleNext}
               disabled={selectedOption === null}
@@ -207,11 +207,11 @@ export default function QuestionnaireScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingTop: 20,
-    paddingBottom: 40,
+    paddingTop: 16,
+    paddingBottom: 32,
   },
   header: {
-    marginBottom: 24,
+    marginBottom: 28,
     alignItems: 'center',
   },
   questionCount: {
@@ -238,28 +238,29 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flexGrow: 1,
-    paddingVertical: 10,
+    paddingVertical: 16,
+    justifyContent: 'center',
   },
   questionContainer: {
-    flex: 1,
+    paddingBottom: 20,
   },
   questionTitle: {
     color: '#FFFFFF',
     fontSize: 24,
     fontWeight: '700',
     textAlign: 'center',
-    marginBottom: 32,
-    lineHeight: 32,
+    marginBottom: 36,
+    lineHeight: 34,
     paddingHorizontal: 8,
   },
   optionsContainer: {
-    gap: 14,
+    gap: 16,
   },
   optionWrapper: {
-    borderRadius: 18,
+    borderRadius: 20,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
+    borderColor: 'rgba(255, 255, 255, 0.12)',
   },
   optionWrapperSelected: {
     borderColor: 'rgba(59, 130, 246, 0.5)',
@@ -269,17 +270,21 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   optionInner: {
-    backgroundColor: 'rgba(30, 30, 35, 0.5)',
-    paddingVertical: 18,
-    paddingHorizontal: 18,
+    backgroundColor: 'rgba(30, 30, 35, 0.55)',
+    paddingVertical: 20,
+    paddingHorizontal: 20,
+    minHeight: 64,
+    justifyContent: 'center',
   },
   optionInnerSelected: {
-    backgroundColor: 'rgba(59, 130, 246, 0.12)',
+    backgroundColor: 'rgba(59, 130, 246, 0.15)',
   },
   optionAndroid: {
     backgroundColor: 'rgba(30, 30, 35, 0.8)',
-    paddingVertical: 18,
-    paddingHorizontal: 18,
+    paddingVertical: 20,
+    paddingHorizontal: 20,
+    minHeight: 64,
+    justifyContent: 'center',
   },
   optionAndroidSelected: {
     backgroundColor: 'rgba(59, 130, 246, 0.2)',
@@ -294,7 +299,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     borderWidth: 2,
     borderColor: 'rgba(255, 255, 255, 0.25)',
-    marginRight: 14,
+    marginRight: 16,
     justifyContent: 'center',
     alignItems: 'center',
     flexShrink: 0,
