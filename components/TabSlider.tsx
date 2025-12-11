@@ -75,13 +75,13 @@ const styles = StyleSheet.create({
   },
   tabText: {
     fontFamily,
-    color: 'rgba(255, 255, 255, 0.6)',
-    fontSize: 15,
-    fontWeight: '500',
+    color: 'rgba(255, 255, 255, 0.55)',
+    fontSize: 14,
+    fontWeight: '400',
   },
   tabTextActive: {
     color: '#FFFFFF',
-    fontWeight: '600',
+    fontWeight: '500',
   },
   badge: {
     backgroundColor: 'rgba(255, 255, 255, 0.15)',
@@ -95,7 +95,7 @@ const styles = StyleSheet.create({
   badgeText: {
     fontFamily,
     color: '#FFFFFF',
-    fontSize: 11,
-    fontWeight: '600',
+    fontSize: 10,
+    fontWeight: '500',
   },
 });

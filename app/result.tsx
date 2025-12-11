@@ -35,7 +35,6 @@ export default function ResultScreen() {
   const mainPlan = getPlanById(selectedPlanId);
   const alternativePlan = getAlternativePlan(selectedPlanId);
 
-  // Determiner quel plan est le principal (90/60 jours) et lequel est mensuel
   const isMonthlyPlan = selectedPlanId.includes('monthly');
   const planMain = isMonthlyPlan ? alternativePlan : mainPlan;
   const planMonthly = isMonthlyPlan ? mainPlan : alternativePlan;
@@ -54,27 +53,20 @@ export default function ResultScreen() {
     }).start();
   }, []);
 
-  // Animation de glissement pour changer de programme
   const handleTabChange = (key: string) => {
     if (key === activeTab) return;
 
     const slideDirection = key === 'monthly' ? -1 : 1;
     const newPlan = key === 'monthly' ? planMonthly : planMain;
 
-    // Animation de sortie
     Animated.timing(slideAnim, {
       toValue: slideDirection * width * 0.3,
       duration: 200,
       useNativeDriver: true,
     }).start(() => {
-      // Changer le plan
       setActiveTab(key);
       setCurrentPlan(newPlan);
-
-      // Repositionner de l'autre cote
       slideAnim.setValue(-slideDirection * width * 0.3);
-
-      // Animation d'entree
       Animated.timing(slideAnim, {
         toValue: 0,
         duration: 200,
@@ -86,7 +78,6 @@ export default function ResultScreen() {
   const handleSelectPlan = (selectedPlan: Plan | undefined) => {
     if (selectedPlan) {
       console.log('Programme selectionne:', selectedPlan.name);
-      // TODO: Naviguer vers le paiement
     }
   };
 
@@ -100,7 +91,6 @@ export default function ResultScreen() {
     );
   }
 
-  // Determiner le label selon le type de programme
   const is60DayProgram = selectedPlanId.includes('double');
   const tabs = [
     { key: 'main', label: is60DayProgram ? '60 jours' : '90 jours', badge: 'Conseille' },
@@ -135,28 +125,20 @@ export default function ResultScreen() {
             />
           )}
 
-          {/* Carte programme avec animation de glissement */}
-          <Animated.View
-            style={{
-              transform: [{ translateX: slideAnim }],
-            }}
-          >
+          {/* Carte programme */}
+          <Animated.View style={{ transform: [{ translateX: slideAnim }] }}>
             <CleanCard style={styles.programCard}>
-              {/* Badge */}
               <View style={styles.badge}>
                 <Text style={styles.badgeText}>
                   {activeTab === 'main' ? 'Recommande' : 'Flexible'}
                 </Text>
               </View>
 
-              {/* Nom du programme */}
               <Text style={styles.planName}>{currentPlan?.name}</Text>
               <Text style={styles.planDuration}>{currentPlan?.durationLabel}</Text>
 
-              {/* Separator */}
               <View style={styles.separator} />
 
-              {/* Features list */}
               <View style={styles.featuresList}>
                 {currentPlan?.features.slice(0, 4).map((feature, index) => (
                   <View key={index} style={styles.featureItem}>
@@ -168,10 +150,8 @@ export default function ResultScreen() {
                 ))}
               </View>
 
-              {/* Separator */}
               <View style={styles.separator} />
 
-              {/* Prix */}
               {currentPlan?.priceInfo && (
                 <View style={styles.priceSection}>
                   <Text style={styles.priceLabel}>Tarif</Text>
@@ -181,7 +161,6 @@ export default function ResultScreen() {
             </CleanCard>
           </Animated.View>
 
-          {/* Bouton CTA */}
           <View style={styles.ctaContainer}>
             <PrimaryButton
               title="Continuer"
@@ -189,7 +168,6 @@ export default function ResultScreen() {
             />
           </View>
 
-          {/* Lien secondaire */}
           <TouchableOpacity
             onPress={() => router.push('/programs')}
             style={styles.secondaryLink}
@@ -219,21 +197,22 @@ const styles = StyleSheet.create({
   title: {
     fontFamily,
     color: '#FFFFFF',
-    fontSize: 32,
-    fontWeight: '700',
+    fontSize: 28,
+    fontWeight: '600',
     textAlign: 'center',
     marginBottom: 12,
-    lineHeight: 40,
-    letterSpacing: -0.5,
+    lineHeight: 36,
+    letterSpacing: -0.3,
   },
   titleBlue: {
     color: '#3B82F6',
   },
   subtitle: {
     fontFamily,
-    color: 'rgba(255, 255, 255, 0.6)',
-    fontSize: 16,
+    color: 'rgba(255, 255, 255, 0.55)',
+    fontSize: 15,
     textAlign: 'center',
+    fontWeight: '400',
   },
   programCard: {
     marginBottom: 24,
@@ -241,37 +220,38 @@ const styles = StyleSheet.create({
   badge: {
     alignSelf: 'flex-start',
     backgroundColor: '#3B82F6',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 8,
-    marginBottom: 16,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 6,
+    marginBottom: 14,
   },
   badgeText: {
     fontFamily,
     color: '#FFFFFF',
-    fontSize: 12,
-    fontWeight: '600',
+    fontSize: 11,
+    fontWeight: '500',
   },
   planName: {
     fontFamily,
     color: '#FFFFFF',
-    fontSize: 24,
-    fontWeight: '700',
+    fontSize: 22,
+    fontWeight: '600',
     marginBottom: 4,
   },
   planDuration: {
     fontFamily,
-    color: 'rgba(255, 255, 255, 0.5)',
+    color: 'rgba(255, 255, 255, 0.45)',
     fontSize: 14,
     marginBottom: 16,
+    fontWeight: '400',
   },
   separator: {
     height: 1,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
     marginVertical: 16,
   },
   featuresList: {
-    gap: 14,
+    gap: 12,
   },
   featureItem: {
     flexDirection: 'row',
@@ -279,24 +259,25 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   featureIcon: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
+    width: 18,
+    height: 18,
+    borderRadius: 9,
     backgroundColor: 'rgba(59, 130, 246, 0.2)',
     alignItems: 'center',
     justifyContent: 'center',
   },
   featureCheck: {
     color: '#3B82F6',
-    fontSize: 12,
-    fontWeight: '700',
+    fontSize: 10,
+    fontWeight: '600',
   },
   featureText: {
     fontFamily,
     flex: 1,
-    color: 'rgba(255, 255, 255, 0.8)',
-    fontSize: 15,
-    lineHeight: 22,
+    color: 'rgba(255, 255, 255, 0.7)',
+    fontSize: 14,
+    lineHeight: 20,
+    fontWeight: '400',
   },
   priceSection: {
     flexDirection: 'row',
@@ -305,13 +286,14 @@ const styles = StyleSheet.create({
   },
   priceLabel: {
     fontFamily,
-    color: 'rgba(255, 255, 255, 0.5)',
+    color: 'rgba(255, 255, 255, 0.45)',
     fontSize: 14,
+    fontWeight: '400',
   },
   priceValue: {
     fontFamily,
     color: '#FFFFFF',
-    fontSize: 18,
+    fontSize: 17,
     fontWeight: '600',
   },
   ctaContainer: {
@@ -323,9 +305,9 @@ const styles = StyleSheet.create({
   },
   secondaryLinkText: {
     fontFamily,
-    color: 'rgba(255, 255, 255, 0.5)',
-    fontSize: 15,
-    fontWeight: '500',
+    color: 'rgba(255, 255, 255, 0.45)',
+    fontSize: 14,
+    fontWeight: '400',
   },
   errorContainer: {
     flex: 1,
@@ -335,7 +317,8 @@ const styles = StyleSheet.create({
   errorText: {
     fontFamily,
     color: '#EF4444',
-    fontSize: 16,
+    fontSize: 15,
     textAlign: 'center',
+    fontWeight: '400',
   },
 });

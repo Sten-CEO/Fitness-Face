@@ -72,9 +72,7 @@ export default function PrimaryButton({
 
 const styles = StyleSheet.create({
   buttonWrapper: {
-    alignSelf: 'center',
-    width: '100%',
-    maxWidth: 340,
+    alignSelf: 'stretch',
     borderRadius: 14,
     overflow: 'hidden',
   },
@@ -87,15 +85,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: 32,
     alignItems: 'center',
     justifyContent: 'center',
-    minHeight: 54,
+    minHeight: 52,
     borderRadius: 14,
   },
   text: {
     fontFamily,
     color: '#FFFFFF',
-    fontSize: 17,
-    fontWeight: '600',
-    letterSpacing: 0.2,
+    fontSize: 16,
+    fontWeight: '500',
+    letterSpacing: 0.1,
     textAlign: 'center',
   },
 });
