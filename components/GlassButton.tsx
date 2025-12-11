@@ -30,7 +30,7 @@ export default function GlassButton({
   variant = 'primary',
 }: GlassButtonProps) {
   const scaleAnim = useRef(new Animated.Value(1)).current;
-  const glowAnim = useRef(new Animated.Value(1)).current;
+  const glowAnim = useRef(new Animated.Value(0.65)).current;
 
   const handlePressIn = () => {
     Animated.parallel([
@@ -41,7 +41,7 @@ export default function GlassButton({
         bounciness: 4,
       }),
       Animated.timing(glowAnim, {
-        toValue: 1.4,
+        toValue: 0.9,
         duration: 100,
         useNativeDriver: true,
       }),
@@ -57,7 +57,7 @@ export default function GlassButton({
         bounciness: 4,
       }),
       Animated.timing(glowAnim, {
-        toValue: 1,
+        toValue: 0.65,
         duration: 150,
         useNativeDriver: true,
       }),
@@ -66,42 +66,40 @@ export default function GlassButton({
 
   const isPrimary = variant === 'primary';
 
-  // Gradient bleu/violet pour le fond du bouton
-  const buttonGradient = (
-    <LinearGradient
-      colors={
-        isPrimary
-          ? ['rgba(76, 111, 255, 0.35)', 'rgba(159, 102, 255, 0.25)']
-          : ['rgba(255, 255, 255, 0.08)', 'rgba(255, 255, 255, 0.04)']
-      }
-      start={{ x: 0, y: 0 }}
-      end={{ x: 1, y: 1 }}
-      style={StyleSheet.absoluteFill}
-    />
-  );
+  // Halo colore a l'interieur du bouton - degrade bleu/violet diagonal
+  const innerHaloGradient = isPrimary ? (
+    <Animated.View style={[StyleSheet.absoluteFill, { opacity: glowAnim }]}>
+      <LinearGradient
+        colors={['rgba(80, 140, 255, 0.9)', 'rgba(168, 85, 247, 0.9)']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={StyleSheet.absoluteFill}
+      />
+    </Animated.View>
+  ) : null;
 
-  // Reflet de lumiere en haut a gauche - effet "liquid glass"
+  // Reflet de lumiere en haut - effet verre
   const glassReflection = (
     <LinearGradient
       colors={[
-        'rgba(255, 255, 255, 0.20)',
-        'rgba(255, 255, 255, 0.08)',
+        'rgba(255, 255, 255, 0.18)',
+        'rgba(255, 255, 255, 0.06)',
         'transparent',
       ]}
-      locations={[0, 0.35, 0.7]}
+      locations={[0, 0.4, 0.8]}
       start={{ x: 0, y: 0 }}
-      end={{ x: 1, y: 1 }}
+      end={{ x: 0.5, y: 1 }}
       style={styles.reflectionOverlay}
     />
   );
 
-  // Ligne de lumiere en haut
+  // Ligne de lumiere en haut du bouton
   const topHighlight = (
     <LinearGradient
       colors={[
         'transparent',
-        'rgba(255, 255, 255, 0.30)',
-        'rgba(255, 255, 255, 0.30)',
+        'rgba(255, 255, 255, 0.35)',
+        'rgba(255, 255, 255, 0.35)',
         'transparent',
       ]}
       locations={[0.05, 0.3, 0.7, 0.95]}
@@ -111,11 +109,15 @@ export default function GlassButton({
     />
   );
 
-  const buttonInner = (
+  const buttonContent = (
     <View style={styles.contentWrapper}>
-      {buttonGradient}
+      {/* Halo degrade a l'interieur */}
+      {innerHaloGradient}
+      {/* Reflet glass */}
       {glassReflection}
+      {/* Ligne de lumiere en haut */}
       {topHighlight}
+      {/* Texte du bouton */}
       <Text style={[
         styles.text,
         !isPrimary && styles.textSecondary,
@@ -127,117 +129,63 @@ export default function GlassButton({
     </View>
   );
 
-  const renderContent = () => {
+  const renderBlurContent = () => {
     if (Platform.OS === 'ios') {
       return (
-        <BlurView intensity={20} tint="dark" style={styles.blurWrapper}>
-          {buttonInner}
+        <BlurView intensity={50} tint="dark" style={styles.blurWrapper}>
+          {buttonContent}
         </BlurView>
       );
     }
+    // Fallback Android - pas de blur
     return (
       <View style={[styles.androidWrapper, !isPrimary && styles.androidWrapperSecondary]}>
-        {buttonInner}
+        {buttonContent}
       </View>
     );
   };
 
   return (
-    <View style={[styles.outerWrapper, style]}>
-      {/* Halo lumineux bleu/violet asymetrique - plus fort en haut a gauche */}
-      {!disabled && isPrimary && (
-        <Animated.View style={[styles.haloContainer, { opacity: glowAnim }]}>
-          {/* Glow principal en haut a gauche */}
-          <View style={styles.haloTopLeft}>
-            <LinearGradient
-              colors={['rgba(76, 111, 255, 0.6)', 'transparent']}
-              style={StyleSheet.absoluteFill}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-            />
-          </View>
-          {/* Glow secondaire violet en bas a droite */}
-          <View style={styles.haloBottomRight}>
-            <LinearGradient
-              colors={['transparent', 'rgba(159, 102, 255, 0.35)']}
-              style={StyleSheet.absoluteFill}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-            />
-          </View>
-        </Animated.View>
-      )}
-
-      <TouchableWithoutFeedback
-        onPressIn={handlePressIn}
-        onPressOut={handlePressOut}
-        onPress={onPress}
-        disabled={disabled}
-      >
-        <Animated.View style={[
-          styles.button,
-          isPrimary ? styles.buttonPrimary : styles.buttonSecondary,
-          disabled && styles.buttonDisabled,
-          { transform: [{ scale: scaleAnim }] },
-        ]}>
-          {renderContent()}
-        </Animated.View>
-      </TouchableWithoutFeedback>
-    </View>
+    <TouchableWithoutFeedback
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
+      onPress={onPress}
+      disabled={disabled}
+    >
+      <Animated.View style={[
+        styles.outerWrapper,
+        isPrimary && styles.outerWrapperPrimary,
+        disabled && styles.buttonDisabled,
+        { transform: [{ scale: scaleAnim }] },
+        style,
+      ]}>
+        {renderBlurContent()}
+      </Animated.View>
+    </TouchableWithoutFeedback>
   );
 }
 
 const styles = StyleSheet.create({
   outerWrapper: {
-    position: 'relative',
     alignSelf: 'center',
     width: '100%',
     maxWidth: 340,
-  },
-  haloContainer: {
-    position: 'absolute',
-    top: -16,
-    left: -16,
-    right: -16,
-    bottom: -16,
     borderRadius: 999,
     overflow: 'hidden',
-  },
-  haloTopLeft: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    width: '70%',
-    height: '70%',
-    borderRadius: 999,
-  },
-  haloBottomRight: {
-    position: 'absolute',
-    bottom: 0,
-    right: 0,
-    width: '60%',
-    height: '60%',
-    borderRadius: 999,
-  },
-  button: {
-    borderRadius: 32,
-    overflow: 'hidden',
-    // Ombre portee bleu/violet
-    shadowOffset: { width: 0, height: 8 },
-    shadowRadius: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.18)',
+    // Ombre portee subtile
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.25,
+    shadowRadius: 18,
     elevation: 8,
   },
-  buttonPrimary: {
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.22)',
-    shadowColor: '#4C6FFF',
-    shadowOpacity: 0.5,
-  },
-  buttonSecondary: {
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.14)',
-    shadowColor: '#000',
-    shadowOpacity: 0.3,
+  outerWrapperPrimary: {
+    // Glow bleu/violet autour du bouton
+    shadowColor: '#508CFF',
+    shadowOpacity: 0.4,
+    shadowRadius: 20,
   },
   buttonDisabled: {
     opacity: 0.5,
@@ -245,34 +193,37 @@ const styles = StyleSheet.create({
   },
   blurWrapper: {
     overflow: 'hidden',
-    borderRadius: 32,
+    borderRadius: 999,
   },
   androidWrapper: {
-    backgroundColor: 'rgba(15, 30, 55, 0.75)',
-    borderRadius: 32,
+    backgroundColor: 'rgba(10, 10, 15, 0.65)',
+    borderRadius: 999,
+    overflow: 'hidden',
   },
   androidWrapperSecondary: {
-    backgroundColor: 'rgba(7, 7, 10, 0.75)',
+    backgroundColor: 'rgba(10, 10, 15, 0.75)',
   },
   contentWrapper: {
-    paddingVertical: 18,
-    paddingHorizontal: 36,
+    paddingVertical: 16,
+    paddingHorizontal: 32,
     alignItems: 'center',
     justifyContent: 'center',
-    minHeight: 58,
+    minHeight: 56,
     overflow: 'hidden',
-    // Fond sombre semi-transparent
-    backgroundColor: 'rgba(15, 30, 55, 0.55)',
+    // Fond sombre verre
+    backgroundColor: 'rgba(10, 10, 15, 0.65)',
   },
   reflectionOverlay: {
     ...StyleSheet.absoluteFillObject,
+    zIndex: 1,
   },
   topHighlight: {
     position: 'absolute',
     top: 0,
-    left: 16,
-    right: 16,
+    left: 24,
+    right: 24,
     height: 1,
+    zIndex: 2,
   },
   text: {
     color: '#FFFFFF',
@@ -280,6 +231,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     letterSpacing: 0.3,
     textAlign: 'center',
+    zIndex: 3,
   },
   textSecondary: {
     color: 'rgba(255, 255, 255, 0.85)',
