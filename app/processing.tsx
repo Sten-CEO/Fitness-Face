@@ -56,7 +56,7 @@ export default function ProcessingScreen() {
     const timeout = setTimeout(() => {
       router.replace({
         pathname: '/result',
-        params: { planId: planId || 'all_in_one_monthly' },
+        params: { planId: planId || 'all_in_one' },
       });
     }, 2500);
 
@@ -93,7 +93,7 @@ export default function ProcessingScreen() {
   return (
     <BackgroundScreen>
       <Animated.View style={[styles.container, { opacity: fadeAnim }]}>
-        <GlassCard style={styles.card}>
+        <GlassCard>
           <Text style={styles.title}>Analyse de tes réponses en cours</Text>
           <Text style={styles.subtitle}>
             On réfléchit au meilleur programme pour toi...
@@ -114,8 +114,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: 'center',
-  },
-  card: {
     alignItems: 'center',
   },
   title: {
@@ -133,6 +131,7 @@ const styles = StyleSheet.create({
   },
   dotsContainer: {
     flexDirection: 'row',
+    justifyContent: 'center',
     gap: 12,
   },
   dot: {

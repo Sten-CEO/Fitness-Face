@@ -67,9 +67,14 @@ export default function ProgramsScreen() {
                   ],
                 }}
               >
-                <GlassCard style={styles.programCard}>
+                <GlassCard compact>
                   <View style={styles.cardHeader}>
-                    <View style={styles.tagContainer}>
+                    <View
+                      style={[
+                        styles.tagContainer,
+                        plan.isMainProgram && styles.tagMain,
+                      ]}
+                    >
                       <Text style={styles.tag}>{plan.tag}</Text>
                     </View>
                   </View>
@@ -117,8 +122,10 @@ const styles = StyleSheet.create({
   },
   header: {
     marginBottom: 28,
+    alignItems: 'center',
   },
   backButton: {
+    alignSelf: 'flex-start',
     marginBottom: 20,
   },
   backButtonText: {
@@ -131,55 +138,62 @@ const styles = StyleSheet.create({
     fontSize: 28,
     fontWeight: '700',
     marginBottom: 6,
+    textAlign: 'center',
   },
   subtitle: {
     color: '#6B7280',
     fontSize: 16,
     fontWeight: '500',
+    textAlign: 'center',
   },
   programsList: {
     gap: 16,
   },
-  programCard: {
-    marginBottom: 0,
-  },
   cardHeader: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 16,
   },
   tagContainer: {
-    backgroundColor: 'rgba(59, 130, 246, 0.15)',
-    borderRadius: 6,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
+    backgroundColor: 'rgba(107, 114, 128, 0.2)',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+  },
+  tagMain: {
+    backgroundColor: 'rgba(59, 130, 246, 0.2)',
   },
   tag: {
     color: '#60A5FA',
     fontSize: 12,
     fontWeight: '600',
+    textAlign: 'center',
   },
   planName: {
     color: '#FFFFFF',
     fontSize: 20,
     fontWeight: '700',
     marginBottom: 6,
+    textAlign: 'center',
   },
   planDuration: {
     color: '#9CA3AF',
     fontSize: 14,
     marginBottom: 12,
+    textAlign: 'center',
   },
   planDescription: {
     color: '#D1D5DB',
     fontSize: 14,
     lineHeight: 21,
     marginBottom: 16,
+    textAlign: 'center',
   },
   badgesContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
+    justifyContent: 'center',
     gap: 8,
     marginBottom: 20,
   },
@@ -193,18 +207,21 @@ const styles = StyleSheet.create({
     color: '#9CA3AF',
     fontSize: 11,
     fontWeight: '500',
+    textAlign: 'center',
   },
   selectButton: {
     backgroundColor: 'rgba(59, 130, 246, 0.2)',
-    borderRadius: 12,
+    borderRadius: 14,
     borderWidth: 1,
     borderColor: 'rgba(59, 130, 246, 0.3)',
-    paddingVertical: 14,
+    paddingVertical: 16,
     alignItems: 'center',
+    width: '100%',
   },
   selectButtonText: {
     color: '#60A5FA',
     fontSize: 15,
     fontWeight: '600',
+    textAlign: 'center',
   },
 });

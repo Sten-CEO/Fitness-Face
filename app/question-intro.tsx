@@ -41,7 +41,7 @@ export default function QuestionIntroScreen() {
             transform: [{ translateY: slideAnim }],
           }}
         >
-          <GlassCard style={styles.card}>
+          <GlassCard>
             <Animated.Text style={styles.title}>
               On va te proposer le programme parfait pour ton visage.
             </Animated.Text>
@@ -59,8 +59,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: 'center',
-  },
-  card: {
     alignItems: 'center',
   },
   title: {

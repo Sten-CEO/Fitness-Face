@@ -3,14 +3,19 @@ import React, { useEffect, useRef } from 'react';
 import { Animated, StyleSheet, View } from 'react-native';
 
 import BackgroundScreen from '../components/BackgroundScreen';
-
-const WELCOME_TEXT = 'Bienvenue sur Fitness Face';
+import { useUser } from '../contexts/UserContext';
 
 export default function WelcomeScreen() {
   const router = useRouter();
+  const { firstName } = useUser();
+
+  const welcomeText = firstName
+    ? `Bienvenue ${firstName}`
+    : 'Bienvenue sur Fitness Face';
+
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const charAnimations = useRef(
-    WELCOME_TEXT.split('').map(() => new Animated.Value(0))
+    welcomeText.split('').map(() => new Animated.Value(0))
   ).current;
 
   useEffect(() => {
@@ -45,7 +50,7 @@ export default function WelcomeScreen() {
     <BackgroundScreen>
       <View style={styles.container}>
         <Animated.View style={[styles.textContainer, { opacity: fadeAnim }]}>
-          {WELCOME_TEXT.split('').map((char, index) => (
+          {welcomeText.split('').map((char, index) => (
             <Animated.Text
               key={index}
               style={[
@@ -82,6 +87,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'center',
+    alignItems: 'center',
     paddingHorizontal: 20,
   },
   char: {
@@ -89,5 +95,6 @@ const styles = StyleSheet.create({
     fontSize: 32,
     fontWeight: '700',
     letterSpacing: 0.5,
+    textAlign: 'center',
   },
 });
