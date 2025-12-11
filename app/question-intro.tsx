@@ -1,8 +1,10 @@
 import { useRouter } from 'expo-router';
 import React, { useEffect, useRef } from 'react';
-import { Animated, StyleSheet, Text, View } from 'react-native';
+import { Animated, Platform, StyleSheet, Text, View } from 'react-native';
 
 import BackgroundScreen from '../components/BackgroundScreen';
+
+const fontFamily = Platform.select({ ios: 'System', android: 'Roboto', default: 'System' });
 
 export default function QuestionIntroScreen() {
   const router = useRouter();
@@ -66,6 +68,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   title: {
+    fontFamily,
     color: '#FFFFFF',
     fontSize: 26,
     fontWeight: '700',
@@ -74,6 +77,7 @@ const styles = StyleSheet.create({
     lineHeight: 34,
   },
   subtitle: {
+    fontFamily,
     color: 'rgba(255, 255, 255, 0.6)',
     fontSize: 16,
     textAlign: 'center',

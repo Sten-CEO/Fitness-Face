@@ -1,9 +1,11 @@
 import { useRouter } from 'expo-router';
 import React from 'react';
-import { StyleSheet, Text, View, TouchableOpacity } from 'react-native';
+import { Platform, StyleSheet, Text, View, TouchableOpacity } from 'react-native';
 
 import BackgroundScreen from '../components/BackgroundScreen';
 import PrimaryButton from '../components/PrimaryButton';
+
+const fontFamily = Platform.select({ ios: 'System', android: 'Roboto', default: 'System' });
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -64,18 +66,20 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
   },
   title: {
+    fontFamily,
     color: '#FFFFFF',
     fontSize: 36,
     fontWeight: '700',
     textAlign: 'center',
     marginBottom: 20,
-    lineHeight: 46,
+    lineHeight: 44,
     letterSpacing: -0.5,
   },
   titleBlue: {
     color: '#3B82F6',
   },
   subtitle: {
+    fontFamily,
     color: 'rgba(255, 255, 255, 0.6)',
     fontSize: 16,
     textAlign: 'center',
@@ -109,6 +113,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
   },
   skipText: {
+    fontFamily,
     color: 'rgba(255, 255, 255, 0.5)',
     fontSize: 16,
     fontWeight: '500',

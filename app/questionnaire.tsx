@@ -3,6 +3,7 @@ import React, { useRef, useState } from 'react';
 import {
   Animated,
   Dimensions,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -21,6 +22,7 @@ import {
 } from '../data/questions';
 
 const { width } = Dimensions.get('window');
+const fontFamily = Platform.select({ ios: 'System', android: 'Roboto', default: 'System' });
 
 export default function QuestionnaireScreen() {
   const router = useRouter();
@@ -189,6 +191,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   questionCount: {
+    fontFamily,
     color: 'rgba(255, 255, 255, 0.5)',
     fontSize: 14,
     fontWeight: '500',
@@ -217,6 +220,7 @@ const styles = StyleSheet.create({
     paddingBottom: 16,
   },
   questionTitle: {
+    fontFamily,
     color: '#FFFFFF',
     fontSize: 24,
     fontWeight: '700',
@@ -262,6 +266,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#3B82F6',
   },
   optionText: {
+    fontFamily,
     flex: 1,
     color: 'rgba(255, 255, 255, 0.7)',
     fontSize: 15,
@@ -283,6 +288,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   backButtonText: {
+    fontFamily,
     color: 'rgba(255, 255, 255, 0.5)',
     fontSize: 16,
     fontWeight: '500',

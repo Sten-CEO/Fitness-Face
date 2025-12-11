@@ -15,6 +15,8 @@ import BackgroundScreen from '../components/BackgroundScreen';
 import PrimaryButton from '../components/PrimaryButton';
 import { useUser } from '../contexts/UserContext';
 
+const fontFamily = Platform.select({ ios: 'System', android: 'Roboto', default: 'System' });
+
 export default function AuthScreen() {
   const router = useRouter();
   const { setFirstName } = useUser();
@@ -133,6 +135,7 @@ const styles = StyleSheet.create({
     marginBottom: 32,
   },
   title: {
+    fontFamily,
     color: '#FFFFFF',
     fontSize: 32,
     fontWeight: '700',
@@ -144,6 +147,7 @@ const styles = StyleSheet.create({
     color: '#3B82F6',
   },
   subtitle: {
+    fontFamily,
     color: 'rgba(255, 255, 255, 0.6)',
     fontSize: 16,
   },
@@ -154,12 +158,14 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   label: {
+    fontFamily,
     color: 'rgba(255, 255, 255, 0.6)',
     fontSize: 14,
     fontWeight: '500',
     marginBottom: 8,
   },
   input: {
+    fontFamily,
     backgroundColor: 'rgba(255, 255, 255, 0.08)',
     borderRadius: 12,
     borderWidth: 1,
@@ -178,6 +184,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   skipText: {
+    fontFamily,
     color: 'rgba(255, 255, 255, 0.5)',
     fontSize: 15,
     fontWeight: '500',
