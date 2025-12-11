@@ -2,7 +2,7 @@ import { useRouter } from 'expo-router';
 import React, { useEffect, useRef } from 'react';
 import { Animated, Platform, StyleSheet, View } from 'react-native';
 
-import BackgroundScreen from '../components/BackgroundScreen';
+import TransitionBackground from '../components/TransitionBackground';
 import { useUser } from '../contexts/UserContext';
 
 const fontFamily = Platform.select({ ios: 'System', android: 'Roboto', default: 'System' });
@@ -49,7 +49,7 @@ export default function WelcomeScreen() {
   }, []);
 
   return (
-    <BackgroundScreen>
+    <TransitionBackground>
       <View style={styles.container}>
         <Animated.View style={[styles.textContainer, { opacity: fadeAnim }]}>
           {welcomeText.split('').map((char, index) => (
@@ -75,7 +75,7 @@ export default function WelcomeScreen() {
           ))}
         </Animated.View>
       </View>
-    </BackgroundScreen>
+    </TransitionBackground>
   );
 }
 
