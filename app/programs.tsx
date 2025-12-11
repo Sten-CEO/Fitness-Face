@@ -164,26 +164,27 @@ const styles = StyleSheet.create({
   },
   backButtonText: {
     fontFamily,
-    color: 'rgba(255, 255, 255, 0.5)',
-    fontSize: 16,
-    fontWeight: '500',
+    color: 'rgba(255, 255, 255, 0.45)',
+    fontSize: 15,
+    fontWeight: '400',
   },
   title: {
     fontFamily,
     color: '#FFFFFF',
-    fontSize: 32,
-    fontWeight: '700',
+    fontSize: 28,
+    fontWeight: '600',
     marginBottom: 12,
-    lineHeight: 40,
-    letterSpacing: -0.5,
+    lineHeight: 36,
+    letterSpacing: -0.3,
   },
   titleBlue: {
     color: '#3B82F6',
   },
   subtitle: {
     fontFamily,
-    color: 'rgba(255, 255, 255, 0.6)',
-    fontSize: 16,
+    color: 'rgba(255, 255, 255, 0.55)',
+    fontSize: 15,
+    fontWeight: '400',
   },
   programsList: {
     gap: 20,
@@ -205,27 +206,29 @@ const styles = StyleSheet.create({
   badgeText: {
     fontFamily,
     color: '#FFFFFF',
-    fontSize: 12,
-    fontWeight: '600',
+    fontSize: 11,
+    fontWeight: '500',
   },
   planName: {
     fontFamily,
     color: '#FFFFFF',
     fontSize: 22,
-    fontWeight: '700',
+    fontWeight: '600',
     marginBottom: 4,
   },
   planDuration: {
     fontFamily,
-    color: 'rgba(255, 255, 255, 0.5)',
+    color: 'rgba(255, 255, 255, 0.45)',
     fontSize: 14,
     marginBottom: 12,
+    fontWeight: '400',
   },
   planDescription: {
     fontFamily,
     color: 'rgba(255, 255, 255, 0.7)',
     fontSize: 14,
     lineHeight: 22,
+    fontWeight: '400',
   },
   separator: {
     height: 1,
@@ -251,7 +254,7 @@ const styles = StyleSheet.create({
   featureCheck: {
     color: '#3B82F6',
     fontSize: 10,
-    fontWeight: '700',
+    fontWeight: '600',
   },
   featureText: {
     fontFamily,
@@ -259,6 +262,7 @@ const styles = StyleSheet.create({
     color: 'rgba(255, 255, 255, 0.7)',
     fontSize: 14,
     lineHeight: 20,
+    fontWeight: '400',
   },
   priceRow: {
     flexDirection: 'row',
@@ -267,13 +271,14 @@ const styles = StyleSheet.create({
   },
   priceLabel: {
     fontFamily,
-    color: 'rgba(255, 255, 255, 0.5)',
+    color: 'rgba(255, 255, 255, 0.45)',
     fontSize: 14,
+    fontWeight: '400',
   },
   priceValue: {
     fontFamily,
     color: '#FFFFFF',
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '600',
   },
   buttonContainer: {

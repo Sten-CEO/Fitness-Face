@@ -58,7 +58,7 @@ export default function AuthScreen() {
               </Text>
             </View>
 
-            {/* Form - inputs directs sans card */}
+            {/* Form */}
             <View style={styles.formContainer}>
               <View style={styles.inputGroup}>
                 <Text style={styles.label}>Prenom</Text>
@@ -137,19 +137,20 @@ const styles = StyleSheet.create({
   title: {
     fontFamily,
     color: '#FFFFFF',
-    fontSize: 32,
-    fontWeight: '700',
+    fontSize: 28,
+    fontWeight: '600',
     marginBottom: 12,
-    lineHeight: 40,
-    letterSpacing: -0.5,
+    lineHeight: 36,
+    letterSpacing: -0.3,
   },
   titleBlue: {
     color: '#3B82F6',
   },
   subtitle: {
     fontFamily,
-    color: 'rgba(255, 255, 255, 0.6)',
-    fontSize: 16,
+    color: 'rgba(255, 255, 255, 0.55)',
+    fontSize: 15,
+    fontWeight: '400',
   },
   formContainer: {
     marginBottom: 8,
@@ -159,9 +160,9 @@ const styles = StyleSheet.create({
   },
   label: {
     fontFamily,
-    color: 'rgba(255, 255, 255, 0.6)',
+    color: 'rgba(255, 255, 255, 0.55)',
     fontSize: 14,
-    fontWeight: '500',
+    fontWeight: '400',
     marginBottom: 8,
   },
   input: {
@@ -173,7 +174,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 14,
     color: '#FFFFFF',
-    fontSize: 16,
+    fontSize: 15,
+    fontWeight: '400',
   },
   buttonContainer: {
     marginTop: 24,
@@ -185,8 +187,8 @@ const styles = StyleSheet.create({
   },
   skipText: {
     fontFamily,
-    color: 'rgba(255, 255, 255, 0.5)',
-    fontSize: 15,
-    fontWeight: '500',
+    color: 'rgba(255, 255, 255, 0.45)',
+    fontSize: 14,
+    fontWeight: '400',
   },
 });

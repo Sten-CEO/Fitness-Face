@@ -95,9 +95,9 @@ const styles = StyleSheet.create({
   char: {
     fontFamily,
     color: '#FFFFFF',
-    fontSize: 32,
-    fontWeight: '700',
-    letterSpacing: 0.5,
+    fontSize: 28,
+    fontWeight: '600',
+    letterSpacing: -0.3,
     textAlign: 'center',
   },
 });
