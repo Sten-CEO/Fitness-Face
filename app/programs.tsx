@@ -173,7 +173,7 @@ const styles = StyleSheet.create({
     letterSpacing: -0.5,
   },
   titleBlue: {
-    color: '#4F46E5',
+    color: '#3B82F6',
   },
   subtitle: {
     color: 'rgba(255, 255, 255, 0.6)',
@@ -194,7 +194,7 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   badgeHighlight: {
-    backgroundColor: '#4F46E5',
+    backgroundColor: '#3B82F6',
   },
   badgeText: {
     color: '#FFFFFF',
@@ -234,12 +234,12 @@ const styles = StyleSheet.create({
     width: 18,
     height: 18,
     borderRadius: 9,
-    backgroundColor: 'rgba(79, 70, 229, 0.2)',
+    backgroundColor: 'rgba(59, 130, 246, 0.2)',
     alignItems: 'center',
     justifyContent: 'center',
   },
   featureCheck: {
-    color: '#4F46E5',
+    color: '#3B82F6',
     fontSize: 10,
     fontWeight: '700',
   },

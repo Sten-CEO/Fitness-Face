@@ -9,7 +9,6 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 
 import BackgroundScreen from '../components/BackgroundScreen';
 import PrimaryButton from '../components/PrimaryButton';
@@ -106,12 +105,7 @@ export default function QuestionnaireScreen() {
             Question {currentIndex + 1}/{questions.length}
           </Text>
           <View style={styles.progressBarBg}>
-            <LinearGradient
-              colors={['#4F46E5', '#7C3AED']}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
-              style={[styles.progressBarFill, { width: `${progress * 100}%` }]}
-            />
+            <View style={[styles.progressBarFill, { width: `${progress * 100}%` }]} />
           </View>
         </View>
 
@@ -210,6 +204,7 @@ const styles = StyleSheet.create({
   progressBarFill: {
     height: '100%',
     borderRadius: 2,
+    backgroundColor: '#3B82F6',
   },
   scrollView: {
     flex: 1,
@@ -244,8 +239,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   optionCardSelected: {
-    backgroundColor: 'rgba(79, 70, 229, 0.15)',
-    borderColor: '#4F46E5',
+    backgroundColor: 'rgba(59, 130, 246, 0.15)',
+    borderColor: '#3B82F6',
   },
   radioOuter: {
     width: 22,
@@ -258,13 +253,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   radioOuterSelected: {
-    borderColor: '#4F46E5',
+    borderColor: '#3B82F6',
   },
   radioInner: {
     width: 12,
     height: 12,
     borderRadius: 6,
-    backgroundColor: '#4F46E5',
+    backgroundColor: '#3B82F6',
   },
   optionText: {
     flex: 1,

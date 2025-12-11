@@ -4,7 +4,6 @@ import {
   Text,
   View,
   TouchableOpacity,
-  Animated,
 } from 'react-native';
 
 interface Tab {
@@ -69,7 +68,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   tabActive: {
-    backgroundColor: '#4F46E5',
+    backgroundColor: '#3B82F6',
   },
   tabText: {
     color: 'rgba(255, 255, 255, 0.6)',

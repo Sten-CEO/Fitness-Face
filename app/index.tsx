@@ -11,7 +11,7 @@ export default function HomeScreen() {
   return (
     <BackgroundScreen>
       <View style={styles.container}>
-        {/* Contenu central - style Zentra */}
+        {/* Contenu central - texte direct sur fond */}
         <View style={styles.centerContent}>
           {/* Titre avec mot cle en bleu */}
           <Text style={styles.title}>
@@ -73,7 +73,7 @@ const styles = StyleSheet.create({
     letterSpacing: -0.5,
   },
   titleBlue: {
-    color: '#4F46E5',
+    color: '#3B82F6',
   },
   subtitle: {
     color: 'rgba(255, 255, 255, 0.6)',
@@ -95,7 +95,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 255, 255, 0.25)',
   },
   dotActive: {
-    backgroundColor: '#4F46E5',
+    backgroundColor: '#3B82F6',
     width: 24,
   },
   footer: {
