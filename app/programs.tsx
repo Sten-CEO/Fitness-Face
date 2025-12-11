@@ -10,7 +10,9 @@ import {
 } from 'react-native';
 
 import BackgroundScreen from '../components/BackgroundScreen';
+import FeatureItem from '../components/FeatureItem';
 import GlassCard from '../components/GlassCard';
+import PrimaryButton from '../components/PrimaryButton';
 import { Plan, plans } from '../data/plans';
 
 export default function ProgramsScreen() {
@@ -26,7 +28,7 @@ export default function ProgramsScreen() {
   }, []);
 
   const handleSelectPlan = (plan: Plan) => {
-    console.log('Programme sélectionné:', plan.name);
+    console.log('Programme selectionne:', plan.name);
     // TODO: Naviguer vers le paiement / onboarding
   };
 
@@ -44,10 +46,12 @@ export default function ProgramsScreen() {
               onPress={() => router.back()}
               style={styles.backButton}
             >
-              <Text style={styles.backButtonText}>← Retour</Text>
+              <Text style={styles.backButtonText}>Retour</Text>
             </TouchableOpacity>
             <Text style={styles.title}>Tous les programmes</Text>
-            <Text style={styles.subtitle}>Fitness Face</Text>
+            <Text style={styles.subtitle}>
+              Choisis celui qui correspond le mieux a tes objectifs
+            </Text>
           </View>
 
           {/* Liste des programmes */}
@@ -67,7 +71,8 @@ export default function ProgramsScreen() {
                   ],
                 }}
               >
-                <GlassCard compact>
+                <GlassCard>
+                  {/* Tag */}
                   <View style={styles.cardHeader}>
                     <View
                       style={[
@@ -75,33 +80,54 @@ export default function ProgramsScreen() {
                         plan.isMainProgram && styles.tagMain,
                       ]}
                     >
-                      <Text style={styles.tag}>{plan.tag}</Text>
+                      <Text style={[styles.tag, !plan.isMainProgram && styles.tagSecondary]}>
+                        {plan.tag}
+                      </Text>
                     </View>
                   </View>
 
+                  {/* Titre et duree */}
                   <Text style={styles.planName}>{plan.name}</Text>
                   <Text style={styles.planDuration}>{plan.durationLabel}</Text>
+
+                  {/* Description */}
                   <Text style={styles.planDescription}>
                     {plan.shortDescription}
                   </Text>
 
-                  <View style={styles.badgesContainer}>
-                    {plan.badges.map((badge, badgeIndex) => (
-                      <View key={badgeIndex} style={styles.badge}>
-                        <Text style={styles.badgeText}>{badge}</Text>
-                      </View>
-                    ))}
-                  </View>
+                  {/* Features avec checkmarks pour les programmes principaux */}
+                  {plan.isMainProgram && plan.features.length > 0 && (
+                    <View style={styles.featuresContainer}>
+                      {plan.features.slice(0, 3).map((feature, featureIndex) => (
+                        <FeatureItem key={featureIndex} text={feature.text} />
+                      ))}
+                    </View>
+                  )}
 
-                  <TouchableOpacity
-                    style={styles.selectButton}
-                    onPress={() => handleSelectPlan(plan)}
-                    activeOpacity={0.7}
-                  >
-                    <Text style={styles.selectButtonText}>
-                      Choisir ce programme
-                    </Text>
-                  </TouchableOpacity>
+                  {/* Prix */}
+                  {plan.priceInfo && (
+                    <View style={styles.priceContainer}>
+                      <Text style={styles.priceValue}>{plan.priceInfo}</Text>
+                    </View>
+                  )}
+
+                  {/* Bouton */}
+                  {plan.isMainProgram ? (
+                    <PrimaryButton
+                      title="Choisir ce programme"
+                      onPress={() => handleSelectPlan(plan)}
+                    />
+                  ) : (
+                    <TouchableOpacity
+                      style={styles.selectButton}
+                      onPress={() => handleSelectPlan(plan)}
+                      activeOpacity={0.7}
+                    >
+                      <Text style={styles.selectButtonText}>
+                        Choisir ce programme
+                      </Text>
+                    </TouchableOpacity>
+                  )}
                 </GlassCard>
               </Animated.View>
             ))}
@@ -122,14 +148,15 @@ const styles = StyleSheet.create({
   },
   header: {
     marginBottom: 28,
-    alignItems: 'center',
   },
   backButton: {
     alignSelf: 'flex-start',
     marginBottom: 20,
+    paddingVertical: 8,
+    paddingRight: 16,
   },
   backButtonText: {
-    color: '#9CA3AF',
+    color: '#60A5FA',
     fontSize: 16,
     fontWeight: '500',
   },
@@ -137,17 +164,17 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 28,
     fontWeight: '700',
-    marginBottom: 6,
+    marginBottom: 8,
     textAlign: 'center',
   },
   subtitle: {
-    color: '#6B7280',
-    fontSize: 16,
-    fontWeight: '500',
+    color: '#9CA3AF',
+    fontSize: 15,
     textAlign: 'center',
+    lineHeight: 22,
   },
   programsList: {
-    gap: 16,
+    gap: 20,
   },
   cardHeader: {
     flexDirection: 'row',
@@ -157,12 +184,15 @@ const styles = StyleSheet.create({
   },
   tagContainer: {
     backgroundColor: 'rgba(107, 114, 128, 0.2)',
-    borderRadius: 8,
-    paddingHorizontal: 12,
+    borderRadius: 10,
+    paddingHorizontal: 14,
     paddingVertical: 6,
+    borderWidth: 0.5,
+    borderColor: 'rgba(107, 114, 128, 0.3)',
   },
   tagMain: {
     backgroundColor: 'rgba(59, 130, 246, 0.2)',
+    borderColor: 'rgba(96, 165, 250, 0.3)',
   },
   tag: {
     color: '#60A5FA',
@@ -170,9 +200,12 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     textAlign: 'center',
   },
+  tagSecondary: {
+    color: '#9CA3AF',
+  },
   planName: {
     color: '#FFFFFF',
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: '700',
     marginBottom: 6,
     textAlign: 'center',
@@ -180,46 +213,47 @@ const styles = StyleSheet.create({
   planDuration: {
     color: '#9CA3AF',
     fontSize: 14,
-    marginBottom: 12,
+    marginBottom: 14,
     textAlign: 'center',
   },
   planDescription: {
     color: '#D1D5DB',
     fontSize: 14,
-    lineHeight: 21,
+    lineHeight: 22,
     marginBottom: 16,
     textAlign: 'center',
   },
-  badgesContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'center',
-    gap: 8,
-    marginBottom: 20,
+  featuresContainer: {
+    alignSelf: 'stretch',
+    marginBottom: 16,
   },
-  badge: {
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
-    borderRadius: 16,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
+  priceContainer: {
+    alignSelf: 'stretch',
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderRadius: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    marginBottom: 16,
+    borderWidth: 0.5,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
   },
-  badgeText: {
-    color: '#9CA3AF',
-    fontSize: 11,
-    fontWeight: '500',
+  priceValue: {
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontWeight: '600',
     textAlign: 'center',
   },
   selectButton: {
-    backgroundColor: 'rgba(59, 130, 246, 0.2)',
-    borderRadius: 14,
+    backgroundColor: 'rgba(107, 114, 128, 0.15)',
+    borderRadius: 18,
     borderWidth: 1,
-    borderColor: 'rgba(59, 130, 246, 0.3)',
+    borderColor: 'rgba(107, 114, 128, 0.25)',
     paddingVertical: 16,
     alignItems: 'center',
     width: '100%',
   },
   selectButtonText: {
-    color: '#60A5FA',
+    color: '#9CA3AF',
     fontSize: 15,
     fontWeight: '600',
     textAlign: 'center',
