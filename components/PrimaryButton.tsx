@@ -1,15 +1,14 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import {
-  TouchableOpacity,
+  Animated,
+  TouchableWithoutFeedback,
   Text,
   StyleSheet,
   ViewStyle,
   TextStyle,
   View,
-  Platform,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { BlurView } from 'expo-blur';
 
 interface PrimaryButtonProps {
   title: string;
@@ -26,96 +25,91 @@ export default function PrimaryButton({
   textStyle,
   disabled = false,
 }: PrimaryButtonProps) {
-  const buttonContent = (
-    <LinearGradient
-      colors={disabled ? ['#4B5563', '#374151'] : ['#60A5FA', '#3B82F6', '#2563EB']}
-      start={{ x: 0, y: 0 }}
-      end={{ x: 1, y: 1 }}
-      style={styles.gradient}
-    >
-      <Text style={[styles.text, disabled && styles.textDisabled, textStyle]}>
-        {title}
-      </Text>
-    </LinearGradient>
-  );
+  const scaleAnim = useRef(new Animated.Value(1)).current;
+
+  const handlePressIn = () => {
+    Animated.spring(scaleAnim, {
+      toValue: 0.97,
+      useNativeDriver: true,
+      speed: 50,
+      bounciness: 4,
+    }).start();
+  };
+
+  const handlePressOut = () => {
+    Animated.spring(scaleAnim, {
+      toValue: 1,
+      useNativeDriver: true,
+      speed: 50,
+      bounciness: 4,
+    }).start();
+  };
 
   return (
-    <View style={[styles.outerWrapper, style]}>
-      {/* Halo bleu lumineux - style iOS */}
-      {!disabled && (
-        <View style={styles.haloOuter}>
-          <View style={styles.haloInner} />
-        </View>
-      )}
-
-      <TouchableOpacity
-        onPress={onPress}
-        disabled={disabled}
-        activeOpacity={0.85}
-        style={[styles.wrapper, disabled && styles.disabled]}
-      >
-        {Platform.OS === 'ios' ? (
-          <BlurView intensity={25} tint="dark" style={styles.blurWrapper}>
-            <View style={styles.glassOverlay} />
-            {buttonContent}
-          </BlurView>
-        ) : (
-          <View style={styles.androidWrapper}>
-            {buttonContent}
-          </View>
-        )}
-      </TouchableOpacity>
-    </View>
+    <TouchableWithoutFeedback
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
+      onPress={onPress}
+      disabled={disabled}
+    >
+      <Animated.View style={[
+        styles.buttonWrapper,
+        disabled && styles.buttonDisabled,
+        { transform: [{ scale: scaleAnim }] },
+        style,
+      ]}>
+        {/* Gradient bleu/violet moderne style Zentra */}
+        <LinearGradient
+          colors={disabled ? ['#4B5563', '#374151'] : ['#4F46E5', '#7C3AED']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={styles.gradient}
+        >
+          {/* Effet lumineux subtil en haut */}
+          <View style={styles.highlight} />
+          <Text style={[styles.text, textStyle]}>
+            {title}
+          </Text>
+        </LinearGradient>
+      </Animated.View>
+    </TouchableWithoutFeedback>
   );
 }
 
 const styles = StyleSheet.create({
-  outerWrapper: {
-    position: 'relative',
-    maxWidth: 340,
+  buttonWrapper: {
     alignSelf: 'center',
     width: '100%',
-  },
-  haloOuter: {
-    position: 'absolute',
-    top: -8,
-    left: -8,
-    right: -8,
-    bottom: -8,
-    borderRadius: 32,
-    backgroundColor: 'rgba(59, 130, 246, 0.15)',
-  },
-  haloInner: {
-    flex: 1,
-    borderRadius: 32,
-    shadowColor: '#3B82F6',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.6,
-    shadowRadius: 24,
-    elevation: 0,
-  },
-  wrapper: {
-    borderRadius: 24,
+    maxWidth: 340,
+    borderRadius: 16,
     overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: 'rgba(96, 165, 250, 0.35)',
+    // Ombre subtile coloree
+    shadowColor: '#4F46E5',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.35,
+    shadowRadius: 16,
+    elevation: 8,
   },
-  blurWrapper: {
-    overflow: 'hidden',
-  },
-  androidWrapper: {
-    backgroundColor: 'rgba(30, 58, 138, 0.6)',
-  },
-  glassOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(59, 130, 246, 0.08)',
+  buttonDisabled: {
+    opacity: 0.5,
+    shadowOpacity: 0,
   },
   gradient: {
     paddingVertical: 18,
     paddingHorizontal: 32,
     alignItems: 'center',
     justifyContent: 'center',
-    minHeight: 56,
+    minHeight: 58,
+    position: 'relative',
+  },
+  highlight: {
+    position: 'absolute',
+    top: 0,
+    left: 20,
+    right: 20,
+    height: 1,
+    backgroundColor: 'rgba(255, 255, 255, 0.25)',
+    borderRadius: 1,
   },
   text: {
     color: '#FFFFFF',
@@ -123,12 +117,5 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     letterSpacing: 0.3,
     textAlign: 'center',
-  },
-  textDisabled: {
-    opacity: 0.6,
-  },
-  disabled: {
-    opacity: 0.5,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
   },
 });

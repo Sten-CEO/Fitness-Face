@@ -3,19 +3,16 @@ import React, { useRef, useState } from 'react';
 import {
   Animated,
   Dimensions,
-  Platform,
   ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from 'react-native';
-import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 
 import BackgroundScreen from '../components/BackgroundScreen';
-import GlassButton from '../components/GlassButton';
-import GlassCard from '../components/GlassCard';
+import PrimaryButton from '../components/PrimaryButton';
 import {
   addScores,
   calculateRecommendedPlan,
@@ -100,89 +97,17 @@ export default function QuestionnaireScreen() {
     }
   };
 
-  const renderOptionCard = (option: { text: string }, index: number) => {
-    const isSelected = selectedOption === index;
-
-    // Reflet glass pour les options
-    const optionGlassOverlay = (
-      <LinearGradient
-        colors={[
-          isSelected ? 'rgba(76, 111, 255, 0.12)' : 'rgba(255, 255, 255, 0.06)',
-          'transparent',
-        ]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={StyleSheet.absoluteFill}
-      />
-    );
-
-    const content = (
-      <View style={styles.optionContent}>
-        <View style={[styles.radioOuter, isSelected && styles.radioOuterSelected]}>
-          {isSelected && (
-            <View style={styles.radioInner}>
-              <LinearGradient
-                colors={['#4C6FFF', '#9F66FF']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={styles.radioGradient}
-              />
-            </View>
-          )}
-        </View>
-        <Text style={[styles.optionText, isSelected && styles.optionTextSelected]}>
-          {option.text}
-        </Text>
-      </View>
-    );
-
-    if (Platform.OS === 'ios') {
-      return (
-        <TouchableOpacity
-          key={index}
-          onPress={() => setSelectedOption(index)}
-          activeOpacity={0.8}
-          style={[styles.optionWrapper, isSelected && styles.optionWrapperSelected]}
-        >
-          <BlurView intensity={18} tint="dark" style={styles.optionBlur}>
-            <View style={[styles.optionInner, isSelected && styles.optionInnerSelected]}>
-              {optionGlassOverlay}
-              {content}
-            </View>
-          </BlurView>
-        </TouchableOpacity>
-      );
-    }
-
-    return (
-      <TouchableOpacity
-        key={index}
-        onPress={() => setSelectedOption(index)}
-        activeOpacity={0.8}
-        style={[
-          styles.optionWrapper,
-          styles.optionAndroid,
-          isSelected && styles.optionWrapperSelected,
-          isSelected && styles.optionAndroidSelected,
-        ]}
-      >
-        {optionGlassOverlay}
-        {content}
-      </TouchableOpacity>
-    );
-  };
-
   return (
     <BackgroundScreen centered={false}>
       <View style={styles.container}>
         {/* Header avec progression */}
         <View style={styles.header}>
           <Text style={styles.questionCount}>
-            Question {currentIndex + 1} sur {questions.length}
+            Question {currentIndex + 1}/{questions.length}
           </Text>
           <View style={styles.progressBarBg}>
             <LinearGradient
-              colors={['#4C6FFF', '#9F66FF']}
+              colors={['#4F46E5', '#7C3AED']}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
               style={[styles.progressBarFill, { width: `${progress * 100}%` }]}
@@ -190,7 +115,7 @@ export default function QuestionnaireScreen() {
           </View>
         </View>
 
-        {/* Question animee dans une GlassCard */}
+        {/* Question */}
         <ScrollView
           style={styles.scrollView}
           contentContainerStyle={styles.scrollContent}
@@ -205,19 +130,41 @@ export default function QuestionnaireScreen() {
               },
             ]}
           >
-            <GlassCard contentStyle={styles.questionCardContent}>
-              <Text style={styles.questionTitle}>{currentQuestion.title}</Text>
+            <Text style={styles.questionTitle}>{currentQuestion.title}</Text>
 
-              <View style={styles.optionsContainer}>
-                {currentQuestion.options.map((option, index) =>
-                  renderOptionCard(option, index)
-                )}
-              </View>
-            </GlassCard>
+            <View style={styles.optionsContainer}>
+              {currentQuestion.options.map((option, index) => {
+                const isSelected = selectedOption === index;
+                return (
+                  <TouchableOpacity
+                    key={index}
+                    onPress={() => setSelectedOption(index)}
+                    activeOpacity={0.8}
+                    style={[
+                      styles.optionCard,
+                      isSelected && styles.optionCardSelected,
+                    ]}
+                  >
+                    <View style={[
+                      styles.radioOuter,
+                      isSelected && styles.radioOuterSelected,
+                    ]}>
+                      {isSelected && <View style={styles.radioInner} />}
+                    </View>
+                    <Text style={[
+                      styles.optionText,
+                      isSelected && styles.optionTextSelected,
+                    ]}>
+                      {option.text}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
           </Animated.View>
         </ScrollView>
 
-        {/* Footer avec boutons */}
+        {/* Footer */}
         <View style={styles.footer}>
           {currentIndex > 0 && (
             <TouchableOpacity onPress={handleBack} style={styles.backButton}>
@@ -225,8 +172,8 @@ export default function QuestionnaireScreen() {
             </TouchableOpacity>
           )}
           <View style={styles.nextButtonContainer}>
-            <GlassButton
-              label={currentIndex === questions.length - 1 ? 'Voir mon resultat' : 'Suivant'}
+            <PrimaryButton
+              title={currentIndex === questions.length - 1 ? 'Voir mon resultat' : 'Suivant'}
               onPress={handleNext}
               disabled={selectedOption === null}
             />
@@ -244,15 +191,14 @@ const styles = StyleSheet.create({
     paddingBottom: 32,
   },
   header: {
-    marginBottom: 28,
+    marginBottom: 32,
     alignItems: 'center',
   },
   questionCount: {
-    color: 'rgba(255, 255, 255, 0.55)',
+    color: 'rgba(255, 255, 255, 0.5)',
     fontSize: 14,
     fontWeight: '500',
-    textAlign: 'center',
-    marginBottom: 14,
+    marginBottom: 16,
   },
   progressBarBg: {
     height: 4,
@@ -271,105 +217,60 @@ const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
     paddingVertical: 8,
-    justifyContent: 'center',
   },
   questionContainer: {
     paddingBottom: 16,
   },
-  questionCardContent: {
-    paddingHorizontal: 20,
-    paddingVertical: 28,
-  },
   questionTitle: {
     color: '#FFFFFF',
-    fontSize: 22,
+    fontSize: 24,
     fontWeight: '700',
     textAlign: 'center',
-    marginBottom: 28,
-    lineHeight: 32,
-    paddingHorizontal: 4,
+    marginBottom: 32,
+    lineHeight: 34,
+    letterSpacing: -0.5,
   },
   optionsContainer: {
     gap: 12,
-    width: '100%',
   },
-  optionWrapper: {
-    borderRadius: 20,
-    overflow: 'hidden',
+  optionCard: {
+    backgroundColor: 'rgba(255, 255, 255, 0.06)',
+    borderRadius: 16,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.12)',
-    // Ombre subtile
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  optionWrapperSelected: {
-    borderColor: 'rgba(76, 111, 255, 0.5)',
-    borderWidth: 1,
-    shadowColor: '#4C6FFF',
-    shadowOpacity: 0.25,
-  },
-  optionBlur: {
-    overflow: 'hidden',
-  },
-  optionInner: {
-    backgroundColor: 'rgba(7, 7, 10, 0.55)',
+    borderColor: 'rgba(255, 255, 255, 0.1)',
     paddingVertical: 18,
     paddingHorizontal: 18,
-    minHeight: 64,
-    justifyContent: 'center',
-    overflow: 'hidden',
-  },
-  optionInnerSelected: {
-    backgroundColor: 'rgba(76, 111, 255, 0.12)',
-  },
-  optionAndroid: {
-    backgroundColor: 'rgba(7, 7, 10, 0.75)',
-    paddingVertical: 18,
-    paddingHorizontal: 18,
-    minHeight: 64,
-    justifyContent: 'center',
-    overflow: 'hidden',
-  },
-  optionAndroidSelected: {
-    backgroundColor: 'rgba(76, 111, 255, 0.15)',
-  },
-  optionContent: {
     flexDirection: 'row',
     alignItems: 'center',
   },
+  optionCardSelected: {
+    backgroundColor: 'rgba(79, 70, 229, 0.15)',
+    borderColor: '#4F46E5',
+  },
   radioOuter: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
     borderWidth: 2,
-    borderColor: 'rgba(255, 255, 255, 0.22)',
+    borderColor: 'rgba(255, 255, 255, 0.3)',
     marginRight: 14,
     justifyContent: 'center',
     alignItems: 'center',
-    flexShrink: 0,
   },
   radioOuterSelected: {
-    borderColor: '#4C6FFF',
-    borderWidth: 2,
+    borderColor: '#4F46E5',
   },
   radioInner: {
     width: 12,
     height: 12,
     borderRadius: 6,
-    overflow: 'hidden',
-  },
-  radioGradient: {
-    flex: 1,
+    backgroundColor: '#4F46E5',
   },
   optionText: {
     flex: 1,
-    color: 'rgba(255, 255, 255, 0.72)',
+    color: 'rgba(255, 255, 255, 0.7)',
     fontSize: 15,
     lineHeight: 22,
-    textAlign: 'left',
   },
   optionTextSelected: {
     color: '#FFFFFF',
@@ -387,10 +288,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   backButtonText: {
-    color: 'rgba(255, 255, 255, 0.55)',
+    color: 'rgba(255, 255, 255, 0.5)',
     fontSize: 16,
     fontWeight: '500',
-    textAlign: 'center',
   },
   nextButtonContainer: {
     flex: 1,
