@@ -14,8 +14,7 @@ import {
 import BackgroundScreen from '../components/BackgroundScreen';
 import PrimaryButton from '../components/PrimaryButton';
 import { useUser } from '../contexts/UserContext';
-
-const fontFamily = Platform.select({ ios: 'System', android: 'Roboto', default: 'System' });
+import { typography, textColors, fontFamily } from '../theme/typography';
 
 export default function AuthScreen() {
   const router = useRouter();
@@ -47,7 +46,6 @@ export default function AuthScreen() {
           keyboardShouldPersistTaps="handled"
         >
           <View style={styles.container}>
-            {/* Header */}
             <View style={styles.header}>
               <Text style={styles.title}>
                 Cree ton{'\n'}
@@ -58,7 +56,6 @@ export default function AuthScreen() {
               </Text>
             </View>
 
-            {/* Form */}
             <View style={styles.formContainer}>
               <View style={styles.inputGroup}>
                 <Text style={styles.label}>Prenom</Text>
@@ -98,7 +95,6 @@ export default function AuthScreen() {
               </View>
             </View>
 
-            {/* Buttons */}
             <View style={styles.buttonContainer}>
               <PrimaryButton
                 title="Continuer"
@@ -135,22 +131,16 @@ const styles = StyleSheet.create({
     marginBottom: 32,
   },
   title: {
-    fontFamily,
-    color: '#FFFFFF',
-    fontSize: 28,
-    fontWeight: '600',
+    ...typography.h2,
+    color: textColors.primary,
     marginBottom: 12,
-    lineHeight: 36,
-    letterSpacing: -0.3,
   },
   titleBlue: {
-    color: '#3B82F6',
+    color: textColors.accent,
   },
   subtitle: {
-    fontFamily,
-    color: 'rgba(255, 255, 255, 0.55)',
-    fontSize: 15,
-    fontWeight: '400',
+    ...typography.body,
+    color: textColors.secondary,
   },
   formContainer: {
     marginBottom: 8,
@@ -159,10 +149,8 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   label: {
-    fontFamily,
-    color: 'rgba(255, 255, 255, 0.55)',
-    fontSize: 14,
-    fontWeight: '400',
+    ...typography.bodySmall,
+    color: textColors.secondary,
     marginBottom: 8,
   },
   input: {
@@ -173,7 +161,7 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255, 255, 255, 0.12)',
     paddingHorizontal: 16,
     paddingVertical: 14,
-    color: '#FFFFFF',
+    color: textColors.primary,
     fontSize: 15,
     fontWeight: '400',
   },
@@ -186,9 +174,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   skipText: {
-    fontFamily,
-    color: 'rgba(255, 255, 255, 0.45)',
-    fontSize: 14,
-    fontWeight: '400',
+    ...typography.bodySmall,
+    color: textColors.tertiary,
   },
 });

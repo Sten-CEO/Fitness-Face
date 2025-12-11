@@ -3,7 +3,6 @@ import React, { useEffect, useRef, useState } from 'react';
 import {
   Animated,
   Dimensions,
-  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -22,9 +21,24 @@ import {
   Plan,
   PlanId,
 } from '../data/plans';
+import { typography, textColors } from '../theme/typography';
 
 const { width } = Dimensions.get('window');
-const fontFamily = Platform.select({ ios: 'System', android: 'Roboto', default: 'System' });
+
+// Parse price info to highlight amount only
+function renderPriceInfo(priceInfo: string) {
+  // Match patterns like "7 € / mois" or "29 €"
+  const match = priceInfo.match(/^(\d+\s*€(?:\s*\/\s*mois)?)(.*)/);
+  if (match) {
+    return (
+      <Text style={styles.priceValue}>
+        <Text style={styles.priceAmount}>{match[1]}</Text>
+        <Text style={styles.priceRest}>{match[2]}</Text>
+      </Text>
+    );
+  }
+  return <Text style={styles.priceValue}>{priceInfo}</Text>;
+}
 
 export default function ResultScreen() {
   const router = useRouter();
@@ -105,7 +119,6 @@ export default function ResultScreen() {
         showsVerticalScrollIndicator={false}
       >
         <Animated.View style={{ opacity: fadeAnim }}>
-          {/* Header */}
           <View style={styles.header}>
             <Text style={styles.title}>
               Ton programme{'\n'}
@@ -116,7 +129,6 @@ export default function ResultScreen() {
             </Text>
           </View>
 
-          {/* Tab slider */}
           {alternativePlan && (
             <TabSlider
               tabs={tabs}
@@ -125,7 +137,6 @@ export default function ResultScreen() {
             />
           )}
 
-          {/* Carte programme */}
           <Animated.View style={{ transform: [{ translateX: slideAnim }] }}>
             <CleanCard style={styles.programCard}>
               <View style={styles.badge}>
@@ -155,7 +166,7 @@ export default function ResultScreen() {
               {currentPlan?.priceInfo && (
                 <View style={styles.priceSection}>
                   <Text style={styles.priceLabel}>Tarif</Text>
-                  <Text style={styles.priceValue}>{currentPlan.priceInfo}</Text>
+                  {renderPriceInfo(currentPlan.priceInfo)}
                 </View>
               )}
             </CleanCard>
@@ -195,55 +206,44 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   title: {
-    fontFamily,
-    color: '#FFFFFF',
-    fontSize: 28,
-    fontWeight: '600',
+    ...typography.h2,
+    color: textColors.primary,
     textAlign: 'center',
     marginBottom: 12,
-    lineHeight: 36,
-    letterSpacing: -0.3,
   },
   titleBlue: {
-    color: '#3B82F6',
+    color: textColors.accent,
   },
   subtitle: {
-    fontFamily,
-    color: 'rgba(255, 255, 255, 0.55)',
-    fontSize: 15,
+    ...typography.body,
+    color: textColors.secondary,
     textAlign: 'center',
-    fontWeight: '400',
   },
   programCard: {
     marginBottom: 24,
   },
   badge: {
     alignSelf: 'flex-start',
-    backgroundColor: '#3B82F6',
+    backgroundColor: textColors.accent,
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderRadius: 6,
     marginBottom: 14,
   },
   badgeText: {
-    fontFamily,
-    color: '#FFFFFF',
+    ...typography.labelSmall,
+    color: textColors.primary,
     fontSize: 11,
-    fontWeight: '500',
   },
   planName: {
-    fontFamily,
-    color: '#FFFFFF',
-    fontSize: 22,
-    fontWeight: '600',
+    ...typography.h3,
+    color: textColors.primary,
     marginBottom: 4,
   },
   planDuration: {
-    fontFamily,
-    color: 'rgba(255, 255, 255, 0.45)',
-    fontSize: 14,
+    ...typography.bodySmall,
+    color: textColors.tertiary,
     marginBottom: 16,
-    fontWeight: '400',
   },
   separator: {
     height: 1,
@@ -267,17 +267,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   featureCheck: {
-    color: '#3B82F6',
+    color: textColors.accent,
     fontSize: 10,
     fontWeight: '600',
   },
   featureText: {
-    fontFamily,
+    ...typography.bodySmall,
     flex: 1,
     color: 'rgba(255, 255, 255, 0.7)',
-    fontSize: 14,
-    lineHeight: 20,
-    fontWeight: '400',
   },
   priceSection: {
     flexDirection: 'row',
@@ -285,16 +282,22 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   priceLabel: {
-    fontFamily,
-    color: 'rgba(255, 255, 255, 0.45)',
-    fontSize: 14,
-    fontWeight: '400',
+    ...typography.bodySmall,
+    color: textColors.tertiary,
   },
   priceValue: {
-    fontFamily,
-    color: '#FFFFFF',
-    fontSize: 17,
+    ...typography.bodySmall,
+    color: textColors.tertiary,
+  },
+  priceAmount: {
+    ...typography.bodySmall,
+    color: textColors.tertiary,
     fontWeight: '600',
+  },
+  priceRest: {
+    ...typography.bodySmall,
+    color: textColors.tertiary,
+    fontWeight: '400',
   },
   ctaContainer: {
     marginBottom: 16,
@@ -304,10 +307,8 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   secondaryLinkText: {
-    fontFamily,
-    color: 'rgba(255, 255, 255, 0.45)',
-    fontSize: 14,
-    fontWeight: '400',
+    ...typography.bodySmall,
+    color: textColors.tertiary,
   },
   errorContainer: {
     flex: 1,
@@ -315,10 +316,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   errorText: {
-    fontFamily,
+    ...typography.body,
     color: '#EF4444',
-    fontSize: 15,
     textAlign: 'center',
-    fontWeight: '400',
   },
 });
