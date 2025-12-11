@@ -79,7 +79,7 @@ export default function ProgramsScreen() {
                     ],
                   }}
                 >
-                  <GlassCard selected={isMainOrHighlighted}>
+                  <GlassCard gradientBorder={isMainOrHighlighted}>
                     {/* Tag avec effet glass */}
                     <View style={styles.cardHeader}>
                       <View style={[
@@ -88,7 +88,7 @@ export default function ProgramsScreen() {
                       ]}>
                         <LinearGradient
                           colors={isMainOrHighlighted
-                            ? ['rgba(76, 111, 255, 0.35)', 'rgba(159, 102, 255, 0.25)']
+                            ? ['rgba(79, 70, 229, 0.6)', 'rgba(168, 85, 247, 0.5)']
                             : ['rgba(255, 255, 255, 0.08)', 'rgba(255, 255, 255, 0.04)']
                           }
                           start={{ x: 0, y: 0 }}
@@ -212,15 +212,15 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   tagMain: {
-    shadowColor: '#4C6FFF',
-    shadowOpacity: 0.25,
+    shadowColor: '#6366f1',
+    shadowOpacity: 0.35,
   },
   tagGradient: {
     paddingHorizontal: 16,
     paddingVertical: 8,
-    borderRadius: 12,
-    borderWidth: 0.5,
-    borderColor: 'rgba(255, 255, 255, 0.14)',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.15)',
   },
   tag: {
     color: 'rgba(255, 255, 255, 0.9)',

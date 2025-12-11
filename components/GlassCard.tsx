@@ -11,6 +11,7 @@ interface GlassCardProps {
   compact?: boolean;
   selected?: boolean;
   noPadding?: boolean;
+  gradientBorder?: boolean; // Bordure degradee bleu/violet
 }
 
 export default function GlassCard({
@@ -21,6 +22,7 @@ export default function GlassCard({
   compact = false,
   selected = false,
   noPadding = false,
+  gradientBorder = false,
 }: GlassCardProps) {
   const cardContent = (
     <View style={[
@@ -37,8 +39,8 @@ export default function GlassCard({
   const glassReflection = (
     <LinearGradient
       colors={[
-        'rgba(255, 255, 255, 0.12)',
-        'rgba(255, 255, 255, 0.04)',
+        'rgba(255, 255, 255, 0.10)',
+        'rgba(255, 255, 255, 0.03)',
         'transparent',
       ]}
       locations={[0, 0.3, 0.7]}
@@ -53,8 +55,8 @@ export default function GlassCard({
     <LinearGradient
       colors={[
         'rgba(255, 255, 255, 0.01)',
-        'rgba(255, 255, 255, 0.15)',
-        'rgba(255, 255, 255, 0.15)',
+        'rgba(255, 255, 255, 0.12)',
+        'rgba(255, 255, 255, 0.12)',
         'rgba(255, 255, 255, 0.01)',
       ]}
       locations={[0, 0.2, 0.8, 1]}
@@ -64,34 +66,52 @@ export default function GlassCard({
     />
   );
 
-  if (Platform.OS === 'ios') {
-    return (
-      <View style={[styles.shadowWrapper, style]}>
-        <View style={[styles.cardWrapper, selected && styles.cardSelected]}>
-          <BlurView intensity={intensity} tint="dark" style={styles.blurView}>
-            <View style={styles.innerWrapper}>
-              {glassReflection}
-              {topHighlight}
-              {cardContent}
-            </View>
-          </BlurView>
+  const cardInner = Platform.OS === 'ios' ? (
+    <View style={[
+      styles.cardWrapper,
+      selected && styles.cardSelected,
+      gradientBorder && styles.cardGradientBorder,
+    ]}>
+      <BlurView intensity={intensity} tint="dark" style={styles.blurView}>
+        <View style={styles.innerWrapper}>
+          {glassReflection}
+          {topHighlight}
+          {cardContent}
         </View>
+      </BlurView>
+    </View>
+  ) : (
+    <View style={[
+      styles.cardWrapper,
+      styles.androidCard,
+      selected && styles.cardSelected,
+      gradientBorder && styles.cardGradientBorder,
+    ]}>
+      {glassReflection}
+      {topHighlight}
+      {cardContent}
+    </View>
+  );
+
+  // Si bordure degradee, on entoure la card d'un wrapper LinearGradient
+  if (gradientBorder) {
+    return (
+      <View style={[styles.shadowWrapper, styles.gradientShadow, style]}>
+        <LinearGradient
+          colors={['#4f46e5', '#a855f7', '#4f46e5']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.gradientBorderWrapper}
+        >
+          {cardInner}
+        </LinearGradient>
       </View>
     );
   }
 
-  // Fallback Android
   return (
     <View style={[styles.shadowWrapper, style]}>
-      <View style={[
-        styles.cardWrapper,
-        styles.androidCard,
-        selected && styles.cardSelected,
-      ]}>
-        {glassReflection}
-        {topHighlight}
-        {cardContent}
-      </View>
+      {cardInner}
     </View>
   );
 }
@@ -105,23 +125,37 @@ const styles = StyleSheet.create({
     shadowRadius: 24,
     elevation: 12,
   },
+  gradientShadow: {
+    // Glow colore pour les cartes avec bordure degradee
+    shadowColor: '#6366f1',
+    shadowOpacity: 0.35,
+    shadowRadius: 28,
+  },
+  gradientBorderWrapper: {
+    borderRadius: 30,
+    padding: 2, // Epaisseur de la bordure degradee
+  },
   cardWrapper: {
     borderRadius: 28,
     overflow: 'hidden',
     // Bordure fine style glass mockup
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.14)',
+    borderColor: 'rgba(255, 255, 255, 0.12)',
   },
   cardSelected: {
     borderColor: 'rgba(76, 111, 255, 0.5)',
     borderWidth: 1.5,
   },
+  cardGradientBorder: {
+    // Pas de bordure quand on utilise le gradient wrapper
+    borderWidth: 0,
+  },
   blurView: {
     overflow: 'hidden',
   },
   innerWrapper: {
-    // Fond sombre semi-transparent - comme "Glass Morphism mockup"
-    backgroundColor: 'rgba(7, 7, 10, 0.65)',
+    // Fond sombre semi-transparent - comme reference
+    backgroundColor: 'rgba(8, 8, 10, 0.72)',
   },
   reflectionOverlay: {
     ...StyleSheet.absoluteFillObject,
@@ -147,6 +181,6 @@ const styles = StyleSheet.create({
     padding: 0,
   },
   androidCard: {
-    backgroundColor: 'rgba(7, 7, 10, 0.85)',
+    backgroundColor: 'rgba(8, 8, 10, 0.85)',
   },
 });

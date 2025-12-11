@@ -3,7 +3,6 @@ import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 import BackgroundScreen from '../components/BackgroundScreen';
-import GlassCard from '../components/GlassCard';
 import GlassButton from '../components/GlassButton';
 
 export default function HomeScreen() {
@@ -14,37 +13,31 @@ export default function HomeScreen() {
       <View style={styles.container}>
         {/* Header avec nom de l'app - style label discret */}
         <View style={styles.header}>
-          <Text style={styles.appName}>Fitness Face</Text>
+          <Text style={styles.appName}>FITNESS FACE</Text>
         </View>
 
-        {/* Contenu central - GlassCard principale */}
+        {/* Contenu central - directement sur le fond glass */}
         <View style={styles.centerContent}>
-          <GlassCard style={styles.mainCard}>
-            <Text style={styles.title}>
-              Transforme ton visage{'\n'}en 5 minutes par jour
-            </Text>
+          <Text style={styles.title}>
+            Transforme ton visage{'\n'}en 5 minutes par jour
+          </Text>
 
-            <Text style={styles.subtitle}>
-              Programmes guides pour jawline,{'\n'}double menton et visage plus net.
-            </Text>
+          <Text style={styles.subtitle}>
+            Programmes guides pour jawline,{'\n'}double menton et visage plus net.
+          </Text>
 
-            <View style={styles.buttonContainer}>
-              <GlassButton
-                label="Commencer"
-                onPress={() => router.push('/auth')}
-              />
-            </View>
-
-            <Text style={styles.smallText}>
-              Pas de materiel. Pas de bullshit.{'\n'}Juste des routines guidees.
-            </Text>
-          </GlassCard>
+          <View style={styles.buttonContainer}>
+            <GlassButton
+              label="Commencer"
+              onPress={() => router.push('/auth')}
+            />
+          </View>
         </View>
 
-        {/* Footer discret */}
+        {/* Footer - phrase d'accroche */}
         <View style={styles.footer}>
           <Text style={styles.footerText}>
-            Des resultats visibles en 30 jours
+            Pas de materiel. Pas de bullshit.{'\n'}Juste des routines guidees.
           </Text>
         </View>
       </View>
@@ -57,60 +50,52 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
-    paddingTop: 24,
+    paddingTop: 60,
     paddingBottom: 40,
     alignItems: 'center',
   },
   appName: {
-    color: 'rgba(255, 255, 255, 0.55)',
-    fontSize: 13,
-    fontWeight: '600',
-    letterSpacing: 3,
+    color: 'rgba(255, 255, 255, 0.45)',
+    fontSize: 12,
+    fontWeight: '400',
+    letterSpacing: 4,
     textTransform: 'uppercase',
     textAlign: 'center',
   },
   centerContent: {
     flex: 1,
     justifyContent: 'center',
-    paddingBottom: 20,
-  },
-  mainCard: {
-    marginHorizontal: -4,
+    alignItems: 'center',
+    paddingHorizontal: 32,
   },
   title: {
     color: '#FFFFFF',
-    fontSize: 28,
+    fontSize: 32,
     fontWeight: '700',
     textAlign: 'center',
-    marginBottom: 18,
-    lineHeight: 38,
+    marginBottom: 20,
+    lineHeight: 42,
   },
   subtitle: {
-    color: 'rgba(255, 255, 255, 0.72)',
+    color: 'rgba(255, 255, 255, 0.65)',
     fontSize: 16,
     textAlign: 'center',
-    marginBottom: 36,
+    marginBottom: 48,
     lineHeight: 26,
-    paddingHorizontal: 8,
   },
   buttonContainer: {
     width: '100%',
-    marginBottom: 28,
-  },
-  smallText: {
-    color: 'rgba(255, 255, 255, 0.45)',
-    fontSize: 13,
-    textAlign: 'center',
-    lineHeight: 20,
+    maxWidth: 300,
   },
   footer: {
-    paddingBottom: 24,
+    paddingBottom: 48,
     alignItems: 'center',
+    paddingHorizontal: 32,
   },
   footerText: {
     color: 'rgba(255, 255, 255, 0.35)',
-    fontSize: 12,
-    fontWeight: '500',
-    letterSpacing: 0.5,
+    fontSize: 13,
+    textAlign: 'center',
+    lineHeight: 20,
   },
 });

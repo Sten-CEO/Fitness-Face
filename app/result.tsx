@@ -78,8 +78,8 @@ export default function ResultScreen() {
   const handleMonthlyVersionPress = () => {
     if (alternativePlan) {
       router.push({
-        pathname: '/programs',
-        params: { highlightPlan: alternativePlan.id },
+        pathname: '/result',
+        params: { planId: alternativePlan.id },
       });
     }
   };
@@ -157,18 +157,31 @@ export default function ResultScreen() {
             {getPersonalizedMessage(selectedPlanId, firstName)}
           </Text>
 
-          {/* Carte principale - Programme recommande */}
-          <GlassCard>
+          {/* Carte principale - Programme recommande avec bordure degradee */}
+          <GlassCard gradientBorder>
             {/* Badge recommande avec effet glass */}
             <View style={styles.tagContainer}>
-              <LinearGradient
-                colors={['rgba(76, 111, 255, 0.35)', 'rgba(159, 102, 255, 0.25)']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={styles.tagGradient}
-              >
-                <Text style={styles.tag}>Programme recommande pour toi</Text>
-              </LinearGradient>
+              {Platform.OS === 'ios' ? (
+                <BlurView intensity={25} tint="dark" style={styles.tagBlur}>
+                  <LinearGradient
+                    colors={['rgba(79, 70, 229, 0.6)', 'rgba(168, 85, 247, 0.5)']}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={styles.tagGradient}
+                  >
+                    <Text style={styles.tag}>Recommande pour toi</Text>
+                  </LinearGradient>
+                </BlurView>
+              ) : (
+                <LinearGradient
+                  colors={['rgba(79, 70, 229, 0.7)', 'rgba(168, 85, 247, 0.6)']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.tagGradient}
+                >
+                  <Text style={styles.tag}>Recommande pour toi</Text>
+                </LinearGradient>
+              )}
             </View>
 
             {/* Titre et sous-titre */}
@@ -242,22 +255,26 @@ const styles = StyleSheet.create({
   },
   tagContainer: {
     alignSelf: 'center',
-    borderRadius: 14,
+    borderRadius: 20,
     overflow: 'hidden',
     marginBottom: 22,
-    // Ombre subtile
-    shadowColor: '#4C6FFF',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 8,
-    elevation: 3,
+    // Ombre subtile coloree
+    shadowColor: '#6366f1',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.35,
+    shadowRadius: 12,
+    elevation: 4,
+  },
+  tagBlur: {
+    borderRadius: 20,
+    overflow: 'hidden',
   },
   tagGradient: {
-    paddingHorizontal: 18,
-    paddingVertical: 10,
-    borderRadius: 14,
-    borderWidth: 0.5,
-    borderColor: 'rgba(76, 111, 255, 0.4)',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.15)',
   },
   tag: {
     color: 'rgba(255, 255, 255, 0.9)',
