@@ -3,7 +3,6 @@ import React, { useRef, useState } from 'react';
 import {
   Animated,
   Dimensions,
-  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -20,9 +19,9 @@ import {
   questions,
   ScoreBuckets,
 } from '../data/questions';
+import { typography, textColors, fontFamily } from '../theme/typography';
 
 const { width } = Dimensions.get('window');
-const fontFamily = Platform.select({ ios: 'System', android: 'Roboto', default: 'System' });
 
 export default function QuestionnaireScreen() {
   const router = useRouter();
@@ -101,7 +100,6 @@ export default function QuestionnaireScreen() {
   return (
     <BackgroundScreen centered={false}>
       <View style={styles.container}>
-        {/* Header avec progression */}
         <View style={styles.header}>
           <Text style={styles.questionCount}>
             Question {currentIndex + 1}/{questions.length}
@@ -111,7 +109,6 @@ export default function QuestionnaireScreen() {
           </View>
         </View>
 
-        {/* Question */}
         <ScrollView
           style={styles.scrollView}
           contentContainerStyle={styles.scrollContent}
@@ -160,7 +157,6 @@ export default function QuestionnaireScreen() {
           </Animated.View>
         </ScrollView>
 
-        {/* Footer */}
         <View style={styles.footer}>
           {currentIndex > 0 && (
             <TouchableOpacity onPress={handleBack} style={styles.backButton}>
@@ -191,10 +187,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   questionCount: {
-    fontFamily,
-    color: 'rgba(255, 255, 255, 0.45)',
-    fontSize: 13,
-    fontWeight: '400',
+    ...typography.caption,
+    color: textColors.tertiary,
     marginBottom: 16,
   },
   progressBarBg: {
@@ -207,7 +201,7 @@ const styles = StyleSheet.create({
   progressBarFill: {
     height: '100%',
     borderRadius: 2,
-    backgroundColor: '#3B82F6',
+    backgroundColor: textColors.accent,
   },
   scrollView: {
     flex: 1,
@@ -220,14 +214,10 @@ const styles = StyleSheet.create({
     paddingBottom: 16,
   },
   questionTitle: {
-    fontFamily,
-    color: '#FFFFFF',
-    fontSize: 22,
-    fontWeight: '600',
+    ...typography.h3,
+    color: textColors.primary,
     textAlign: 'center',
     marginBottom: 32,
-    lineHeight: 30,
-    letterSpacing: -0.3,
   },
   optionsContainer: {
     gap: 12,
@@ -244,7 +234,7 @@ const styles = StyleSheet.create({
   },
   optionCardSelected: {
     backgroundColor: 'rgba(59, 130, 246, 0.15)',
-    borderColor: '#3B82F6',
+    borderColor: textColors.accent,
   },
   radioOuter: {
     width: 20,
@@ -257,24 +247,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   radioOuterSelected: {
-    borderColor: '#3B82F6',
+    borderColor: textColors.accent,
   },
   radioInner: {
     width: 10,
     height: 10,
     borderRadius: 5,
-    backgroundColor: '#3B82F6',
+    backgroundColor: textColors.accent,
   },
   optionText: {
-    fontFamily,
+    ...typography.body,
     flex: 1,
     color: 'rgba(255, 255, 255, 0.65)',
-    fontSize: 15,
-    lineHeight: 22,
-    fontWeight: '400',
   },
   optionTextSelected: {
-    color: '#FFFFFF',
+    color: textColors.primary,
     fontWeight: '500',
   },
   footer: {
@@ -289,10 +276,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   backButtonText: {
-    fontFamily,
-    color: 'rgba(255, 255, 255, 0.45)',
-    fontSize: 15,
-    fontWeight: '400',
+    ...typography.body,
+    color: textColors.tertiary,
   },
   nextButtonContainer: {
     flex: 1,

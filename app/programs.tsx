@@ -2,7 +2,6 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useRef } from 'react';
 import {
   Animated,
-  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -14,8 +13,22 @@ import BackgroundScreen from '../components/BackgroundScreen';
 import CleanCard from '../components/CleanCard';
 import PrimaryButton from '../components/PrimaryButton';
 import { Plan, plans } from '../data/plans';
+import { typography, textColors } from '../theme/typography';
 
-const fontFamily = Platform.select({ ios: 'System', android: 'Roboto', default: 'System' });
+// Parse price info to highlight amount only
+function renderPriceInfo(priceInfo: string) {
+  // Match patterns like "7 € / mois" or "29 €"
+  const match = priceInfo.match(/^(\d+\s*€(?:\s*\/\s*mois)?)(.*)/);
+  if (match) {
+    return (
+      <Text style={styles.priceValue}>
+        <Text style={styles.priceAmount}>{match[1]}</Text>
+        <Text style={styles.priceRest}>{match[2]}</Text>
+      </Text>
+    );
+  }
+  return <Text style={styles.priceValue}>{priceInfo}</Text>;
+}
 
 export default function ProgramsScreen() {
   const router = useRouter();
@@ -45,7 +58,6 @@ export default function ProgramsScreen() {
         showsVerticalScrollIndicator={false}
       >
         <Animated.View style={{ opacity: fadeAnim }}>
-          {/* Header */}
           <View style={styles.header}>
             <TouchableOpacity
               onPress={() => router.back()}
@@ -62,7 +74,6 @@ export default function ProgramsScreen() {
             </Text>
           </View>
 
-          {/* Liste des programmes */}
           <View style={styles.programsList}>
             {plans.map((plan, index) => {
               const isHighlighted = highlightPlan === plan.id || plan.isMainProgram;
@@ -83,7 +94,6 @@ export default function ProgramsScreen() {
                   }}
                 >
                   <CleanCard style={styles.programCard}>
-                    {/* Badge */}
                     <View style={[
                       styles.badge,
                       isHighlighted && styles.badgeHighlight
@@ -91,16 +101,13 @@ export default function ProgramsScreen() {
                       <Text style={styles.badgeText}>{plan.tag}</Text>
                     </View>
 
-                    {/* Nom et duree */}
                     <Text style={styles.planName}>{plan.name}</Text>
                     <Text style={styles.planDuration}>{plan.durationLabel}</Text>
 
-                    {/* Description */}
                     <Text style={styles.planDescription}>
                       {plan.shortDescription}
                     </Text>
 
-                    {/* Features pour les programmes principaux */}
                     {isHighlighted && plan.features.length > 0 && (
                       <>
                         <View style={styles.separator} />
@@ -117,18 +124,16 @@ export default function ProgramsScreen() {
                       </>
                     )}
 
-                    {/* Prix */}
                     {plan.priceInfo && (
                       <>
                         <View style={styles.separator} />
                         <View style={styles.priceRow}>
                           <Text style={styles.priceLabel}>Tarif</Text>
-                          <Text style={styles.priceValue}>{plan.priceInfo}</Text>
+                          {renderPriceInfo(plan.priceInfo)}
                         </View>
                       </>
                     )}
 
-                    {/* Bouton */}
                     <View style={styles.buttonContainer}>
                       <PrimaryButton
                         title="Choisir"
@@ -163,28 +168,20 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   backButtonText: {
-    fontFamily,
-    color: 'rgba(255, 255, 255, 0.45)',
-    fontSize: 15,
-    fontWeight: '400',
+    ...typography.body,
+    color: textColors.tertiary,
   },
   title: {
-    fontFamily,
-    color: '#FFFFFF',
-    fontSize: 28,
-    fontWeight: '600',
+    ...typography.h2,
+    color: textColors.primary,
     marginBottom: 12,
-    lineHeight: 36,
-    letterSpacing: -0.3,
   },
   titleBlue: {
-    color: '#3B82F6',
+    color: textColors.accent,
   },
   subtitle: {
-    fontFamily,
-    color: 'rgba(255, 255, 255, 0.55)',
-    fontSize: 15,
-    fontWeight: '400',
+    ...typography.body,
+    color: textColors.secondary,
   },
   programsList: {
     gap: 20,
@@ -201,34 +198,26 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   badgeHighlight: {
-    backgroundColor: '#3B82F6',
+    backgroundColor: textColors.accent,
   },
   badgeText: {
-    fontFamily,
-    color: '#FFFFFF',
+    ...typography.labelSmall,
+    color: textColors.primary,
     fontSize: 11,
-    fontWeight: '500',
   },
   planName: {
-    fontFamily,
-    color: '#FFFFFF',
-    fontSize: 22,
-    fontWeight: '600',
+    ...typography.h3,
+    color: textColors.primary,
     marginBottom: 4,
   },
   planDuration: {
-    fontFamily,
-    color: 'rgba(255, 255, 255, 0.45)',
-    fontSize: 14,
+    ...typography.bodySmall,
+    color: textColors.tertiary,
     marginBottom: 12,
-    fontWeight: '400',
   },
   planDescription: {
-    fontFamily,
+    ...typography.bodySmall,
     color: 'rgba(255, 255, 255, 0.7)',
-    fontSize: 14,
-    lineHeight: 22,
-    fontWeight: '400',
   },
   separator: {
     height: 1,
@@ -252,17 +241,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   featureCheck: {
-    color: '#3B82F6',
+    color: textColors.accent,
     fontSize: 10,
     fontWeight: '600',
   },
   featureText: {
-    fontFamily,
+    ...typography.bodySmall,
     flex: 1,
     color: 'rgba(255, 255, 255, 0.7)',
-    fontSize: 14,
-    lineHeight: 20,
-    fontWeight: '400',
   },
   priceRow: {
     flexDirection: 'row',
@@ -270,16 +256,22 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   priceLabel: {
-    fontFamily,
-    color: 'rgba(255, 255, 255, 0.45)',
-    fontSize: 14,
-    fontWeight: '400',
+    ...typography.bodySmall,
+    color: textColors.tertiary,
   },
   priceValue: {
-    fontFamily,
-    color: '#FFFFFF',
-    fontSize: 17,
+    ...typography.bodySmall,
+    color: textColors.tertiary,
+  },
+  priceAmount: {
+    ...typography.bodySmall,
+    color: textColors.tertiary,
     fontWeight: '600',
+  },
+  priceRest: {
+    ...typography.bodySmall,
+    color: textColors.tertiary,
+    fontWeight: '400',
   },
   buttonContainer: {
     marginTop: 20,

@@ -1,13 +1,12 @@
 import React from 'react';
 import {
-  Platform,
   StyleSheet,
   Text,
   View,
   TouchableOpacity,
 } from 'react-native';
 
-const fontFamily = Platform.select({ ios: 'System', android: 'Roboto', default: 'System' });
+import { typography, textColors } from '../theme/typography';
 
 interface Tab {
   key: string;
@@ -71,16 +70,14 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   tabActive: {
-    backgroundColor: '#3B82F6',
+    backgroundColor: textColors.accent,
   },
   tabText: {
-    fontFamily,
-    color: 'rgba(255, 255, 255, 0.55)',
-    fontSize: 14,
-    fontWeight: '400',
+    ...typography.bodySmall,
+    color: textColors.secondary,
   },
   tabTextActive: {
-    color: '#FFFFFF',
+    color: textColors.primary,
     fontWeight: '500',
   },
   badge: {
@@ -93,9 +90,8 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
   },
   badgeText: {
-    fontFamily,
-    color: '#FFFFFF',
+    ...typography.labelSmall,
+    color: textColors.primary,
     fontSize: 10,
-    fontWeight: '500',
   },
 });

@@ -1,7 +1,6 @@
 import React, { useRef } from 'react';
 import {
   Animated,
-  Platform,
   TouchableWithoutFeedback,
   Text,
   StyleSheet,
@@ -10,7 +9,7 @@ import {
   View,
 } from 'react-native';
 
-const fontFamily = Platform.select({ ios: 'System', android: 'Roboto', default: 'System' });
+import { typography, textColors } from '../theme/typography';
 
 interface PrimaryButtonProps {
   title: string;
@@ -89,11 +88,8 @@ const styles = StyleSheet.create({
     borderRadius: 14,
   },
   text: {
-    fontFamily,
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '500',
-    letterSpacing: 0.1,
+    ...typography.button,
+    color: textColors.primary,
     textAlign: 'center',
   },
 });

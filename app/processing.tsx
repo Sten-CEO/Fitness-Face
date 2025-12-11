@@ -1,11 +1,10 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useRef } from 'react';
-import { Animated, Easing, Platform, StyleSheet, Text, View } from 'react-native';
+import { Animated, Easing, StyleSheet, Text, View } from 'react-native';
 
 import TransitionBackground from '../components/TransitionBackground';
 import type { PlanId } from '../data/plans';
-
-const fontFamily = Platform.select({ ios: 'System', android: 'Roboto', default: 'System' });
+import { typography, textColors } from '../theme/typography';
 
 export default function ProcessingScreen() {
   const router = useRouter();
@@ -17,14 +16,12 @@ export default function ProcessingScreen() {
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    // Fade in
     Animated.timing(fadeAnim, {
       toValue: 1,
       duration: 400,
       useNativeDriver: true,
     }).start();
 
-    // Animation des points
     const animateDot = (dot: Animated.Value, delay: number) => {
       return Animated.loop(
         Animated.sequence([
@@ -53,7 +50,6 @@ export default function ProcessingScreen() {
     anim2.start();
     anim3.start();
 
-    // Navigation automatique après 2.5 secondes
     const timeout = setTimeout(() => {
       router.replace({
         pathname: '/result',
@@ -116,22 +112,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   title: {
-    fontFamily,
-    color: '#FFFFFF',
-    fontSize: 22,
-    fontWeight: '600',
+    ...typography.h3,
+    color: textColors.primary,
     textAlign: 'center',
     marginBottom: 12,
-    lineHeight: 30,
-    letterSpacing: -0.3,
   },
   subtitle: {
-    fontFamily,
-    color: 'rgba(255, 255, 255, 0.55)',
-    fontSize: 15,
+    ...typography.body,
+    color: textColors.secondary,
     textAlign: 'center',
     marginBottom: 32,
-    fontWeight: '400',
   },
   dotsContainer: {
     flexDirection: 'row',
@@ -142,6 +132,6 @@ const styles = StyleSheet.create({
     width: 12,
     height: 12,
     borderRadius: 6,
-    backgroundColor: '#3B82F6',
+    backgroundColor: textColors.accent,
   },
 });
