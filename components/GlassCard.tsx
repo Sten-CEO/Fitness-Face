@@ -10,93 +10,68 @@ interface GlassCardProps {
   intensity?: number;
   compact?: boolean;
   selected?: boolean;
-  opaque?: boolean;
-  glowColor?: 'blue' | 'none';
+  noPadding?: boolean;
 }
 
 export default function GlassCard({
   children,
   style,
   contentStyle,
-  intensity = 60,
+  intensity = 20,
   compact = false,
   selected = false,
-  opaque = false,
-  glowColor = 'none',
+  noPadding = false,
 }: GlassCardProps) {
   const cardContent = (
-    <View style={[styles.innerContent, compact && styles.compactContent, contentStyle]}>
+    <View style={[
+      styles.innerContent,
+      compact && styles.compactContent,
+      noPadding && styles.noPaddingContent,
+      contentStyle,
+    ]}>
       {children}
     </View>
   );
 
-  // Reflet diagonal type "liquid glass" iOS 18
-  const liquidGlassOverlay = (
-    <>
-      {/* Reflet principal en haut a gauche */}
-      <LinearGradient
-        colors={[
-          'rgba(255, 255, 255, 0.18)',
-          'rgba(255, 255, 255, 0.08)',
-          'rgba(255, 255, 255, 0.02)',
-          'transparent',
-        ]}
-        locations={[0, 0.2, 0.5, 1]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={StyleSheet.absoluteFill}
-      />
-      {/* Ligne de reflet superieure */}
-      <LinearGradient
-        colors={[
-          'transparent',
-          'rgba(255, 255, 255, 0.25)',
-          'rgba(255, 255, 255, 0.15)',
-          'transparent',
-        ]}
-        locations={[0, 0.3, 0.7, 1]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 0 }}
-        style={styles.topReflection}
-      />
-    </>
+  // Reflet subtil en haut a gauche - style "Glass Morphism mockup"
+  const glassReflection = (
+    <LinearGradient
+      colors={[
+        'rgba(255, 255, 255, 0.12)',
+        'rgba(255, 255, 255, 0.04)',
+        'transparent',
+      ]}
+      locations={[0, 0.3, 0.7]}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 1 }}
+      style={styles.reflectionOverlay}
+    />
   );
 
-  // Bordure lumineuse type verre
-  const glassHighlightBorder = (
-    <View style={styles.highlightBorderWrapper}>
-      <LinearGradient
-        colors={[
-          'rgba(255, 255, 255, 0.35)',
-          'rgba(255, 255, 255, 0.1)',
-          'rgba(255, 255, 255, 0.05)',
-          'rgba(255, 255, 255, 0.15)',
-        ]}
-        locations={[0, 0.3, 0.7, 1]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={styles.highlightBorder}
-      />
-    </View>
+  // Ligne de lumiere en haut
+  const topHighlight = (
+    <LinearGradient
+      colors={[
+        'rgba(255, 255, 255, 0.01)',
+        'rgba(255, 255, 255, 0.15)',
+        'rgba(255, 255, 255, 0.15)',
+        'rgba(255, 255, 255, 0.01)',
+      ]}
+      locations={[0, 0.2, 0.8, 1]}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 0 }}
+      style={styles.topHighlight}
+    />
   );
-
-  const hasBlueGlow = glowColor === 'blue' || selected;
 
   if (Platform.OS === 'ios') {
     return (
-      <View style={[
-        styles.shadowWrapper,
-        hasBlueGlow && styles.blueGlowShadow,
-        style,
-      ]}>
-        <View style={[
-          styles.cardWrapper,
-          selected && styles.cardSelected,
-        ]}>
-          {glassHighlightBorder}
+      <View style={[styles.shadowWrapper, style]}>
+        <View style={[styles.cardWrapper, selected && styles.cardSelected]}>
           <BlurView intensity={intensity} tint="dark" style={styles.blurView}>
-            <View style={[styles.innerWrapper, opaque && styles.innerWrapperOpaque]}>
-              {liquidGlassOverlay}
+            <View style={styles.innerWrapper}>
+              {glassReflection}
+              {topHighlight}
               {cardContent}
             </View>
           </BlurView>
@@ -105,21 +80,16 @@ export default function GlassCard({
     );
   }
 
-  // Fallback Android avec effet similaire
+  // Fallback Android
   return (
-    <View style={[
-      styles.shadowWrapper,
-      hasBlueGlow && styles.blueGlowShadow,
-      style,
-    ]}>
+    <View style={[styles.shadowWrapper, style]}>
       <View style={[
         styles.cardWrapper,
         styles.androidCard,
-        opaque && styles.androidCardOpaque,
         selected && styles.cardSelected,
       ]}>
-        {glassHighlightBorder}
-        {liquidGlassOverlay}
+        {glassReflection}
+        {topHighlight}
         {cardContent}
       </View>
     </View>
@@ -128,72 +98,55 @@ export default function GlassCard({
 
 const styles = StyleSheet.create({
   shadowWrapper: {
-    // Ombre douce par defaut
+    // Ombre douce flottante
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.35,
-    shadowRadius: 20,
-    elevation: 8,
-  },
-  blueGlowShadow: {
-    // Halo bleu subtil
-    shadowColor: '#3B82F6',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.4,
+    shadowRadius: 24,
+    elevation: 12,
   },
   cardWrapper: {
     borderRadius: 28,
     overflow: 'hidden',
-    // Bordure subtile style iOS glass
-    borderWidth: 0.5,
-    borderColor: 'rgba(255, 255, 255, 0.18)',
+    // Bordure fine style glass mockup
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.14)',
   },
   cardSelected: {
-    borderColor: 'rgba(96, 165, 250, 0.5)',
+    borderColor: 'rgba(76, 111, 255, 0.5)',
     borderWidth: 1.5,
-  },
-  highlightBorderWrapper: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 1,
-    zIndex: 10,
-    overflow: 'hidden',
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
-  },
-  highlightBorder: {
-    flex: 1,
-  },
-  topReflection: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 60,
   },
   blurView: {
     overflow: 'hidden',
   },
   innerWrapper: {
-    backgroundColor: 'rgba(20, 20, 30, 0.55)',
+    // Fond sombre semi-transparent - comme "Glass Morphism mockup"
+    backgroundColor: 'rgba(7, 7, 10, 0.65)',
   },
-  innerWrapperOpaque: {
-    backgroundColor: 'rgba(15, 15, 22, 0.75)',
+  reflectionOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 1,
+  },
+  topHighlight: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 1,
+    zIndex: 2,
   },
   innerContent: {
     padding: 28,
     alignItems: 'center',
+    zIndex: 3,
   },
   compactContent: {
     padding: 20,
   },
-  androidCard: {
-    backgroundColor: 'rgba(20, 20, 30, 0.85)',
+  noPaddingContent: {
+    padding: 0,
   },
-  androidCardOpaque: {
-    backgroundColor: 'rgba(15, 15, 22, 0.92)',
+  androidCard: {
+    backgroundColor: 'rgba(7, 7, 10, 0.85)',
   },
 });

@@ -51,12 +51,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   text: {
-    color: '#7DD3FC',
+    color: 'rgba(255, 255, 255, 0.55)',
     fontSize: 15,
     fontWeight: '500',
     textAlign: 'center',
     textDecorationLine: 'underline',
-    textDecorationColor: 'rgba(125, 211, 252, 0.4)',
+    textDecorationColor: 'rgba(255, 255, 255, 0.3)',
   },
   textPressed: {
     opacity: 0.7,

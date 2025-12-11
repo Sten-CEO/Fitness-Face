@@ -11,10 +11,9 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 
 import BackgroundScreen from '../components/BackgroundScreen';
-import FeatureItem from '../components/FeatureItem';
+import GlassButton from '../components/GlassButton';
 import GlassCard from '../components/GlassCard';
-import PrimaryGlassButton from '../components/PrimaryGlassButton';
-import SecondaryGlassButton from '../components/SecondaryGlassButton';
+import GlassPill from '../components/GlassPill';
 import { Plan, plans } from '../data/plans';
 
 export default function ProgramsScreen() {
@@ -80,10 +79,7 @@ export default function ProgramsScreen() {
                     ],
                   }}
                 >
-                  <GlassCard
-                    opaque={isMainOrHighlighted}
-                    glowColor={isMainOrHighlighted ? 'blue' : 'none'}
-                  >
+                  <GlassCard selected={isMainOrHighlighted}>
                     {/* Tag avec effet glass */}
                     <View style={styles.cardHeader}>
                       <View style={[
@@ -92,8 +88,8 @@ export default function ProgramsScreen() {
                       ]}>
                         <LinearGradient
                           colors={isMainOrHighlighted
-                            ? ['rgba(96, 165, 250, 0.25)', 'rgba(59, 130, 246, 0.15)']
-                            : ['rgba(107, 114, 128, 0.2)', 'rgba(107, 114, 128, 0.1)']
+                            ? ['rgba(76, 111, 255, 0.35)', 'rgba(159, 102, 255, 0.25)']
+                            : ['rgba(255, 255, 255, 0.08)', 'rgba(255, 255, 255, 0.04)']
                           }
                           start={{ x: 0, y: 0 }}
                           end={{ x: 1, y: 1 }}
@@ -122,7 +118,7 @@ export default function ProgramsScreen() {
                     {isMainOrHighlighted && plan.features.length > 0 && (
                       <View style={styles.featuresContainer}>
                         {plan.features.slice(0, 3).map((feature, featureIndex) => (
-                          <FeatureItem key={featureIndex} text={feature.text} />
+                          <GlassPill key={featureIndex} text={feature.text} />
                         ))}
                       </View>
                     )}
@@ -145,17 +141,11 @@ export default function ProgramsScreen() {
                     )}
 
                     {/* Bouton */}
-                    {isMainOrHighlighted ? (
-                      <PrimaryGlassButton
-                        title="Choisir ce programme"
-                        onPress={() => handleSelectPlan(plan)}
-                      />
-                    ) : (
-                      <SecondaryGlassButton
-                        title="Choisir ce programme"
-                        onPress={() => handleSelectPlan(plan)}
-                      />
-                    )}
+                    <GlassButton
+                      label="Choisir ce programme"
+                      onPress={() => handleSelectPlan(plan)}
+                      variant={isMainOrHighlighted ? 'primary' : 'secondary'}
+                    />
                   </GlassCard>
                 </Animated.View>
               );
@@ -185,7 +175,7 @@ const styles = StyleSheet.create({
     paddingRight: 16,
   },
   backButtonText: {
-    color: '#60A5FA',
+    color: 'rgba(255, 255, 255, 0.55)',
     fontSize: 16,
     fontWeight: '500',
   },
@@ -197,7 +187,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   subtitle: {
-    color: '#9CA3AF',
+    color: 'rgba(255, 255, 255, 0.55)',
     fontSize: 15,
     textAlign: 'center',
     lineHeight: 22,
@@ -222,24 +212,24 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   tagMain: {
-    shadowColor: '#3B82F6',
-    shadowOpacity: 0.2,
+    shadowColor: '#4C6FFF',
+    shadowOpacity: 0.25,
   },
   tagGradient: {
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 12,
     borderWidth: 0.5,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
+    borderColor: 'rgba(255, 255, 255, 0.14)',
   },
   tag: {
-    color: '#93C5FD',
+    color: 'rgba(255, 255, 255, 0.9)',
     fontSize: 12,
     fontWeight: '600',
     textAlign: 'center',
   },
   tagSecondary: {
-    color: '#9CA3AF',
+    color: 'rgba(255, 255, 255, 0.55)',
   },
   planName: {
     color: '#FFFFFF',
@@ -249,13 +239,13 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   planDuration: {
-    color: '#9CA3AF',
+    color: 'rgba(255, 255, 255, 0.55)',
     fontSize: 14,
     marginBottom: 16,
     textAlign: 'center',
   },
   planDescription: {
-    color: '#D1D5DB',
+    color: 'rgba(255, 255, 255, 0.72)',
     fontSize: 14,
     lineHeight: 22,
     marginBottom: 20,

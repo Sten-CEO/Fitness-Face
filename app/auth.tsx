@@ -3,18 +3,17 @@ import React, { useState } from 'react';
 import {
   StyleSheet,
   Text,
-  TextInput,
   View,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  TouchableOpacity,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 
 import BackgroundScreen from '../components/BackgroundScreen';
 import GlassCard from '../components/GlassCard';
-import PrimaryGlassButton from '../components/PrimaryGlassButton';
-import SecondaryLink from '../components/SecondaryLink';
+import GlassButton from '../components/GlassButton';
+import GlassInput from '../components/GlassInput';
 import { useUser } from '../contexts/UserContext';
 
 export default function AuthScreen() {
@@ -25,7 +24,7 @@ export default function AuthScreen() {
   const [password, setPassword] = useState('');
 
   const handleContinue = () => {
-    // Sauvegarder le prénom dans le contexte
+    // Sauvegarder le prenom dans le contexte
     if (firstName.trim()) {
       setFirstName(firstName.trim());
     }
@@ -35,51 +34,6 @@ export default function AuthScreen() {
   const handleSkip = () => {
     router.push('/welcome');
   };
-
-  // Input avec effet glass
-  const GlassInput = ({
-    label,
-    placeholder,
-    value,
-    onChangeText,
-    secureTextEntry = false,
-    keyboardType = 'default' as const,
-    autoCapitalize = 'none' as const,
-  }: {
-    label: string;
-    placeholder: string;
-    value: string;
-    onChangeText: (text: string) => void;
-    secureTextEntry?: boolean;
-    keyboardType?: 'default' | 'email-address';
-    autoCapitalize?: 'none' | 'words';
-  }) => (
-    <View style={styles.inputContainer}>
-      <Text style={styles.label}>{label}</Text>
-      <View style={styles.inputWrapper}>
-        <LinearGradient
-          colors={[
-            'rgba(255, 255, 255, 0.08)',
-            'rgba(255, 255, 255, 0.02)',
-          ]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={StyleSheet.absoluteFill}
-        />
-        <TextInput
-          style={styles.input}
-          placeholder={placeholder}
-          placeholderTextColor="rgba(156, 163, 175, 0.6)"
-          value={value}
-          onChangeText={onChangeText}
-          keyboardType={keyboardType}
-          autoCapitalize={autoCapitalize}
-          autoCorrect={false}
-          secureTextEntry={secureTextEntry}
-        />
-      </View>
-    </View>
-  );
 
   return (
     <BackgroundScreen centered={false}>
@@ -93,7 +47,7 @@ export default function AuthScreen() {
           keyboardShouldPersistTaps="handled"
         >
           <View style={styles.container}>
-            <GlassCard glowColor="blue">
+            <GlassCard>
               <Text style={styles.title}>Cree ton compte</Text>
               <Text style={styles.subtitle}>
                 Ou connecte-toi pour reprendre ta progression.
@@ -124,16 +78,17 @@ export default function AuthScreen() {
               />
 
               <View style={styles.buttonContainer}>
-                <PrimaryGlassButton
-                  title="Continuer"
+                <GlassButton
+                  label="Continuer"
                   onPress={handleContinue}
                 />
               </View>
 
-              <SecondaryLink
-                title="Continuer sans creer de compte"
-                onPress={handleSkip}
-              />
+              <TouchableOpacity onPress={handleSkip} style={styles.skipButton}>
+                <Text style={styles.skipText}>
+                  Continuer sans creer de compte
+                </Text>
+              </TouchableOpacity>
             </GlassCard>
           </View>
         </ScrollView>
@@ -163,45 +118,24 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   subtitle: {
-    color: '#9CA3AF',
+    color: 'rgba(255, 255, 255, 0.72)',
     fontSize: 15,
     textAlign: 'center',
-    marginBottom: 36,
+    marginBottom: 32,
     lineHeight: 22,
   },
-  inputContainer: {
-    marginBottom: 22,
-    width: '100%',
-  },
-  label: {
-    color: '#D1D5DB',
-    fontSize: 14,
-    fontWeight: '500',
-    marginBottom: 10,
-    textAlign: 'left',
-  },
-  inputWrapper: {
-    borderRadius: 16,
-    borderWidth: 0.5,
-    borderColor: 'rgba(255, 255, 255, 0.15)',
-    overflow: 'hidden',
-    // Ombre subtile
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  input: {
-    paddingHorizontal: 18,
-    paddingVertical: 18,
-    color: '#FFFFFF',
-    fontSize: 16,
-    width: '100%',
-  },
   buttonContainer: {
-    marginTop: 16,
-    marginBottom: 12,
+    marginTop: 12,
+    marginBottom: 16,
     width: '100%',
+  },
+  skipButton: {
+    paddingVertical: 12,
+    alignItems: 'center',
+  },
+  skipText: {
+    color: 'rgba(255, 255, 255, 0.55)',
+    fontSize: 14,
+    textDecorationLine: 'underline',
   },
 });

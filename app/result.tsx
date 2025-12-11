@@ -13,9 +13,9 @@ import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 
 import BackgroundScreen from '../components/BackgroundScreen';
-import FeatureItem from '../components/FeatureItem';
+import GlassButton from '../components/GlassButton';
 import GlassCard from '../components/GlassCard';
-import PrimaryGlassButton from '../components/PrimaryGlassButton';
+import GlassPill from '../components/GlassPill';
 import SecondaryLink from '../components/SecondaryLink';
 import { useUser } from '../contexts/UserContext';
 import {
@@ -158,11 +158,11 @@ export default function ResultScreen() {
           </Text>
 
           {/* Carte principale - Programme recommande */}
-          <GlassCard opaque glowColor="blue">
+          <GlassCard>
             {/* Badge recommande avec effet glass */}
             <View style={styles.tagContainer}>
               <LinearGradient
-                colors={['rgba(96, 165, 250, 0.3)', 'rgba(59, 130, 246, 0.2)']}
+                colors={['rgba(76, 111, 255, 0.35)', 'rgba(159, 102, 255, 0.25)']}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
                 style={styles.tagGradient}
@@ -181,7 +181,7 @@ export default function ResultScreen() {
             {/* Features avec checkmarks glass */}
             <View style={styles.featuresContainer}>
               {plan.features.map((feature, index) => (
-                <FeatureItem key={index} text={feature.text} />
+                <GlassPill key={index} text={feature.text} />
               ))}
             </View>
 
@@ -190,8 +190,8 @@ export default function ResultScreen() {
 
             {/* Bouton CTA */}
             <View style={styles.buttonContainer}>
-              <PrimaryGlassButton
-                title="Continuer avec ce programme"
+              <GlassButton
+                label="Continuer avec ce programme"
                 onPress={() => handleSelectPlan(plan)}
               />
             </View>
@@ -246,7 +246,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     marginBottom: 22,
     // Ombre subtile
-    shadowColor: '#3B82F6',
+    shadowColor: '#4C6FFF',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
     shadowRadius: 8,
@@ -257,10 +257,10 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderRadius: 14,
     borderWidth: 0.5,
-    borderColor: 'rgba(96, 165, 250, 0.4)',
+    borderColor: 'rgba(76, 111, 255, 0.4)',
   },
   tag: {
-    color: '#93C5FD',
+    color: 'rgba(255, 255, 255, 0.9)',
     fontSize: 13,
     fontWeight: '600',
     textAlign: 'center',
@@ -273,13 +273,13 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   planDuration: {
-    color: '#9CA3AF',
+    color: 'rgba(255, 255, 255, 0.55)',
     fontSize: 15,
     marginBottom: 18,
     textAlign: 'center',
   },
   planDescription: {
-    color: '#D1D5DB',
+    color: 'rgba(255, 255, 255, 0.72)',
     fontSize: 15,
     lineHeight: 24,
     marginBottom: 28,
@@ -309,13 +309,13 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   priceInner: {
-    backgroundColor: 'rgba(30, 30, 40, 0.5)',
+    backgroundColor: 'rgba(7, 7, 10, 0.55)',
     paddingVertical: 18,
     paddingHorizontal: 20,
     overflow: 'hidden',
   },
   priceAndroid: {
-    backgroundColor: 'rgba(30, 30, 40, 0.7)',
+    backgroundColor: 'rgba(7, 7, 10, 0.75)',
     paddingVertical: 18,
     paddingHorizontal: 20,
   },
@@ -323,7 +323,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   priceLabel: {
-    color: '#9CA3AF',
+    color: 'rgba(255, 255, 255, 0.55)',
     fontSize: 12,
     fontWeight: '500',
     textAlign: 'center',
@@ -348,13 +348,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   alternativeLabel: {
-    color: '#6B7280',
+    color: 'rgba(255, 255, 255, 0.55)',
     fontSize: 14,
     textAlign: 'center',
     lineHeight: 22,
   },
   alternativeLink: {
-    color: '#60A5FA',
+    color: '#9F66FF',
     fontSize: 14,
     textDecorationLine: 'underline',
     lineHeight: 22,

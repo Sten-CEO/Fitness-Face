@@ -4,7 +4,7 @@ import { StyleSheet, Text, View } from 'react-native';
 
 import BackgroundScreen from '../components/BackgroundScreen';
 import GlassCard from '../components/GlassCard';
-import PrimaryGlassButton from '../components/PrimaryGlassButton';
+import GlassButton from '../components/GlassButton';
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -12,14 +12,14 @@ export default function HomeScreen() {
   return (
     <BackgroundScreen>
       <View style={styles.container}>
-        {/* Header avec nom de l'app */}
+        {/* Header avec nom de l'app - style label discret */}
         <View style={styles.header}>
           <Text style={styles.appName}>Fitness Face</Text>
         </View>
 
-        {/* Contenu central */}
+        {/* Contenu central - GlassCard principale */}
         <View style={styles.centerContent}>
-          <GlassCard style={styles.mainCard} glowColor="blue">
+          <GlassCard style={styles.mainCard}>
             <Text style={styles.title}>
               Transforme ton visage{'\n'}en 5 minutes par jour
             </Text>
@@ -29,8 +29,8 @@ export default function HomeScreen() {
             </Text>
 
             <View style={styles.buttonContainer}>
-              <PrimaryGlassButton
-                title="Commencer"
+              <GlassButton
+                label="Commencer"
                 onPress={() => router.push('/auth')}
               />
             </View>
@@ -41,7 +41,7 @@ export default function HomeScreen() {
           </GlassCard>
         </View>
 
-        {/* Footer subtle */}
+        {/* Footer discret */}
         <View style={styles.footer}>
           <Text style={styles.footerText}>
             Des resultats visibles en 30 jours
@@ -57,13 +57,13 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
-    paddingTop: 20,
-    paddingBottom: 32,
+    paddingTop: 24,
+    paddingBottom: 40,
     alignItems: 'center',
   },
   appName: {
-    color: 'rgba(255, 255, 255, 0.6)',
-    fontSize: 14,
+    color: 'rgba(255, 255, 255, 0.55)',
+    fontSize: 13,
     fontWeight: '600',
     letterSpacing: 3,
     textTransform: 'uppercase',
@@ -82,33 +82,33 @@ const styles = StyleSheet.create({
     fontSize: 28,
     fontWeight: '700',
     textAlign: 'center',
-    marginBottom: 20,
+    marginBottom: 18,
     lineHeight: 38,
   },
   subtitle: {
-    color: '#A0AEC0',
+    color: 'rgba(255, 255, 255, 0.72)',
     fontSize: 16,
     textAlign: 'center',
-    marginBottom: 40,
+    marginBottom: 36,
     lineHeight: 26,
     paddingHorizontal: 8,
   },
   buttonContainer: {
     width: '100%',
-    marginBottom: 32,
+    marginBottom: 28,
   },
   smallText: {
-    color: '#6B7280',
+    color: 'rgba(255, 255, 255, 0.45)',
     fontSize: 13,
     textAlign: 'center',
     lineHeight: 20,
   },
   footer: {
-    paddingBottom: 20,
+    paddingBottom: 24,
     alignItems: 'center',
   },
   footerText: {
-    color: 'rgba(255, 255, 255, 0.4)',
+    color: 'rgba(255, 255, 255, 0.35)',
     fontSize: 12,
     fontWeight: '500',
     letterSpacing: 0.5,
