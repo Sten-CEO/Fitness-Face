@@ -2,7 +2,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useRef } from 'react';
 import { Animated, Easing, Platform, StyleSheet, Text, View } from 'react-native';
 
-import BackgroundScreen from '../components/BackgroundScreen';
+import TransitionBackground from '../components/TransitionBackground';
 import type { PlanId } from '../data/plans';
 
 const fontFamily = Platform.select({ ios: 'System', android: 'Roboto', default: 'System' });
@@ -92,7 +92,7 @@ export default function ProcessingScreen() {
   );
 
   return (
-    <BackgroundScreen>
+    <TransitionBackground>
       <Animated.View style={[styles.container, { opacity: fadeAnim }]}>
         <Text style={styles.title}>Analyse de tes reponses en cours</Text>
         <Text style={styles.subtitle}>
@@ -105,7 +105,7 @@ export default function ProcessingScreen() {
           {renderDot(dot3)}
         </View>
       </Animated.View>
-    </BackgroundScreen>
+    </TransitionBackground>
   );
 }
 
@@ -114,7 +114,6 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 24,
   },
   title: {
     fontFamily,
