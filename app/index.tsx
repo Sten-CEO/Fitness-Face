@@ -1,9 +1,9 @@
 import { useRouter } from 'expo-router';
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity } from 'react-native';
 
 import BackgroundScreen from '../components/BackgroundScreen';
-import GlassButton from '../components/GlassButton';
+import PrimaryButton from '../components/PrimaryButton';
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -11,34 +11,42 @@ export default function HomeScreen() {
   return (
     <BackgroundScreen>
       <View style={styles.container}>
-        {/* Header avec nom de l'app - style label discret */}
-        <View style={styles.header}>
-          <Text style={styles.appName}>FITNESS FACE</Text>
-        </View>
-
-        {/* Contenu central - directement sur le fond glass */}
+        {/* Contenu central - style Zentra */}
         <View style={styles.centerContent}>
+          {/* Titre avec mot cle en bleu */}
           <Text style={styles.title}>
-            Transforme ton visage{'\n'}en 5 minutes par jour
+            Transforme ton{'\n'}
+            <Text style={styles.titleBlue}>visage</Text> en 5 min{'\n'}
+            par jour
           </Text>
 
+          {/* Sous-titre leger */}
           <Text style={styles.subtitle}>
-            Programmes guides pour jawline,{'\n'}double menton et visage plus net.
+            Programmes guides pour jawline, double menton{'\n'}et un visage plus sculpte.
           </Text>
 
-          <View style={styles.buttonContainer}>
-            <GlassButton
-              label="Commencer"
-              onPress={() => router.push('/auth')}
-            />
+          {/* Progress dots - onboarding */}
+          <View style={styles.dotsContainer}>
+            <View style={[styles.dot, styles.dotActive]} />
+            <View style={styles.dot} />
+            <View style={styles.dot} />
           </View>
         </View>
 
-        {/* Footer - phrase d'accroche */}
+        {/* Footer avec boutons */}
         <View style={styles.footer}>
-          <Text style={styles.footerText}>
-            Pas de materiel. Pas de bullshit.{'\n'}Juste des routines guidees.
-          </Text>
+          <PrimaryButton
+            title="Commencer"
+            onPress={() => router.push('/auth')}
+          />
+
+          {/* Lien Skip */}
+          <TouchableOpacity
+            onPress={() => router.push('/auth')}
+            style={styles.skipButton}
+          >
+            <Text style={styles.skipText}>Passer</Text>
+          </TouchableOpacity>
         </View>
       </View>
     </BackgroundScreen>
@@ -49,53 +57,60 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  header: {
-    paddingTop: 60,
-    paddingBottom: 40,
-    alignItems: 'center',
-  },
-  appName: {
-    color: 'rgba(255, 255, 255, 0.45)',
-    fontSize: 12,
-    fontWeight: '400',
-    letterSpacing: 4,
-    textTransform: 'uppercase',
-    textAlign: 'center',
-  },
   centerContent: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 32,
+    paddingHorizontal: 24,
   },
   title: {
     color: '#FFFFFF',
-    fontSize: 32,
+    fontSize: 36,
     fontWeight: '700',
     textAlign: 'center',
     marginBottom: 20,
-    lineHeight: 42,
+    lineHeight: 46,
+    letterSpacing: -0.5,
+  },
+  titleBlue: {
+    color: '#4F46E5',
   },
   subtitle: {
-    color: 'rgba(255, 255, 255, 0.65)',
+    color: 'rgba(255, 255, 255, 0.6)',
     fontSize: 16,
     textAlign: 'center',
-    marginBottom: 48,
-    lineHeight: 26,
+    marginBottom: 40,
+    lineHeight: 24,
+    fontWeight: '400',
   },
-  buttonContainer: {
-    width: '100%',
-    maxWidth: 300,
+  dotsContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  dot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: 'rgba(255, 255, 255, 0.25)',
+  },
+  dotActive: {
+    backgroundColor: '#4F46E5',
+    width: 24,
   },
   footer: {
-    paddingBottom: 48,
+    paddingBottom: 40,
+    paddingHorizontal: 24,
     alignItems: 'center',
-    paddingHorizontal: 32,
   },
-  footerText: {
-    color: 'rgba(255, 255, 255, 0.35)',
-    fontSize: 13,
-    textAlign: 'center',
-    lineHeight: 20,
+  skipButton: {
+    marginTop: 20,
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+  },
+  skipText: {
+    color: 'rgba(255, 255, 255, 0.5)',
+    fontSize: 16,
+    fontWeight: '500',
   },
 });

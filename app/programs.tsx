@@ -8,19 +8,16 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 
 import BackgroundScreen from '../components/BackgroundScreen';
-import GlassButton from '../components/GlassButton';
-import GlassCard from '../components/GlassCard';
-import GlassPill from '../components/GlassPill';
+import CleanCard from '../components/CleanCard';
+import PrimaryButton from '../components/PrimaryButton';
 import { Plan, plans } from '../data/plans';
 
 export default function ProgramsScreen() {
   const router = useRouter();
   const { highlightPlan } = useLocalSearchParams<{ highlightPlan?: string }>();
   const fadeAnim = useRef(new Animated.Value(0)).current;
-  const scrollViewRef = useRef<ScrollView>(null);
 
   useEffect(() => {
     Animated.timing(fadeAnim, {
@@ -31,14 +28,15 @@ export default function ProgramsScreen() {
   }, []);
 
   const handleSelectPlan = (plan: Plan) => {
-    console.log('Programme selectionne:', plan.name);
-    // TODO: Naviguer vers le paiement / onboarding
+    router.push({
+      pathname: '/result',
+      params: { planId: plan.id },
+    });
   };
 
   return (
     <BackgroundScreen centered={false}>
       <ScrollView
-        ref={scrollViewRef}
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
@@ -50,19 +48,21 @@ export default function ProgramsScreen() {
               onPress={() => router.back()}
               style={styles.backButton}
             >
-              <Text style={styles.backButtonText}>Retour</Text>
+              <Text style={styles.backButtonText}>← Retour</Text>
             </TouchableOpacity>
-            <Text style={styles.title}>Tous les programmes</Text>
+            <Text style={styles.title}>
+              Tous les{'\n'}
+              <Text style={styles.titleBlue}>programmes</Text>
+            </Text>
             <Text style={styles.subtitle}>
-              Choisis celui qui correspond le mieux a tes objectifs
+              Choisis celui qui correspond a tes objectifs
             </Text>
           </View>
 
           {/* Liste des programmes */}
           <View style={styles.programsList}>
             {plans.map((plan, index) => {
-              const isHighlighted = highlightPlan === plan.id;
-              const isMainOrHighlighted = plan.isMainProgram || isHighlighted;
+              const isHighlighted = highlightPlan === plan.id || plan.isMainProgram;
 
               return (
                 <Animated.View
@@ -73,39 +73,22 @@ export default function ProgramsScreen() {
                       {
                         translateY: fadeAnim.interpolate({
                           inputRange: [0, 1],
-                          outputRange: [20 + index * 10, 0],
+                          outputRange: [20 + index * 8, 0],
                         }),
                       },
                     ],
                   }}
                 >
-                  <GlassCard gradientBorder={isMainOrHighlighted}>
-                    {/* Tag avec effet glass */}
-                    <View style={styles.cardHeader}>
-                      <View style={[
-                        styles.tagContainer,
-                        isMainOrHighlighted && styles.tagMain,
-                      ]}>
-                        <LinearGradient
-                          colors={isMainOrHighlighted
-                            ? ['rgba(79, 70, 229, 0.6)', 'rgba(168, 85, 247, 0.5)']
-                            : ['rgba(255, 255, 255, 0.08)', 'rgba(255, 255, 255, 0.04)']
-                          }
-                          start={{ x: 0, y: 0 }}
-                          end={{ x: 1, y: 1 }}
-                          style={styles.tagGradient}
-                        >
-                          <Text style={[
-                            styles.tag,
-                            !isMainOrHighlighted && styles.tagSecondary
-                          ]}>
-                            {plan.tag}
-                          </Text>
-                        </LinearGradient>
-                      </View>
+                  <CleanCard style={styles.programCard}>
+                    {/* Badge */}
+                    <View style={[
+                      styles.badge,
+                      isHighlighted && styles.badgeHighlight
+                    ]}>
+                      <Text style={styles.badgeText}>{plan.tag}</Text>
                     </View>
 
-                    {/* Titre et duree */}
+                    {/* Nom et duree */}
                     <Text style={styles.planName}>{plan.name}</Text>
                     <Text style={styles.planDuration}>{plan.durationLabel}</Text>
 
@@ -114,39 +97,42 @@ export default function ProgramsScreen() {
                       {plan.shortDescription}
                     </Text>
 
-                    {/* Features avec checkmarks pour les programmes principaux */}
-                    {isMainOrHighlighted && plan.features.length > 0 && (
-                      <View style={styles.featuresContainer}>
-                        {plan.features.slice(0, 3).map((feature, featureIndex) => (
-                          <GlassPill key={featureIndex} text={feature.text} />
-                        ))}
-                      </View>
+                    {/* Features pour les programmes principaux */}
+                    {isHighlighted && plan.features.length > 0 && (
+                      <>
+                        <View style={styles.separator} />
+                        <View style={styles.featuresList}>
+                          {plan.features.slice(0, 3).map((feature, idx) => (
+                            <View key={idx} style={styles.featureItem}>
+                              <View style={styles.featureIcon}>
+                                <Text style={styles.featureCheck}>✓</Text>
+                              </View>
+                              <Text style={styles.featureText}>{feature.text}</Text>
+                            </View>
+                          ))}
+                        </View>
+                      </>
                     )}
 
                     {/* Prix */}
                     {plan.priceInfo && (
-                      <View style={styles.priceContainer}>
-                        <LinearGradient
-                          colors={[
-                            'rgba(255, 255, 255, 0.08)',
-                            'rgba(255, 255, 255, 0.02)',
-                          ]}
-                          start={{ x: 0, y: 0 }}
-                          end={{ x: 1, y: 1 }}
-                          style={styles.priceGradient}
-                        >
+                      <>
+                        <View style={styles.separator} />
+                        <View style={styles.priceRow}>
+                          <Text style={styles.priceLabel}>Tarif</Text>
                           <Text style={styles.priceValue}>{plan.priceInfo}</Text>
-                        </LinearGradient>
-                      </View>
+                        </View>
+                      </>
                     )}
 
                     {/* Bouton */}
-                    <GlassButton
-                      label="Choisir ce programme"
-                      onPress={() => handleSelectPlan(plan)}
-                      variant={isMainOrHighlighted ? 'primary' : 'secondary'}
-                    />
-                  </GlassCard>
+                    <View style={styles.buttonContainer}>
+                      <PrimaryButton
+                        title="Choisir"
+                        onPress={() => handleSelectPlan(plan)}
+                      />
+                    </View>
+                  </CleanCard>
                 </Animated.View>
               );
             })}
@@ -172,106 +158,112 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
     marginBottom: 24,
     paddingVertical: 8,
-    paddingRight: 16,
   },
   backButtonText: {
-    color: 'rgba(255, 255, 255, 0.55)',
+    color: 'rgba(255, 255, 255, 0.5)',
     fontSize: 16,
     fontWeight: '500',
   },
   title: {
     color: '#FFFFFF',
-    fontSize: 28,
+    fontSize: 32,
     fontWeight: '700',
-    marginBottom: 10,
-    textAlign: 'center',
+    marginBottom: 12,
+    lineHeight: 40,
+    letterSpacing: -0.5,
+  },
+  titleBlue: {
+    color: '#4F46E5',
   },
   subtitle: {
-    color: 'rgba(255, 255, 255, 0.55)',
-    fontSize: 15,
-    textAlign: 'center',
-    lineHeight: 22,
+    color: 'rgba(255, 255, 255, 0.6)',
+    fontSize: 16,
   },
   programsList: {
-    gap: 24,
+    gap: 20,
   },
-  cardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 18,
+  programCard: {
+    // pas de style supplementaire
   },
-  tagContainer: {
-    borderRadius: 12,
-    overflow: 'hidden',
-    // Ombre subtile
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 4,
-    elevation: 2,
+  badge: {
+    alignSelf: 'flex-start',
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+    marginBottom: 14,
   },
-  tagMain: {
-    shadowColor: '#6366f1',
-    shadowOpacity: 0.35,
+  badgeHighlight: {
+    backgroundColor: '#4F46E5',
   },
-  tagGradient: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.15)',
-  },
-  tag: {
-    color: 'rgba(255, 255, 255, 0.9)',
+  badgeText: {
+    color: '#FFFFFF',
     fontSize: 12,
     fontWeight: '600',
-    textAlign: 'center',
-  },
-  tagSecondary: {
-    color: 'rgba(255, 255, 255, 0.55)',
   },
   planName: {
     color: '#FFFFFF',
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: '700',
-    marginBottom: 6,
-    textAlign: 'center',
+    marginBottom: 4,
   },
   planDuration: {
-    color: 'rgba(255, 255, 255, 0.55)',
+    color: 'rgba(255, 255, 255, 0.5)',
     fontSize: 14,
-    marginBottom: 16,
-    textAlign: 'center',
+    marginBottom: 12,
   },
   planDescription: {
-    color: 'rgba(255, 255, 255, 0.72)',
+    color: 'rgba(255, 255, 255, 0.7)',
     fontSize: 14,
     lineHeight: 22,
-    marginBottom: 20,
-    textAlign: 'center',
-    paddingHorizontal: 8,
   },
-  featuresContainer: {
-    alignSelf: 'stretch',
-    marginBottom: 20,
+  separator: {
+    height: 1,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    marginVertical: 16,
   },
-  priceContainer: {
-    alignSelf: 'stretch',
-    borderRadius: 14,
-    overflow: 'hidden',
-    marginBottom: 20,
-    borderWidth: 0.5,
-    borderColor: 'rgba(255, 255, 255, 0.12)',
+  featuresList: {
+    gap: 12,
   },
-  priceGradient: {
-    paddingVertical: 14,
-    paddingHorizontal: 16,
+  featureItem: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 10,
+  },
+  featureIcon: {
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: 'rgba(79, 70, 229, 0.2)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  featureCheck: {
+    color: '#4F46E5',
+    fontSize: 10,
+    fontWeight: '700',
+  },
+  featureText: {
+    flex: 1,
+    color: 'rgba(255, 255, 255, 0.7)',
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  priceRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  priceLabel: {
+    color: 'rgba(255, 255, 255, 0.5)',
+    fontSize: 14,
   },
   priceValue: {
     color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '600',
-    textAlign: 'center',
+  },
+  buttonContainer: {
+    marginTop: 20,
   },
 });

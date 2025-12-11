@@ -1,22 +1,18 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   Animated,
-  Platform,
   ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from 'react-native';
-import { BlurView } from 'expo-blur';
-import { LinearGradient } from 'expo-linear-gradient';
 
 import BackgroundScreen from '../components/BackgroundScreen';
-import GlassButton from '../components/GlassButton';
-import GlassCard from '../components/GlassCard';
-import GlassPill from '../components/GlassPill';
-import SecondaryLink from '../components/SecondaryLink';
+import CleanCard from '../components/CleanCard';
+import PrimaryButton from '../components/PrimaryButton';
+import TabSlider from '../components/TabSlider';
 import { useUser } from '../contexts/UserContext';
 import {
   getAlternativePlan,
@@ -25,63 +21,50 @@ import {
   PlanId,
 } from '../data/plans';
 
-function getPersonalizedMessage(planId: PlanId, firstName: string): string {
-  const name = firstName ? `, ${firstName}` : '';
-
-  switch (planId) {
-    case 'jawline_90':
-    case 'jawline_monthly':
-      return `Voici le programme qu'on te recommande${name} pour sculpter ta machoire.`;
-    case 'double_60':
-    case 'double_monthly':
-      return `Voici le programme qu'on te recommande${name} pour affiner ton cou.`;
-    case 'all_in_one':
-      return `Voici le programme qu'on te recommande${name} pour transformer tout ton visage.`;
-    default:
-      return `Voici le programme parfait pour toi${name}.`;
-  }
-}
-
 export default function ResultScreen() {
   const router = useRouter();
   const { firstName } = useUser();
   const { planId } = useLocalSearchParams<{ planId: PlanId }>();
 
-  const selectedPlanId = planId || 'all_in_one';
+  const selectedPlanId = planId || 'jawline_90';
   const plan = getPlanById(selectedPlanId);
   const alternativePlan = getAlternativePlan(selectedPlanId);
 
+  // Tab state: '90_days' ou 'monthly'
+  const isMonthlyPlan = selectedPlanId.includes('monthly');
+  const [activeTab, setActiveTab] = useState(isMonthlyPlan ? 'monthly' : '90_days');
+
   const fadeAnim = useRef(new Animated.Value(0)).current;
-  const slideAnim = useRef(new Animated.Value(30)).current;
 
   useEffect(() => {
-    Animated.parallel([
-      Animated.timing(fadeAnim, {
-        toValue: 1,
-        duration: 500,
-        useNativeDriver: true,
-      }),
-      Animated.timing(slideAnim, {
-        toValue: 0,
-        duration: 500,
-        useNativeDriver: true,
-      }),
-    ]).start();
+    Animated.timing(fadeAnim, {
+      toValue: 1,
+      duration: 400,
+      useNativeDriver: true,
+    }).start();
   }, []);
 
-  const handleSelectPlan = (selectedPlan: Plan) => {
-    console.log('Programme selectionne:', selectedPlan.name);
-    // TODO: Naviguer vers le paiement / onboarding
-  };
-
-  // Navigation vers la version mensuelle du programme
-  const handleMonthlyVersionPress = () => {
-    if (alternativePlan) {
-      router.push({
+  // Changer de plan selon l'onglet
+  const handleTabChange = (key: string) => {
+    setActiveTab(key);
+    if (key === 'monthly' && alternativePlan) {
+      router.replace({
         pathname: '/result',
         params: { planId: alternativePlan.id },
       });
+    } else if (key === '90_days' && plan?.alternativeId) {
+      // Revenir au plan principal
+      const mainPlanId = selectedPlanId.replace('_monthly', '_90');
+      router.replace({
+        pathname: '/result',
+        params: { planId: mainPlanId },
+      });
     }
+  };
+
+  const handleSelectPlan = (selectedPlan: Plan) => {
+    console.log('Programme selectionne:', selectedPlan.name);
+    // TODO: Naviguer vers le paiement
   };
 
   if (!plan) {
@@ -94,50 +77,10 @@ export default function ResultScreen() {
     );
   }
 
-  // Composant pour le bloc prix avec effet glass premium
-  const PriceBlock = () => {
-    if (!plan.priceInfo) return null;
-
-    const glassOverlay = (
-      <LinearGradient
-        colors={[
-          'rgba(255, 255, 255, 0.1)',
-          'rgba(255, 255, 255, 0.03)',
-          'transparent',
-        ]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={StyleSheet.absoluteFill}
-      />
-    );
-
-    const content = (
-      <View style={styles.priceContent}>
-        <Text style={styles.priceLabel}>Tarif indicatif</Text>
-        <Text style={styles.priceValue}>{plan.priceInfo}</Text>
-      </View>
-    );
-
-    if (Platform.OS === 'ios') {
-      return (
-        <View style={styles.priceWrapper}>
-          <BlurView intensity={35} tint="dark" style={styles.priceBlur}>
-            <View style={styles.priceInner}>
-              {glassOverlay}
-              {content}
-            </View>
-          </BlurView>
-        </View>
-      );
-    }
-
-    return (
-      <View style={[styles.priceWrapper, styles.priceAndroid]}>
-        {glassOverlay}
-        {content}
-      </View>
-    );
-  };
+  const tabs = [
+    { key: '90_days', label: '90 jours', badge: 'Conseille' },
+    { key: 'monthly', label: 'Mensuel' },
+  ];
 
   return (
     <BackgroundScreen centered={false}>
@@ -146,90 +89,82 @@ export default function ResultScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        <Animated.View
-          style={{
-            opacity: fadeAnim,
-            transform: [{ translateY: slideAnim }],
-          }}
-        >
-          {/* Message personnalise */}
-          <Text style={styles.message}>
-            {getPersonalizedMessage(selectedPlanId, firstName)}
-          </Text>
+        <Animated.View style={{ opacity: fadeAnim }}>
+          {/* Header */}
+          <View style={styles.header}>
+            <Text style={styles.title}>
+              Ton programme{'\n'}
+              <Text style={styles.titleBlue}>personnalise</Text>
+            </Text>
+            <Text style={styles.subtitle}>
+              {firstName ? `${firstName}, voici` : 'Voici'} ce qu'on te recommande
+            </Text>
+          </View>
 
-          {/* Carte principale - Programme recommande avec bordure degradee */}
-          <GlassCard gradientBorder>
-            {/* Badge recommande avec effet glass */}
-            <View style={styles.tagContainer}>
-              {Platform.OS === 'ios' ? (
-                <BlurView intensity={25} tint="dark" style={styles.tagBlur}>
-                  <LinearGradient
-                    colors={['rgba(79, 70, 229, 0.6)', 'rgba(168, 85, 247, 0.5)']}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 1 }}
-                    style={styles.tagGradient}
-                  >
-                    <Text style={styles.tag}>Recommande pour toi</Text>
-                  </LinearGradient>
-                </BlurView>
-              ) : (
-                <LinearGradient
-                  colors={['rgba(79, 70, 229, 0.7)', 'rgba(168, 85, 247, 0.6)']}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                  style={styles.tagGradient}
-                >
-                  <Text style={styles.tag}>Recommande pour toi</Text>
-                </LinearGradient>
-              )}
+          {/* Tab slider Premium/Monthly */}
+          {alternativePlan && (
+            <TabSlider
+              tabs={tabs}
+              activeTab={activeTab}
+              onTabChange={handleTabChange}
+            />
+          )}
+
+          {/* Carte programme - style Zentra */}
+          <CleanCard style={styles.programCard}>
+            {/* Badge */}
+            <View style={styles.badge}>
+              <Text style={styles.badgeText}>Recommande</Text>
             </View>
 
-            {/* Titre et sous-titre */}
+            {/* Nom du programme */}
             <Text style={styles.planName}>{plan.name}</Text>
             <Text style={styles.planDuration}>{plan.durationLabel}</Text>
 
-            {/* Description courte */}
-            <Text style={styles.planDescription}>{plan.shortDescription}</Text>
+            {/* Separator */}
+            <View style={styles.separator} />
 
-            {/* Features avec checkmarks glass */}
-            <View style={styles.featuresContainer}>
-              {plan.features.map((feature, index) => (
-                <GlassPill key={index} text={feature.text} />
+            {/* Features list */}
+            <View style={styles.featuresList}>
+              {plan.features.slice(0, 4).map((feature, index) => (
+                <View key={index} style={styles.featureItem}>
+                  <View style={styles.featureIcon}>
+                    <Text style={styles.featureCheck}>✓</Text>
+                  </View>
+                  <Text style={styles.featureText}>{feature.text}</Text>
+                </View>
               ))}
             </View>
 
-            {/* Prix indicatif */}
-            <PriceBlock />
+            {/* Separator */}
+            <View style={styles.separator} />
 
-            {/* Bouton CTA */}
-            <View style={styles.buttonContainer}>
-              <GlassButton
-                label="Continuer avec ce programme"
-                onPress={() => handleSelectPlan(plan)}
-              />
-            </View>
-          </GlassCard>
+            {/* Prix */}
+            {plan.priceInfo && (
+              <View style={styles.priceSection}>
+                <Text style={styles.priceLabel}>Tarif</Text>
+                <Text style={styles.priceValue}>{plan.priceInfo}</Text>
+              </View>
+            )}
+          </CleanCard>
 
-          {/* Alternative mensuelle - discret */}
-          {alternativePlan && (
-            <View style={styles.alternativeSection}>
-              <Text style={styles.alternativeLabel}>
-                Tu preferes payer au mois ?{' '}
-              </Text>
-              <TouchableOpacity onPress={handleMonthlyVersionPress}>
-                <Text style={styles.alternativeLink}>
-                  Decouvre la version mensuelle.
-                </Text>
-              </TouchableOpacity>
-            </View>
-          )}
+          {/* Bouton CTA */}
+          <View style={styles.ctaContainer}>
+            <PrimaryButton
+              title="Continuer"
+              onPress={() => handleSelectPlan(plan)}
+            />
+          </View>
 
-          {/* Lien vers tous les programmes */}
-          <SecondaryLink
-            title="Voir tous les programmes disponibles"
+          {/* Lien secondaire */}
+          <TouchableOpacity
             onPress={() => router.push('/programs')}
-            style={styles.allProgramsLink}
-          />
+            style={styles.secondaryLink}
+          >
+            <Text style={styles.secondaryLinkText}>
+              Voir tous les programmes
+            </Text>
+          </TouchableOpacity>
         </Animated.View>
       </ScrollView>
     </BackgroundScreen>
@@ -241,143 +176,114 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingTop: 40,
+    paddingTop: 20,
     paddingBottom: 40,
   },
-  message: {
+  header: {
+    marginBottom: 32,
+    alignItems: 'center',
+  },
+  title: {
     color: '#FFFFFF',
-    fontSize: 22,
+    fontSize: 32,
     fontWeight: '700',
     textAlign: 'center',
-    marginBottom: 28,
-    lineHeight: 32,
-    paddingHorizontal: 8,
+    marginBottom: 12,
+    lineHeight: 40,
+    letterSpacing: -0.5,
   },
-  tagContainer: {
-    alignSelf: 'center',
-    borderRadius: 20,
-    overflow: 'hidden',
-    marginBottom: 22,
-    // Ombre subtile coloree
-    shadowColor: '#6366f1',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.35,
-    shadowRadius: 12,
-    elevation: 4,
+  titleBlue: {
+    color: '#4F46E5',
   },
-  tagBlur: {
-    borderRadius: 20,
-    overflow: 'hidden',
-  },
-  tagGradient: {
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.15)',
-  },
-  tag: {
-    color: 'rgba(255, 255, 255, 0.9)',
-    fontSize: 13,
-    fontWeight: '600',
+  subtitle: {
+    color: 'rgba(255, 255, 255, 0.6)',
+    fontSize: 16,
     textAlign: 'center',
+  },
+  programCard: {
+    marginBottom: 24,
+  },
+  badge: {
+    alignSelf: 'flex-start',
+    backgroundColor: '#4F46E5',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+    marginBottom: 16,
+  },
+  badgeText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '600',
   },
   planName: {
     color: '#FFFFFF',
-    fontSize: 28,
+    fontSize: 24,
     fontWeight: '700',
-    marginBottom: 6,
-    textAlign: 'center',
+    marginBottom: 4,
   },
   planDuration: {
-    color: 'rgba(255, 255, 255, 0.55)',
+    color: 'rgba(255, 255, 255, 0.5)',
+    fontSize: 14,
+    marginBottom: 16,
+  },
+  separator: {
+    height: 1,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    marginVertical: 16,
+  },
+  featuresList: {
+    gap: 14,
+  },
+  featureItem: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 12,
+  },
+  featureIcon: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: 'rgba(79, 70, 229, 0.2)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  featureCheck: {
+    color: '#4F46E5',
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  featureText: {
+    flex: 1,
+    color: 'rgba(255, 255, 255, 0.8)',
     fontSize: 15,
-    marginBottom: 18,
-    textAlign: 'center',
+    lineHeight: 22,
   },
-  planDescription: {
-    color: 'rgba(255, 255, 255, 0.72)',
-    fontSize: 15,
-    lineHeight: 24,
-    marginBottom: 28,
-    textAlign: 'center',
-    paddingHorizontal: 8,
-  },
-  featuresContainer: {
-    alignSelf: 'stretch',
-    marginBottom: 28,
-    paddingHorizontal: 4,
-  },
-  priceWrapper: {
-    alignSelf: 'stretch',
-    borderRadius: 18,
-    overflow: 'hidden',
-    marginBottom: 28,
-    borderWidth: 0.5,
-    borderColor: 'rgba(255, 255, 255, 0.15)',
-    // Ombre subtile
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  priceBlur: {
-    overflow: 'hidden',
-  },
-  priceInner: {
-    backgroundColor: 'rgba(7, 7, 10, 0.55)',
-    paddingVertical: 18,
-    paddingHorizontal: 20,
-    overflow: 'hidden',
-  },
-  priceAndroid: {
-    backgroundColor: 'rgba(7, 7, 10, 0.75)',
-    paddingVertical: 18,
-    paddingHorizontal: 20,
-  },
-  priceContent: {
+  priceSection: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
   },
   priceLabel: {
-    color: 'rgba(255, 255, 255, 0.55)',
-    fontSize: 12,
-    fontWeight: '500',
-    textAlign: 'center',
-    marginBottom: 8,
-    textTransform: 'uppercase',
-    letterSpacing: 0.8,
+    color: 'rgba(255, 255, 255, 0.5)',
+    fontSize: 14,
   },
   priceValue: {
     color: '#FFFFFF',
-    fontSize: 20,
-    fontWeight: '700',
-    textAlign: 'center',
+    fontSize: 18,
+    fontWeight: '600',
   },
-  buttonContainer: {
-    width: '100%',
+  ctaContainer: {
+    marginBottom: 16,
   },
-  alternativeSection: {
-    marginTop: 32,
-    paddingHorizontal: 20,
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'center',
+  secondaryLink: {
+    alignItems: 'center',
+    paddingVertical: 12,
   },
-  alternativeLabel: {
-    color: 'rgba(255, 255, 255, 0.55)',
-    fontSize: 14,
-    textAlign: 'center',
-    lineHeight: 22,
-  },
-  alternativeLink: {
-    color: '#9F66FF',
-    fontSize: 14,
-    textDecorationLine: 'underline',
-    lineHeight: 22,
-  },
-  allProgramsLink: {
-    marginTop: 20,
+  secondaryLinkText: {
+    color: 'rgba(255, 255, 255, 0.5)',
+    fontSize: 15,
+    fontWeight: '500',
   },
   errorContainer: {
     flex: 1,
