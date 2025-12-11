@@ -3,7 +3,6 @@ import React, { useEffect, useRef } from 'react';
 import { Animated, Easing, StyleSheet, Text, View } from 'react-native';
 
 import BackgroundScreen from '../components/BackgroundScreen';
-import GlassCard from '../components/GlassCard';
 import type { PlanId } from '../data/plans';
 
 export default function ProcessingScreen() {
@@ -93,18 +92,16 @@ export default function ProcessingScreen() {
   return (
     <BackgroundScreen>
       <Animated.View style={[styles.container, { opacity: fadeAnim }]}>
-        <GlassCard>
-          <Text style={styles.title}>Analyse de tes réponses en cours</Text>
-          <Text style={styles.subtitle}>
-            On réfléchit au meilleur programme pour toi...
-          </Text>
+        <Text style={styles.title}>Analyse de tes reponses en cours</Text>
+        <Text style={styles.subtitle}>
+          On reflechit au meilleur programme pour toi...
+        </Text>
 
-          <View style={styles.dotsContainer}>
-            {renderDot(dot1)}
-            {renderDot(dot2)}
-            {renderDot(dot3)}
-          </View>
-        </GlassCard>
+        <View style={styles.dotsContainer}>
+          {renderDot(dot1)}
+          {renderDot(dot2)}
+          {renderDot(dot3)}
+        </View>
       </Animated.View>
     </BackgroundScreen>
   );
@@ -115,6 +112,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    paddingHorizontal: 24,
   },
   title: {
     color: '#FFFFFF',
@@ -122,9 +120,10 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     textAlign: 'center',
     marginBottom: 12,
+    lineHeight: 32,
   },
   subtitle: {
-    color: '#9CA3AF',
+    color: 'rgba(255, 255, 255, 0.6)',
     fontSize: 15,
     textAlign: 'center',
     marginBottom: 32,

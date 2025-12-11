@@ -110,7 +110,7 @@ export default function ResultScreen() {
             />
           )}
 
-          {/* Carte programme - style Zentra */}
+          {/* Carte programme */}
           <CleanCard style={styles.programCard}>
             {/* Badge */}
             <View style={styles.badge}>
@@ -193,7 +193,7 @@ const styles = StyleSheet.create({
     letterSpacing: -0.5,
   },
   titleBlue: {
-    color: '#4F46E5',
+    color: '#3B82F6',
   },
   subtitle: {
     color: 'rgba(255, 255, 255, 0.6)',
@@ -205,7 +205,7 @@ const styles = StyleSheet.create({
   },
   badge: {
     alignSelf: 'flex-start',
-    backgroundColor: '#4F46E5',
+    backgroundColor: '#3B82F6',
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 8,
@@ -244,12 +244,12 @@ const styles = StyleSheet.create({
     width: 20,
     height: 20,
     borderRadius: 10,
-    backgroundColor: 'rgba(79, 70, 229, 0.2)',
+    backgroundColor: 'rgba(59, 130, 246, 0.2)',
     alignItems: 'center',
     justifyContent: 'center',
   },
   featureCheck: {
-    color: '#4F46E5',
+    color: '#3B82F6',
     fontSize: 12,
     fontWeight: '700',
   },

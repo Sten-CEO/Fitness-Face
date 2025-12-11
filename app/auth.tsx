@@ -12,7 +12,6 @@ import {
 } from 'react-native';
 
 import BackgroundScreen from '../components/BackgroundScreen';
-import CleanCard from '../components/CleanCard';
 import PrimaryButton from '../components/PrimaryButton';
 import { useUser } from '../contexts/UserContext';
 
@@ -57,8 +56,8 @@ export default function AuthScreen() {
               </Text>
             </View>
 
-            {/* Form */}
-            <CleanCard>
+            {/* Form - inputs directs sans card */}
+            <View style={styles.formContainer}>
               <View style={styles.inputGroup}>
                 <Text style={styles.label}>Prenom</Text>
                 <TextInput
@@ -95,7 +94,7 @@ export default function AuthScreen() {
                   secureTextEntry
                 />
               </View>
-            </CleanCard>
+            </View>
 
             {/* Buttons */}
             <View style={styles.buttonContainer}>
@@ -142,11 +141,14 @@ const styles = StyleSheet.create({
     letterSpacing: -0.5,
   },
   titleBlue: {
-    color: '#4F46E5',
+    color: '#3B82F6',
   },
   subtitle: {
     color: 'rgba(255, 255, 255, 0.6)',
     fontSize: 16,
+  },
+  formContainer: {
+    marginBottom: 8,
   },
   inputGroup: {
     marginBottom: 20,
@@ -158,10 +160,10 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   input: {
-    backgroundColor: 'rgba(255, 255, 255, 0.06)',
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
+    borderColor: 'rgba(255, 255, 255, 0.12)',
     paddingHorizontal: 16,
     paddingVertical: 14,
     color: '#FFFFFF',

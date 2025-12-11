@@ -1,9 +1,8 @@
 import { useRouter } from 'expo-router';
 import React, { useEffect, useRef } from 'react';
-import { Animated, StyleSheet, View } from 'react-native';
+import { Animated, StyleSheet, Text, View } from 'react-native';
 
 import BackgroundScreen from '../components/BackgroundScreen';
-import GlassCard from '../components/GlassCard';
 
 export default function QuestionIntroScreen() {
   const router = useRouter();
@@ -36,19 +35,20 @@ export default function QuestionIntroScreen() {
     <BackgroundScreen>
       <View style={styles.container}>
         <Animated.View
-          style={{
-            opacity: fadeAnim,
-            transform: [{ translateY: slideAnim }],
-          }}
+          style={[
+            styles.textContainer,
+            {
+              opacity: fadeAnim,
+              transform: [{ translateY: slideAnim }],
+            },
+          ]}
         >
-          <GlassCard>
-            <Animated.Text style={styles.title}>
-              On va te proposer le programme parfait pour ton visage.
-            </Animated.Text>
-            <Animated.Text style={styles.subtitle}>
-              Réponds à quelques questions pour commencer.
-            </Animated.Text>
-          </GlassCard>
+          <Text style={styles.title}>
+            On va te proposer le programme parfait pour ton visage.
+          </Text>
+          <Text style={styles.subtitle}>
+            Reponds a quelques questions pour commencer.
+          </Text>
         </Animated.View>
       </View>
     </BackgroundScreen>
@@ -60,6 +60,10 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    paddingHorizontal: 24,
+  },
+  textContainer: {
+    alignItems: 'center',
   },
   title: {
     color: '#FFFFFF',
@@ -70,7 +74,7 @@ const styles = StyleSheet.create({
     lineHeight: 34,
   },
   subtitle: {
-    color: '#9CA3AF',
+    color: 'rgba(255, 255, 255, 0.6)',
     fontSize: 16,
     textAlign: 'center',
     lineHeight: 24,

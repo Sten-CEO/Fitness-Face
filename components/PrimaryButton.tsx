@@ -8,7 +8,6 @@ import {
   TextStyle,
   View,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 
 interface PrimaryButtonProps {
   title: string;
@@ -58,19 +57,11 @@ export default function PrimaryButton({
         { transform: [{ scale: scaleAnim }] },
         style,
       ]}>
-        {/* Gradient bleu/violet moderne style Zentra */}
-        <LinearGradient
-          colors={disabled ? ['#4B5563', '#374151'] : ['#4F46E5', '#7C3AED']}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 0 }}
-          style={styles.gradient}
-        >
-          {/* Effet lumineux subtil en haut */}
-          <View style={styles.highlight} />
+        <View style={styles.buttonInner}>
           <Text style={[styles.text, textStyle]}>
             {title}
           </Text>
-        </LinearGradient>
+        </View>
       </Animated.View>
     </TouchableWithoutFeedback>
   );
@@ -81,41 +72,26 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     width: '100%',
     maxWidth: 340,
-    borderRadius: 16,
+    borderRadius: 14,
     overflow: 'hidden',
-    // Ombre subtile coloree
-    shadowColor: '#4F46E5',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.35,
-    shadowRadius: 16,
-    elevation: 8,
   },
   buttonDisabled: {
     opacity: 0.5,
-    shadowOpacity: 0,
   },
-  gradient: {
-    paddingVertical: 18,
+  buttonInner: {
+    backgroundColor: '#3B82F6',
+    paddingVertical: 16,
     paddingHorizontal: 32,
     alignItems: 'center',
     justifyContent: 'center',
-    minHeight: 58,
-    position: 'relative',
-  },
-  highlight: {
-    position: 'absolute',
-    top: 0,
-    left: 20,
-    right: 20,
-    height: 1,
-    backgroundColor: 'rgba(255, 255, 255, 0.25)',
-    borderRadius: 1,
+    minHeight: 54,
+    borderRadius: 14,
   },
   text: {
     color: '#FFFFFF',
     fontSize: 17,
     fontWeight: '600',
-    letterSpacing: 0.3,
+    letterSpacing: 0.2,
     textAlign: 'center',
   },
 });
