@@ -12,7 +12,7 @@ import {
 
 import BackgroundScreen from '../components/BackgroundScreen';
 import GlassCard from '../components/GlassCard';
-import PrimaryButton from '../components/PrimaryButton';
+import PrimaryGlassButton from '../components/PrimaryGlassButton';
 import SecondaryLink from '../components/SecondaryLink';
 import { useUser } from '../contexts/UserContext';
 
@@ -92,11 +92,12 @@ export default function AuthScreen() {
                 />
               </View>
 
-              <PrimaryButton
-                title="Continuer"
-                onPress={handleContinue}
-                style={styles.button}
-              />
+              <View style={styles.buttonContainer}>
+                <PrimaryGlassButton
+                  title="Continuer"
+                  onPress={handleContinue}
+                />
+              </View>
 
               <SecondaryLink
                 title="Continuer sans créer de compte"
@@ -158,7 +159,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     width: '100%',
   },
-  button: {
+  buttonContainer: {
     marginTop: 12,
     marginBottom: 8,
     width: '100%',

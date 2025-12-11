@@ -6,20 +6,24 @@ import { LinearGradient } from 'expo-linear-gradient';
 interface GlassCardProps {
   children: React.ReactNode;
   style?: ViewStyle;
+  contentStyle?: ViewStyle;
   intensity?: number;
   compact?: boolean;
   selected?: boolean;
+  opaque?: boolean;
 }
 
 export default function GlassCard({
   children,
   style,
+  contentStyle,
   intensity = 50,
   compact = false,
   selected = false,
+  opaque = false,
 }: GlassCardProps) {
   const cardContent = (
-    <View style={[styles.innerContent, compact && styles.compactContent]}>
+    <View style={[styles.innerContent, compact && styles.compactContent, contentStyle]}>
       {children}
     </View>
   );
@@ -47,7 +51,7 @@ export default function GlassCard({
       <View style={[styles.cardWrapper, selected && styles.cardSelected, style]}>
         {topHighlight}
         <BlurView intensity={intensity} tint="dark" style={styles.blurView}>
-          <View style={styles.innerWrapper}>
+          <View style={[styles.innerWrapper, opaque && styles.innerWrapperOpaque]}>
             {gradientOverlay}
             {cardContent}
           </View>
@@ -58,7 +62,7 @@ export default function GlassCard({
 
   // Fallback Android avec effet similaire
   return (
-    <View style={[styles.cardWrapper, styles.androidCard, selected && styles.cardSelected, style]}>
+    <View style={[styles.cardWrapper, styles.androidCard, opaque && styles.androidCardOpaque, selected && styles.cardSelected, style]}>
       {topHighlight}
       {gradientOverlay}
       {cardContent}
@@ -99,6 +103,9 @@ const styles = StyleSheet.create({
   innerWrapper: {
     backgroundColor: 'rgba(30, 30, 35, 0.65)',
   },
+  innerWrapperOpaque: {
+    backgroundColor: 'rgba(20, 20, 28, 0.85)',
+  },
   innerContent: {
     padding: 24,
     alignItems: 'center',
@@ -108,5 +115,8 @@ const styles = StyleSheet.create({
   },
   androidCard: {
     backgroundColor: 'rgba(30, 30, 35, 0.88)',
+  },
+  androidCardOpaque: {
+    backgroundColor: 'rgba(20, 20, 28, 0.95)',
   },
 });

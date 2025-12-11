@@ -1,4 +1,4 @@
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useRef } from 'react';
 import {
   Animated,
@@ -12,12 +12,15 @@ import {
 import BackgroundScreen from '../components/BackgroundScreen';
 import FeatureItem from '../components/FeatureItem';
 import GlassCard from '../components/GlassCard';
-import PrimaryButton from '../components/PrimaryButton';
+import PrimaryGlassButton from '../components/PrimaryGlassButton';
+import SecondaryGlassButton from '../components/SecondaryGlassButton';
 import { Plan, plans } from '../data/plans';
 
 export default function ProgramsScreen() {
   const router = useRouter();
+  const { highlightPlan } = useLocalSearchParams<{ highlightPlan?: string }>();
   const fadeAnim = useRef(new Animated.Value(0)).current;
+  const scrollViewRef = useRef<ScrollView>(null);
 
   useEffect(() => {
     Animated.timing(fadeAnim, {
@@ -35,6 +38,7 @@ export default function ProgramsScreen() {
   return (
     <BackgroundScreen centered={false}>
       <ScrollView
+        ref={scrollViewRef}
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
@@ -56,81 +60,80 @@ export default function ProgramsScreen() {
 
           {/* Liste des programmes */}
           <View style={styles.programsList}>
-            {plans.map((plan, index) => (
-              <Animated.View
-                key={plan.id}
-                style={{
-                  opacity: fadeAnim,
-                  transform: [
-                    {
-                      translateY: fadeAnim.interpolate({
-                        inputRange: [0, 1],
-                        outputRange: [20 + index * 10, 0],
-                      }),
-                    },
-                  ],
-                }}
-              >
-                <GlassCard>
-                  {/* Tag */}
-                  <View style={styles.cardHeader}>
-                    <View
-                      style={[
-                        styles.tagContainer,
-                        plan.isMainProgram && styles.tagMain,
-                      ]}
-                    >
-                      <Text style={[styles.tag, !plan.isMainProgram && styles.tagSecondary]}>
-                        {plan.tag}
-                      </Text>
+            {plans.map((plan, index) => {
+              const isHighlighted = highlightPlan === plan.id;
+
+              return (
+                <Animated.View
+                  key={plan.id}
+                  style={{
+                    opacity: fadeAnim,
+                    transform: [
+                      {
+                        translateY: fadeAnim.interpolate({
+                          inputRange: [0, 1],
+                          outputRange: [20 + index * 10, 0],
+                        }),
+                      },
+                    ],
+                  }}
+                >
+                  <GlassCard opaque={plan.isMainProgram || isHighlighted}>
+                    {/* Tag */}
+                    <View style={styles.cardHeader}>
+                      <View
+                        style={[
+                          styles.tagContainer,
+                          plan.isMainProgram && styles.tagMain,
+                        ]}
+                      >
+                        <Text style={[styles.tag, !plan.isMainProgram && styles.tagSecondary]}>
+                          {plan.tag}
+                        </Text>
+                      </View>
                     </View>
-                  </View>
 
-                  {/* Titre et duree */}
-                  <Text style={styles.planName}>{plan.name}</Text>
-                  <Text style={styles.planDuration}>{plan.durationLabel}</Text>
+                    {/* Titre et duree */}
+                    <Text style={styles.planName}>{plan.name}</Text>
+                    <Text style={styles.planDuration}>{plan.durationLabel}</Text>
 
-                  {/* Description */}
-                  <Text style={styles.planDescription}>
-                    {plan.shortDescription}
-                  </Text>
+                    {/* Description */}
+                    <Text style={styles.planDescription}>
+                      {plan.shortDescription}
+                    </Text>
 
-                  {/* Features avec checkmarks pour les programmes principaux */}
-                  {plan.isMainProgram && plan.features.length > 0 && (
-                    <View style={styles.featuresContainer}>
-                      {plan.features.slice(0, 3).map((feature, featureIndex) => (
-                        <FeatureItem key={featureIndex} text={feature.text} />
-                      ))}
-                    </View>
-                  )}
+                    {/* Features avec checkmarks pour les programmes principaux */}
+                    {plan.isMainProgram && plan.features.length > 0 && (
+                      <View style={styles.featuresContainer}>
+                        {plan.features.slice(0, 3).map((feature, featureIndex) => (
+                          <FeatureItem key={featureIndex} text={feature.text} />
+                        ))}
+                      </View>
+                    )}
 
-                  {/* Prix */}
-                  {plan.priceInfo && (
-                    <View style={styles.priceContainer}>
-                      <Text style={styles.priceValue}>{plan.priceInfo}</Text>
-                    </View>
-                  )}
+                    {/* Prix */}
+                    {plan.priceInfo && (
+                      <View style={styles.priceContainer}>
+                        <Text style={styles.priceValue}>{plan.priceInfo}</Text>
+                      </View>
+                    )}
 
-                  {/* Bouton */}
-                  {plan.isMainProgram ? (
-                    <PrimaryButton
-                      title="Choisir ce programme"
-                      onPress={() => handleSelectPlan(plan)}
-                    />
-                  ) : (
-                    <TouchableOpacity
-                      style={styles.selectButton}
-                      onPress={() => handleSelectPlan(plan)}
-                      activeOpacity={0.7}
-                    >
-                      <Text style={styles.selectButtonText}>
-                        Choisir ce programme
-                      </Text>
-                    </TouchableOpacity>
-                  )}
-                </GlassCard>
-              </Animated.View>
-            ))}
+                    {/* Bouton */}
+                    {plan.isMainProgram ? (
+                      <PrimaryGlassButton
+                        title="Choisir ce programme"
+                        onPress={() => handleSelectPlan(plan)}
+                      />
+                    ) : (
+                      <SecondaryGlassButton
+                        title="Choisir ce programme"
+                        onPress={() => handleSelectPlan(plan)}
+                      />
+                    )}
+                  </GlassCard>
+                </Animated.View>
+              );
+            })}
           </View>
         </Animated.View>
       </ScrollView>
@@ -143,7 +146,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingTop: 20,
+    paddingTop: 16,
     paddingBottom: 40,
   },
   header: {
@@ -220,12 +223,12 @@ const styles = StyleSheet.create({
     color: '#D1D5DB',
     fontSize: 14,
     lineHeight: 22,
-    marginBottom: 16,
+    marginBottom: 18,
     textAlign: 'center',
   },
   featuresContainer: {
     alignSelf: 'stretch',
-    marginBottom: 16,
+    marginBottom: 18,
   },
   priceContainer: {
     alignSelf: 'stretch',
@@ -233,27 +236,12 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     paddingVertical: 12,
     paddingHorizontal: 16,
-    marginBottom: 16,
+    marginBottom: 18,
     borderWidth: 0.5,
     borderColor: 'rgba(255, 255, 255, 0.1)',
   },
   priceValue: {
     color: '#FFFFFF',
-    fontSize: 15,
-    fontWeight: '600',
-    textAlign: 'center',
-  },
-  selectButton: {
-    backgroundColor: 'rgba(107, 114, 128, 0.15)',
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: 'rgba(107, 114, 128, 0.25)',
-    paddingVertical: 16,
-    alignItems: 'center',
-    width: '100%',
-  },
-  selectButtonText: {
-    color: '#9CA3AF',
     fontSize: 15,
     fontWeight: '600',
     textAlign: 'center',
