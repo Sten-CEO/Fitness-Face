@@ -8,6 +8,9 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+// Image de fond importee depuis assets
+const backgroundImage = require('@/assets/images/background.jpeg');
+
 interface BackgroundScreenProps {
   children: React.ReactNode;
   style?: ViewStyle;
@@ -23,7 +26,7 @@ export default function BackgroundScreen({
     <View style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#050509" />
       <ImageBackground
-        source={require('../assets/images/background.jpeg')}
+        source={backgroundImage}
         style={styles.background}
         resizeMode="cover"
       >
