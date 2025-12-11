@@ -11,6 +11,7 @@ import {
   View,
 } from 'react-native';
 import { BlurView } from 'expo-blur';
+import { LinearGradient } from 'expo-linear-gradient';
 
 import BackgroundScreen from '../components/BackgroundScreen';
 import PrimaryGlassButton from '../components/PrimaryGlassButton';
@@ -101,10 +102,30 @@ export default function QuestionnaireScreen() {
   const renderOptionCard = (option: { text: string }, index: number) => {
     const isSelected = selectedOption === index;
 
+    // Reflet glass pour les options
+    const optionGlassOverlay = (
+      <LinearGradient
+        colors={[
+          isSelected ? 'rgba(96, 165, 250, 0.15)' : 'rgba(255, 255, 255, 0.08)',
+          'transparent',
+        ]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={StyleSheet.absoluteFill}
+      />
+    );
+
     const content = (
       <View style={styles.optionContent}>
         <View style={[styles.radioOuter, isSelected && styles.radioOuterSelected]}>
-          {isSelected && <View style={styles.radioInner} />}
+          {isSelected && (
+            <View style={styles.radioInner}>
+              <LinearGradient
+                colors={['#60A5FA', '#3B82F6']}
+                style={styles.radioGradient}
+              />
+            </View>
+          )}
         </View>
         <Text style={[styles.optionText, isSelected && styles.optionTextSelected]}>
           {option.text}
@@ -120,8 +141,9 @@ export default function QuestionnaireScreen() {
           activeOpacity={0.8}
           style={[styles.optionWrapper, isSelected && styles.optionWrapperSelected]}
         >
-          <BlurView intensity={40} tint="dark" style={styles.optionBlur}>
+          <BlurView intensity={45} tint="dark" style={styles.optionBlur}>
             <View style={[styles.optionInner, isSelected && styles.optionInnerSelected]}>
+              {optionGlassOverlay}
               {content}
             </View>
           </BlurView>
@@ -141,6 +163,7 @@ export default function QuestionnaireScreen() {
           isSelected && styles.optionAndroidSelected,
         ]}
       >
+        {optionGlassOverlay}
         {content}
       </TouchableOpacity>
     );
@@ -152,10 +175,15 @@ export default function QuestionnaireScreen() {
         {/* Header avec progression */}
         <View style={styles.header}>
           <Text style={styles.questionCount}>
-            Question {currentIndex + 1} / {questions.length}
+            Question {currentIndex + 1} sur {questions.length}
           </Text>
           <View style={styles.progressBarBg}>
-            <View style={[styles.progressBarFill, { width: `${progress * 100}%` }]} />
+            <LinearGradient
+              colors={['#60A5FA', '#3B82F6']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={[styles.progressBarFill, { width: `${progress * 100}%` }]}
+            />
           </View>
         </View>
 
@@ -211,7 +239,7 @@ const styles = StyleSheet.create({
     paddingBottom: 32,
   },
   header: {
-    marginBottom: 28,
+    marginBottom: 32,
     alignItems: 'center',
   },
   questionCount: {
@@ -219,7 +247,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '500',
     textAlign: 'center',
-    marginBottom: 12,
+    marginBottom: 14,
   },
   progressBarBg: {
     height: 4,
@@ -230,7 +258,6 @@ const styles = StyleSheet.create({
   },
   progressBarFill: {
     height: '100%',
-    backgroundColor: '#3B82F6',
     borderRadius: 2,
   },
   scrollView: {
@@ -249,54 +276,64 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: '700',
     textAlign: 'center',
-    marginBottom: 36,
+    marginBottom: 40,
     lineHeight: 34,
     paddingHorizontal: 8,
   },
   optionsContainer: {
-    gap: 16,
+    gap: 14,
   },
   optionWrapper: {
-    borderRadius: 20,
+    borderRadius: 22,
     overflow: 'hidden',
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.12)',
+    // Ombre subtile
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4,
   },
   optionWrapperSelected: {
-    borderColor: 'rgba(59, 130, 246, 0.5)',
+    borderColor: 'rgba(96, 165, 250, 0.5)',
     borderWidth: 1.5,
+    shadowColor: '#3B82F6',
+    shadowOpacity: 0.3,
   },
   optionBlur: {
     overflow: 'hidden',
   },
   optionInner: {
-    backgroundColor: 'rgba(30, 30, 35, 0.55)',
+    backgroundColor: 'rgba(25, 25, 35, 0.5)',
     paddingVertical: 20,
     paddingHorizontal: 20,
-    minHeight: 64,
+    minHeight: 68,
     justifyContent: 'center',
+    overflow: 'hidden',
   },
   optionInnerSelected: {
-    backgroundColor: 'rgba(59, 130, 246, 0.15)',
+    backgroundColor: 'rgba(59, 130, 246, 0.12)',
   },
   optionAndroid: {
-    backgroundColor: 'rgba(30, 30, 35, 0.8)',
+    backgroundColor: 'rgba(25, 25, 35, 0.8)',
     paddingVertical: 20,
     paddingHorizontal: 20,
-    minHeight: 64,
+    minHeight: 68,
     justifyContent: 'center',
+    overflow: 'hidden',
   },
   optionAndroidSelected: {
-    backgroundColor: 'rgba(59, 130, 246, 0.2)',
+    backgroundColor: 'rgba(59, 130, 246, 0.18)',
   },
   optionContent: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   radioOuter: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
+    width: 26,
+    height: 26,
+    borderRadius: 13,
     borderWidth: 2,
     borderColor: 'rgba(255, 255, 255, 0.25)',
     marginRight: 16,
@@ -305,13 +342,17 @@ const styles = StyleSheet.create({
     flexShrink: 0,
   },
   radioOuterSelected: {
-    borderColor: '#3B82F6',
+    borderColor: '#60A5FA',
+    borderWidth: 2,
   },
   radioInner: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: '#3B82F6',
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    overflow: 'hidden',
+  },
+  radioGradient: {
+    flex: 1,
   },
   optionText: {
     flex: 1,
@@ -328,7 +369,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 20,
+    marginTop: 24,
     paddingTop: 16,
   },
   backButton: {

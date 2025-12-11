@@ -9,6 +9,7 @@ import {
   Platform,
   ScrollView,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 
 import BackgroundScreen from '../components/BackgroundScreen';
 import GlassCard from '../components/GlassCard';
@@ -35,6 +36,51 @@ export default function AuthScreen() {
     router.push('/welcome');
   };
 
+  // Input avec effet glass
+  const GlassInput = ({
+    label,
+    placeholder,
+    value,
+    onChangeText,
+    secureTextEntry = false,
+    keyboardType = 'default' as const,
+    autoCapitalize = 'none' as const,
+  }: {
+    label: string;
+    placeholder: string;
+    value: string;
+    onChangeText: (text: string) => void;
+    secureTextEntry?: boolean;
+    keyboardType?: 'default' | 'email-address';
+    autoCapitalize?: 'none' | 'words';
+  }) => (
+    <View style={styles.inputContainer}>
+      <Text style={styles.label}>{label}</Text>
+      <View style={styles.inputWrapper}>
+        <LinearGradient
+          colors={[
+            'rgba(255, 255, 255, 0.08)',
+            'rgba(255, 255, 255, 0.02)',
+          ]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={StyleSheet.absoluteFill}
+        />
+        <TextInput
+          style={styles.input}
+          placeholder={placeholder}
+          placeholderTextColor="rgba(156, 163, 175, 0.6)"
+          value={value}
+          onChangeText={onChangeText}
+          keyboardType={keyboardType}
+          autoCapitalize={autoCapitalize}
+          autoCorrect={false}
+          secureTextEntry={secureTextEntry}
+        />
+      </View>
+    </View>
+  );
+
   return (
     <BackgroundScreen centered={false}>
       <KeyboardAvoidingView
@@ -47,50 +93,35 @@ export default function AuthScreen() {
           keyboardShouldPersistTaps="handled"
         >
           <View style={styles.container}>
-            <GlassCard>
-              <Text style={styles.title}>Crée ton compte</Text>
+            <GlassCard glowColor="blue">
+              <Text style={styles.title}>Cree ton compte</Text>
               <Text style={styles.subtitle}>
                 Ou connecte-toi pour reprendre ta progression.
               </Text>
 
-              <View style={styles.inputContainer}>
-                <Text style={styles.label}>Prénom</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="Ton prénom"
-                  placeholderTextColor="#6B7280"
-                  value={firstName}
-                  onChangeText={setFirstNameLocal}
-                  autoCapitalize="words"
-                  autoCorrect={false}
-                />
-              </View>
+              <GlassInput
+                label="Prenom"
+                placeholder="Ton prenom"
+                value={firstName}
+                onChangeText={setFirstNameLocal}
+                autoCapitalize="words"
+              />
 
-              <View style={styles.inputContainer}>
-                <Text style={styles.label}>Adresse e-mail (optionnel)</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="exemple@email.com"
-                  placeholderTextColor="#6B7280"
-                  value={email}
-                  onChangeText={setEmail}
-                  keyboardType="email-address"
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                />
-              </View>
+              <GlassInput
+                label="Adresse e-mail (optionnel)"
+                placeholder="exemple@email.com"
+                value={email}
+                onChangeText={setEmail}
+                keyboardType="email-address"
+              />
 
-              <View style={styles.inputContainer}>
-                <Text style={styles.label}>Mot de passe (optionnel)</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="••••••••"
-                  placeholderTextColor="#6B7280"
-                  value={password}
-                  onChangeText={setPassword}
-                  secureTextEntry
-                />
-              </View>
+              <GlassInput
+                label="Mot de passe (optionnel)"
+                placeholder="••••••••"
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry
+              />
 
               <View style={styles.buttonContainer}>
                 <PrimaryGlassButton
@@ -100,7 +131,7 @@ export default function AuthScreen() {
               </View>
 
               <SecondaryLink
-                title="Continuer sans créer de compte"
+                title="Continuer sans creer de compte"
                 onPress={handleSkip}
               />
             </GlassCard>
@@ -126,42 +157,51 @@ const styles = StyleSheet.create({
   },
   title: {
     color: '#FFFFFF',
-    fontSize: 26,
+    fontSize: 28,
     fontWeight: '700',
     textAlign: 'center',
-    marginBottom: 8,
+    marginBottom: 10,
   },
   subtitle: {
     color: '#9CA3AF',
     fontSize: 15,
     textAlign: 'center',
-    marginBottom: 32,
+    marginBottom: 36,
+    lineHeight: 22,
   },
   inputContainer: {
-    marginBottom: 20,
+    marginBottom: 22,
     width: '100%',
   },
   label: {
     color: '#D1D5DB',
     fontSize: 14,
     fontWeight: '500',
-    marginBottom: 8,
+    marginBottom: 10,
     textAlign: 'left',
   },
+  inputWrapper: {
+    borderRadius: 16,
+    borderWidth: 0.5,
+    borderColor: 'rgba(255, 255, 255, 0.15)',
+    overflow: 'hidden',
+    // Ombre subtile
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 3,
+  },
   input: {
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.12)',
-    paddingHorizontal: 16,
-    paddingVertical: 16,
+    paddingHorizontal: 18,
+    paddingVertical: 18,
     color: '#FFFFFF',
     fontSize: 16,
     width: '100%',
   },
   buttonContainer: {
-    marginTop: 12,
-    marginBottom: 8,
+    marginTop: 16,
+    marginBottom: 12,
     width: '100%',
   },
 });

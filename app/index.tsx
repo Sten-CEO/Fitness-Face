@@ -19,13 +19,13 @@ export default function HomeScreen() {
 
         {/* Contenu central */}
         <View style={styles.centerContent}>
-          <GlassCard style={styles.mainCard}>
+          <GlassCard style={styles.mainCard} glowColor="blue">
             <Text style={styles.title}>
               Transforme ton visage{'\n'}en 5 minutes par jour
             </Text>
 
             <Text style={styles.subtitle}>
-              Programmes guides pour jawline, double menton et visage plus net.
+              Programmes guides pour jawline,{'\n'}double menton et visage plus net.
             </Text>
 
             <View style={styles.buttonContainer}>
@@ -40,6 +40,13 @@ export default function HomeScreen() {
             </Text>
           </GlassCard>
         </View>
+
+        {/* Footer subtle */}
+        <View style={styles.footer}>
+          <Text style={styles.footerText}>
+            Des resultats visibles en 30 jours
+          </Text>
+        </View>
       </View>
     </BackgroundScreen>
   );
@@ -50,26 +57,25 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
-    paddingTop: 16,
-    paddingBottom: 24,
+    paddingTop: 20,
+    paddingBottom: 32,
     alignItems: 'center',
   },
   appName: {
-    color: 'rgba(255, 255, 255, 0.5)',
+    color: 'rgba(255, 255, 255, 0.6)',
     fontSize: 14,
     fontWeight: '600',
-    letterSpacing: 2,
+    letterSpacing: 3,
     textTransform: 'uppercase',
     textAlign: 'center',
   },
   centerContent: {
     flex: 1,
     justifyContent: 'center',
-    paddingBottom: 40,
+    paddingBottom: 20,
   },
   mainCard: {
-    paddingVertical: 36,
-    paddingHorizontal: 28,
+    marginHorizontal: -4,
   },
   title: {
     color: '#FFFFFF',
@@ -80,21 +86,31 @@ const styles = StyleSheet.create({
     lineHeight: 38,
   },
   subtitle: {
-    color: '#9CA3AF',
+    color: '#A0AEC0',
     fontSize: 16,
     textAlign: 'center',
-    marginBottom: 36,
-    lineHeight: 24,
+    marginBottom: 40,
+    lineHeight: 26,
     paddingHorizontal: 8,
   },
   buttonContainer: {
     width: '100%',
-    marginBottom: 28,
+    marginBottom: 32,
   },
   smallText: {
     color: '#6B7280',
     fontSize: 13,
     textAlign: 'center',
     lineHeight: 20,
+  },
+  footer: {
+    paddingBottom: 20,
+    alignItems: 'center',
+  },
+  footerText: {
+    color: 'rgba(255, 255, 255, 0.4)',
+    fontSize: 12,
+    fontWeight: '500',
+    letterSpacing: 0.5,
   },
 });
