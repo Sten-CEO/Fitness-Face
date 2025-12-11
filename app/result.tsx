@@ -1,8 +1,16 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useRef } from 'react';
-import { Animated, ScrollView, StyleSheet, Text, View } from 'react-native';
+import {
+  Animated,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 
 import BackgroundScreen from '../components/BackgroundScreen';
+import FeatureItem from '../components/FeatureItem';
 import GlassCard from '../components/GlassCard';
 import PrimaryButton from '../components/PrimaryButton';
 import SecondaryLink from '../components/SecondaryLink';
@@ -20,7 +28,7 @@ function getPersonalizedMessage(planId: PlanId, firstName: string): string {
   switch (planId) {
     case 'jawline_90':
     case 'jawline_monthly':
-      return `Voici le programme qu'on te recommande${name} pour sculpter ta mâchoire.`;
+      return `Voici le programme qu'on te recommande${name} pour sculpter ta machoire.`;
     case 'double_60':
     case 'double_monthly':
       return `Voici le programme qu'on te recommande${name} pour affiner ton cou.`;
@@ -59,15 +67,21 @@ export default function ResultScreen() {
   }, []);
 
   const handleSelectPlan = (selectedPlan: Plan) => {
-    console.log('Programme sélectionné:', selectedPlan.name);
+    console.log('Programme selectionne:', selectedPlan.name);
     // TODO: Naviguer vers le paiement / onboarding
+  };
+
+  const handleAlternativePress = () => {
+    if (alternativePlan) {
+      handleSelectPlan(alternativePlan);
+    }
   };
 
   if (!plan) {
     return (
       <BackgroundScreen>
         <View style={styles.errorContainer}>
-          <Text style={styles.errorText}>Erreur: Programme non trouvé</Text>
+          <Text style={styles.errorText}>Erreur: Programme non trouve</Text>
         </View>
       </BackgroundScreen>
     );
@@ -86,29 +100,41 @@ export default function ResultScreen() {
             transform: [{ translateY: slideAnim }],
           }}
         >
-          {/* Message personnalisé */}
+          {/* Message personnalise */}
           <Text style={styles.message}>
             {getPersonalizedMessage(selectedPlanId, firstName)}
           </Text>
 
-          {/* Carte principale - Programme recommandé */}
+          {/* Carte principale - Programme recommande */}
           <GlassCard>
+            {/* Badge recommande */}
             <View style={styles.tagContainer}>
-              <Text style={styles.tag}>Programme recommandé pour toi</Text>
+              <Text style={styles.tag}>Programme recommande pour toi</Text>
             </View>
 
+            {/* Titre et sous-titre */}
             <Text style={styles.planName}>{plan.name}</Text>
             <Text style={styles.planDuration}>{plan.durationLabel}</Text>
+
+            {/* Description courte */}
             <Text style={styles.planDescription}>{plan.shortDescription}</Text>
 
-            <View style={styles.badgesContainer}>
-              {plan.badges.map((badge, index) => (
-                <View key={index} style={styles.badge}>
-                  <Text style={styles.badgeText}>{badge}</Text>
-                </View>
+            {/* Features avec checkmarks */}
+            <View style={styles.featuresContainer}>
+              {plan.features.map((feature, index) => (
+                <FeatureItem key={index} text={feature.text} />
               ))}
             </View>
 
+            {/* Prix indicatif */}
+            {plan.priceInfo && (
+              <View style={styles.priceContainer}>
+                <Text style={styles.priceLabel}>Tarif indicatif</Text>
+                <Text style={styles.priceValue}>{plan.priceInfo}</Text>
+              </View>
+            )}
+
+            {/* Bouton CTA */}
             <PrimaryButton
               title="Continuer avec ce programme"
               onPress={() => handleSelectPlan(plan)}
@@ -116,27 +142,18 @@ export default function ResultScreen() {
             />
           </GlassCard>
 
-          {/* Alternative mensuelle */}
+          {/* Alternative mensuelle - discret */}
           {alternativePlan && (
             <View style={styles.alternativeSection}>
               <Text style={styles.alternativeLabel}>
-                Tu préfères payer au mois ?{'\n'}Découvre la version mensuelle de ce programme.
+                Tu preferes payer au mois ?{' '}
+                <Text
+                  style={styles.alternativeLink}
+                  onPress={handleAlternativePress}
+                >
+                  Decouvre la version mensuelle.
+                </Text>
               </Text>
-              <GlassCard compact>
-                <Text style={styles.altPlanName}>{alternativePlan.name}</Text>
-                <Text style={styles.altPlanDuration}>
-                  {alternativePlan.durationLabel}
-                </Text>
-                <Text style={styles.altPlanDescription}>
-                  {alternativePlan.shortDescription}
-                </Text>
-
-                <SecondaryLink
-                  title="Choisir ce programme"
-                  onPress={() => handleSelectPlan(alternativePlan)}
-                  style={styles.altButton}
-                />
-              </GlassCard>
             </View>
           )}
 
@@ -157,24 +174,27 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingTop: 60,
+    paddingTop: 50,
     paddingBottom: 40,
   },
   message: {
     color: '#FFFFFF',
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: '700',
     textAlign: 'center',
-    marginBottom: 28,
-    lineHeight: 32,
+    marginBottom: 24,
+    lineHeight: 30,
+    paddingHorizontal: 8,
   },
   tagContainer: {
     alignSelf: 'center',
     backgroundColor: 'rgba(59, 130, 246, 0.2)',
-    borderRadius: 10,
-    paddingHorizontal: 14,
+    borderRadius: 12,
+    paddingHorizontal: 16,
     paddingVertical: 8,
     marginBottom: 20,
+    borderWidth: 0.5,
+    borderColor: 'rgba(96, 165, 250, 0.3)',
   },
   tag: {
     color: '#60A5FA',
@@ -184,9 +204,9 @@ const styles = StyleSheet.create({
   },
   planName: {
     color: '#FFFFFF',
-    fontSize: 24,
+    fontSize: 26,
     fontWeight: '700',
-    marginBottom: 8,
+    marginBottom: 6,
     textAlign: 'center',
   },
   planDuration: {
@@ -202,23 +222,34 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     textAlign: 'center',
   },
-  badgesContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'center',
-    gap: 8,
-    marginBottom: 24,
+  featuresContainer: {
+    alignSelf: 'stretch',
+    marginBottom: 20,
+    paddingHorizontal: 4,
   },
-  badge: {
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
-    borderRadius: 20,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+  priceContainer: {
+    alignSelf: 'stretch',
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderRadius: 14,
+    paddingVertical: 14,
+    paddingHorizontal: 18,
+    marginBottom: 20,
+    borderWidth: 0.5,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
   },
-  badgeText: {
+  priceLabel: {
     color: '#9CA3AF',
     fontSize: 12,
     fontWeight: '500',
+    textAlign: 'center',
+    marginBottom: 4,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  priceValue: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
     textAlign: 'center',
   },
   mainButton: {
@@ -227,40 +258,20 @@ const styles = StyleSheet.create({
   },
   alternativeSection: {
     marginTop: 28,
-    marginBottom: 20,
+    paddingHorizontal: 20,
   },
   alternativeLabel: {
     color: '#6B7280',
     fontSize: 14,
     textAlign: 'center',
-    marginBottom: 16,
-    lineHeight: 20,
+    lineHeight: 22,
   },
-  altPlanName: {
-    color: '#FFFFFF',
-    fontSize: 18,
-    fontWeight: '600',
-    marginBottom: 6,
-    textAlign: 'center',
-  },
-  altPlanDuration: {
-    color: '#9CA3AF',
-    fontSize: 14,
-    marginBottom: 12,
-    textAlign: 'center',
-  },
-  altPlanDescription: {
-    color: '#D1D5DB',
-    fontSize: 14,
-    lineHeight: 21,
-    marginBottom: 12,
-    textAlign: 'center',
-  },
-  altButton: {
-    alignSelf: 'center',
+  alternativeLink: {
+    color: '#60A5FA',
+    textDecorationLine: 'underline',
   },
   allProgramsLink: {
-    marginTop: 16,
+    marginTop: 20,
   },
   errorContainer: {
     flex: 1,

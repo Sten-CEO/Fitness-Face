@@ -33,14 +33,20 @@ export default function PrimaryButton({
       end={{ x: 1, y: 1 }}
       style={styles.gradient}
     >
-      <Text style={[styles.text, textStyle]}>{title}</Text>
+      <Text style={[styles.text, disabled && styles.textDisabled, textStyle]}>
+        {title}
+      </Text>
     </LinearGradient>
   );
 
   return (
     <View style={[styles.outerWrapper, style]}>
-      {/* Halo bleu */}
-      {!disabled && <View style={styles.halo} />}
+      {/* Halo bleu lumineux - style iOS */}
+      {!disabled && (
+        <View style={styles.haloOuter}>
+          <View style={styles.haloInner} />
+        </View>
+      )}
 
       <TouchableOpacity
         onPress={onPress}
@@ -49,7 +55,7 @@ export default function PrimaryButton({
         style={[styles.wrapper, disabled && styles.disabled]}
       >
         {Platform.OS === 'ios' ? (
-          <BlurView intensity={20} tint="dark" style={styles.blurWrapper}>
+          <BlurView intensity={25} tint="dark" style={styles.blurWrapper}>
             <View style={styles.glassOverlay} />
             {buttonContent}
           </BlurView>
@@ -66,51 +72,60 @@ export default function PrimaryButton({
 const styles = StyleSheet.create({
   outerWrapper: {
     position: 'relative',
+    maxWidth: 340,
+    alignSelf: 'center',
+    width: '100%',
   },
-  halo: {
+  haloOuter: {
     position: 'absolute',
-    top: -6,
-    left: -6,
-    right: -6,
-    bottom: -6,
-    borderRadius: 30,
-    backgroundColor: 'rgba(59, 130, 246, 0.25)',
+    top: -8,
+    left: -8,
+    right: -8,
+    bottom: -8,
+    borderRadius: 32,
+    backgroundColor: 'rgba(59, 130, 246, 0.15)',
+  },
+  haloInner: {
+    flex: 1,
+    borderRadius: 32,
     shadowColor: '#3B82F6',
     shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.5,
-    shadowRadius: 20,
+    shadowOpacity: 0.6,
+    shadowRadius: 24,
     elevation: 0,
   },
   wrapper: {
     borderRadius: 24,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: 'rgba(96, 165, 250, 0.4)',
+    borderColor: 'rgba(96, 165, 250, 0.35)',
   },
   blurWrapper: {
     overflow: 'hidden',
   },
   androidWrapper: {
-    backgroundColor: 'rgba(30, 40, 60, 0.5)',
+    backgroundColor: 'rgba(30, 58, 138, 0.6)',
   },
   glassOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+    backgroundColor: 'rgba(59, 130, 246, 0.08)',
   },
   gradient: {
     paddingVertical: 18,
     paddingHorizontal: 32,
     alignItems: 'center',
     justifyContent: 'center',
+    minHeight: 56,
   },
   text: {
     color: '#FFFFFF',
     fontSize: 17,
-    fontWeight: '700',
-    letterSpacing: 0.4,
-    textShadowColor: 'rgba(0, 0, 0, 0.3)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 2,
+    fontWeight: '600',
+    letterSpacing: 0.3,
+    textAlign: 'center',
+  },
+  textDisabled: {
+    opacity: 0.6,
   },
   disabled: {
     opacity: 0.5,
