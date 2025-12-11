@@ -14,7 +14,8 @@ import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 
 import BackgroundScreen from '../components/BackgroundScreen';
-import PrimaryGlassButton from '../components/PrimaryGlassButton';
+import GlassButton from '../components/GlassButton';
+import GlassCard from '../components/GlassCard';
 import {
   addScores,
   calculateRecommendedPlan,
@@ -106,7 +107,7 @@ export default function QuestionnaireScreen() {
     const optionGlassOverlay = (
       <LinearGradient
         colors={[
-          isSelected ? 'rgba(96, 165, 250, 0.15)' : 'rgba(255, 255, 255, 0.08)',
+          isSelected ? 'rgba(76, 111, 255, 0.12)' : 'rgba(255, 255, 255, 0.06)',
           'transparent',
         ]}
         start={{ x: 0, y: 0 }}
@@ -121,7 +122,9 @@ export default function QuestionnaireScreen() {
           {isSelected && (
             <View style={styles.radioInner}>
               <LinearGradient
-                colors={['#60A5FA', '#3B82F6']}
+                colors={['#4C6FFF', '#9F66FF']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
                 style={styles.radioGradient}
               />
             </View>
@@ -141,7 +144,7 @@ export default function QuestionnaireScreen() {
           activeOpacity={0.8}
           style={[styles.optionWrapper, isSelected && styles.optionWrapperSelected]}
         >
-          <BlurView intensity={45} tint="dark" style={styles.optionBlur}>
+          <BlurView intensity={18} tint="dark" style={styles.optionBlur}>
             <View style={[styles.optionInner, isSelected && styles.optionInnerSelected]}>
               {optionGlassOverlay}
               {content}
@@ -179,7 +182,7 @@ export default function QuestionnaireScreen() {
           </Text>
           <View style={styles.progressBarBg}>
             <LinearGradient
-              colors={['#60A5FA', '#3B82F6']}
+              colors={['#4C6FFF', '#9F66FF']}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
               style={[styles.progressBarFill, { width: `${progress * 100}%` }]}
@@ -187,7 +190,7 @@ export default function QuestionnaireScreen() {
           </View>
         </View>
 
-        {/* Question animee */}
+        {/* Question animee dans une GlassCard */}
         <ScrollView
           style={styles.scrollView}
           contentContainerStyle={styles.scrollContent}
@@ -202,13 +205,15 @@ export default function QuestionnaireScreen() {
               },
             ]}
           >
-            <Text style={styles.questionTitle}>{currentQuestion.title}</Text>
+            <GlassCard contentStyle={styles.questionCardContent}>
+              <Text style={styles.questionTitle}>{currentQuestion.title}</Text>
 
-            <View style={styles.optionsContainer}>
-              {currentQuestion.options.map((option, index) =>
-                renderOptionCard(option, index)
-              )}
-            </View>
+              <View style={styles.optionsContainer}>
+                {currentQuestion.options.map((option, index) =>
+                  renderOptionCard(option, index)
+                )}
+              </View>
+            </GlassCard>
           </Animated.View>
         </ScrollView>
 
@@ -220,8 +225,8 @@ export default function QuestionnaireScreen() {
             </TouchableOpacity>
           )}
           <View style={styles.nextButtonContainer}>
-            <PrimaryGlassButton
-              title={currentIndex === questions.length - 1 ? 'Voir mon resultat' : 'Suivant'}
+            <GlassButton
+              label={currentIndex === questions.length - 1 ? 'Voir mon resultat' : 'Suivant'}
               onPress={handleNext}
               disabled={selectedOption === null}
             />
@@ -239,11 +244,11 @@ const styles = StyleSheet.create({
     paddingBottom: 32,
   },
   header: {
-    marginBottom: 32,
+    marginBottom: 28,
     alignItems: 'center',
   },
   questionCount: {
-    color: '#9CA3AF',
+    color: 'rgba(255, 255, 255, 0.55)',
     fontSize: 14,
     fontWeight: '500',
     textAlign: 'center',
@@ -265,26 +270,31 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flexGrow: 1,
-    paddingVertical: 16,
+    paddingVertical: 8,
     justifyContent: 'center',
   },
   questionContainer: {
-    paddingBottom: 20,
+    paddingBottom: 16,
+  },
+  questionCardContent: {
+    paddingHorizontal: 20,
+    paddingVertical: 28,
   },
   questionTitle: {
     color: '#FFFFFF',
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: '700',
     textAlign: 'center',
-    marginBottom: 40,
-    lineHeight: 34,
-    paddingHorizontal: 8,
+    marginBottom: 28,
+    lineHeight: 32,
+    paddingHorizontal: 4,
   },
   optionsContainer: {
-    gap: 14,
+    gap: 12,
+    width: '100%',
   },
   optionWrapper: {
-    borderRadius: 22,
+    borderRadius: 20,
     overflow: 'hidden',
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.12)',
@@ -296,59 +306,59 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   optionWrapperSelected: {
-    borderColor: 'rgba(96, 165, 250, 0.5)',
-    borderWidth: 1.5,
-    shadowColor: '#3B82F6',
-    shadowOpacity: 0.3,
+    borderColor: 'rgba(76, 111, 255, 0.5)',
+    borderWidth: 1,
+    shadowColor: '#4C6FFF',
+    shadowOpacity: 0.25,
   },
   optionBlur: {
     overflow: 'hidden',
   },
   optionInner: {
-    backgroundColor: 'rgba(25, 25, 35, 0.5)',
-    paddingVertical: 20,
-    paddingHorizontal: 20,
-    minHeight: 68,
+    backgroundColor: 'rgba(7, 7, 10, 0.55)',
+    paddingVertical: 18,
+    paddingHorizontal: 18,
+    minHeight: 64,
     justifyContent: 'center',
     overflow: 'hidden',
   },
   optionInnerSelected: {
-    backgroundColor: 'rgba(59, 130, 246, 0.12)',
+    backgroundColor: 'rgba(76, 111, 255, 0.12)',
   },
   optionAndroid: {
-    backgroundColor: 'rgba(25, 25, 35, 0.8)',
-    paddingVertical: 20,
-    paddingHorizontal: 20,
-    minHeight: 68,
+    backgroundColor: 'rgba(7, 7, 10, 0.75)',
+    paddingVertical: 18,
+    paddingHorizontal: 18,
+    minHeight: 64,
     justifyContent: 'center',
     overflow: 'hidden',
   },
   optionAndroidSelected: {
-    backgroundColor: 'rgba(59, 130, 246, 0.18)',
+    backgroundColor: 'rgba(76, 111, 255, 0.15)',
   },
   optionContent: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   radioOuter: {
-    width: 26,
-    height: 26,
-    borderRadius: 13,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
     borderWidth: 2,
-    borderColor: 'rgba(255, 255, 255, 0.25)',
-    marginRight: 16,
+    borderColor: 'rgba(255, 255, 255, 0.22)',
+    marginRight: 14,
     justifyContent: 'center',
     alignItems: 'center',
     flexShrink: 0,
   },
   radioOuterSelected: {
-    borderColor: '#60A5FA',
+    borderColor: '#4C6FFF',
     borderWidth: 2,
   },
   radioInner: {
-    width: 14,
-    height: 14,
-    borderRadius: 7,
+    width: 12,
+    height: 12,
+    borderRadius: 6,
     overflow: 'hidden',
   },
   radioGradient: {
@@ -356,9 +366,9 @@ const styles = StyleSheet.create({
   },
   optionText: {
     flex: 1,
-    color: '#D1D5DB',
-    fontSize: 16,
-    lineHeight: 24,
+    color: 'rgba(255, 255, 255, 0.72)',
+    fontSize: 15,
+    lineHeight: 22,
     textAlign: 'left',
   },
   optionTextSelected: {
@@ -369,15 +379,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 24,
-    paddingTop: 16,
+    marginTop: 20,
+    paddingTop: 12,
   },
   backButton: {
     paddingVertical: 16,
     paddingHorizontal: 20,
   },
   backButtonText: {
-    color: '#9CA3AF',
+    color: 'rgba(255, 255, 255, 0.55)',
     fontSize: 16,
     fontWeight: '500',
     textAlign: 'center',
