@@ -94,9 +94,22 @@ export default function ResultScreen() {
     );
   }
 
-  // Composant pour le bloc prix avec effet glass
+  // Composant pour le bloc prix avec effet glass premium
   const PriceBlock = () => {
     if (!plan.priceInfo) return null;
+
+    const glassOverlay = (
+      <LinearGradient
+        colors={[
+          'rgba(255, 255, 255, 0.1)',
+          'rgba(255, 255, 255, 0.03)',
+          'transparent',
+        ]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={StyleSheet.absoluteFill}
+      />
+    );
 
     const content = (
       <View style={styles.priceContent}>
@@ -108,13 +121,11 @@ export default function ResultScreen() {
     if (Platform.OS === 'ios') {
       return (
         <View style={styles.priceWrapper}>
-          <BlurView intensity={30} tint="dark" style={styles.priceBlur}>
-            <LinearGradient
-              colors={['rgba(255, 255, 255, 0.08)', 'rgba(255, 255, 255, 0.02)']}
-              style={styles.priceGradient}
-            >
+          <BlurView intensity={35} tint="dark" style={styles.priceBlur}>
+            <View style={styles.priceInner}>
+              {glassOverlay}
               {content}
-            </LinearGradient>
+            </View>
           </BlurView>
         </View>
       );
@@ -122,6 +133,7 @@ export default function ResultScreen() {
 
     return (
       <View style={[styles.priceWrapper, styles.priceAndroid]}>
+        {glassOverlay}
         {content}
       </View>
     );
@@ -146,10 +158,17 @@ export default function ResultScreen() {
           </Text>
 
           {/* Carte principale - Programme recommande */}
-          <GlassCard opaque>
-            {/* Badge recommande */}
+          <GlassCard opaque glowColor="blue">
+            {/* Badge recommande avec effet glass */}
             <View style={styles.tagContainer}>
-              <Text style={styles.tag}>Programme recommande pour toi</Text>
+              <LinearGradient
+                colors={['rgba(96, 165, 250, 0.3)', 'rgba(59, 130, 246, 0.2)']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.tagGradient}
+              >
+                <Text style={styles.tag}>Programme recommande pour toi</Text>
+              </LinearGradient>
             </View>
 
             {/* Titre et sous-titre */}
@@ -159,7 +178,7 @@ export default function ResultScreen() {
             {/* Description courte */}
             <Text style={styles.planDescription}>{plan.shortDescription}</Text>
 
-            {/* Features avec checkmarks */}
+            {/* Features avec checkmarks glass */}
             <View style={styles.featuresContainer}>
               {plan.features.map((feature, index) => (
                 <FeatureItem key={index} text={feature.text} />
@@ -217,29 +236,38 @@ const styles = StyleSheet.create({
     fontSize: 22,
     fontWeight: '700',
     textAlign: 'center',
-    marginBottom: 24,
-    lineHeight: 30,
+    marginBottom: 28,
+    lineHeight: 32,
     paddingHorizontal: 8,
   },
   tagContainer: {
     alignSelf: 'center',
-    backgroundColor: 'rgba(59, 130, 246, 0.2)',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    marginBottom: 20,
+    borderRadius: 14,
+    overflow: 'hidden',
+    marginBottom: 22,
+    // Ombre subtile
+    shadowColor: '#3B82F6',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  tagGradient: {
+    paddingHorizontal: 18,
+    paddingVertical: 10,
+    borderRadius: 14,
     borderWidth: 0.5,
-    borderColor: 'rgba(96, 165, 250, 0.3)',
+    borderColor: 'rgba(96, 165, 250, 0.4)',
   },
   tag: {
-    color: '#60A5FA',
+    color: '#93C5FD',
     fontSize: 13,
     fontWeight: '600',
     textAlign: 'center',
   },
   planName: {
     color: '#FFFFFF',
-    fontSize: 26,
+    fontSize: 28,
     fontWeight: '700',
     marginBottom: 6,
     textAlign: 'center',
@@ -247,39 +275,48 @@ const styles = StyleSheet.create({
   planDuration: {
     color: '#9CA3AF',
     fontSize: 15,
-    marginBottom: 16,
+    marginBottom: 18,
     textAlign: 'center',
   },
   planDescription: {
     color: '#D1D5DB',
     fontSize: 15,
-    lineHeight: 23,
-    marginBottom: 24,
+    lineHeight: 24,
+    marginBottom: 28,
     textAlign: 'center',
+    paddingHorizontal: 8,
   },
   featuresContainer: {
     alignSelf: 'stretch',
-    marginBottom: 24,
+    marginBottom: 28,
     paddingHorizontal: 4,
   },
   priceWrapper: {
     alignSelf: 'stretch',
-    borderRadius: 16,
+    borderRadius: 18,
     overflow: 'hidden',
-    marginBottom: 24,
+    marginBottom: 28,
     borderWidth: 0.5,
-    borderColor: 'rgba(255, 255, 255, 0.12)',
+    borderColor: 'rgba(255, 255, 255, 0.15)',
+    // Ombre subtile
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 3,
   },
   priceBlur: {
     overflow: 'hidden',
   },
-  priceGradient: {
-    paddingVertical: 16,
+  priceInner: {
+    backgroundColor: 'rgba(30, 30, 40, 0.5)',
+    paddingVertical: 18,
     paddingHorizontal: 20,
+    overflow: 'hidden',
   },
   priceAndroid: {
-    backgroundColor: 'rgba(40, 40, 50, 0.6)',
-    paddingVertical: 16,
+    backgroundColor: 'rgba(30, 30, 40, 0.7)',
+    paddingVertical: 18,
     paddingHorizontal: 20,
   },
   priceContent: {
@@ -290,13 +327,13 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '500',
     textAlign: 'center',
-    marginBottom: 6,
+    marginBottom: 8,
     textTransform: 'uppercase',
-    letterSpacing: 0.5,
+    letterSpacing: 0.8,
   },
   priceValue: {
     color: '#FFFFFF',
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: '700',
     textAlign: 'center',
   },
@@ -304,7 +341,7 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   alternativeSection: {
-    marginTop: 28,
+    marginTop: 32,
     paddingHorizontal: 20,
     flexDirection: 'row',
     flexWrap: 'wrap',
