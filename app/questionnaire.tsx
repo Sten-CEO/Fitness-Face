@@ -120,7 +120,7 @@ export default function QuestionnaireScreen() {
             },
           ]}
         >
-          <GlassCard style={styles.card}>
+          <GlassCard>
             <Text style={styles.questionTitle}>{currentQuestion.title}</Text>
 
             <View style={styles.optionsContainer}>
@@ -134,7 +134,12 @@ export default function QuestionnaireScreen() {
                   onPress={() => setSelectedOption(index)}
                   activeOpacity={0.8}
                 >
-                  <View style={styles.radioOuter}>
+                  <View
+                    style={[
+                      styles.radioOuter,
+                      selectedOption === index && styles.radioOuterSelected,
+                    ]}
+                  >
                     {selectedOption === index && <View style={styles.radioInner} />}
                   </View>
                   <Text
@@ -179,6 +184,7 @@ const styles = StyleSheet.create({
   },
   header: {
     marginBottom: 32,
+    alignItems: 'center',
   },
   questionCount: {
     color: '#9CA3AF',
@@ -192,6 +198,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 255, 255, 0.1)',
     borderRadius: 2,
     overflow: 'hidden',
+    width: '100%',
   },
   progressBarFill: {
     height: '100%',
@@ -201,9 +208,7 @@ const styles = StyleSheet.create({
   questionContainer: {
     flex: 1,
     justifyContent: 'center',
-  },
-  card: {
-    width: '100%',
+    alignItems: 'center',
   },
   questionTitle: {
     color: '#FFFFFF',
@@ -215,15 +220,16 @@ const styles = StyleSheet.create({
   },
   optionsContainer: {
     gap: 12,
+    width: '100%',
   },
   optionButton: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: 'rgba(255, 255, 255, 0.05)',
-    borderRadius: 14,
+    borderRadius: 16,
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.1)',
-    paddingVertical: 16,
+    paddingVertical: 18,
     paddingHorizontal: 16,
   },
   optionSelected: {
@@ -231,14 +237,17 @@ const styles = StyleSheet.create({
     borderColor: '#3B82F6',
   },
   radioOuter: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
     borderWidth: 2,
     borderColor: 'rgba(255, 255, 255, 0.3)',
     marginRight: 14,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  radioOuterSelected: {
+    borderColor: '#3B82F6',
   },
   radioInner: {
     width: 12,
@@ -251,6 +260,7 @@ const styles = StyleSheet.create({
     color: '#D1D5DB',
     fontSize: 15,
     lineHeight: 22,
+    textAlign: 'left',
   },
   optionTextSelected: {
     color: '#FFFFFF',
@@ -259,6 +269,7 @@ const styles = StyleSheet.create({
   footer: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     marginTop: 24,
   },
   backButton: {
@@ -269,6 +280,7 @@ const styles = StyleSheet.create({
     color: '#9CA3AF',
     fontSize: 16,
     fontWeight: '500',
+    textAlign: 'center',
   },
   nextButtonContainer: {
     flex: 1,

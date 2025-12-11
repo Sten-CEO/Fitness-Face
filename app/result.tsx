@@ -6,6 +6,7 @@ import BackgroundScreen from '../components/BackgroundScreen';
 import GlassCard from '../components/GlassCard';
 import PrimaryButton from '../components/PrimaryButton';
 import SecondaryLink from '../components/SecondaryLink';
+import { useUser } from '../contexts/UserContext';
 import {
   getAlternativePlan,
   getPlanById,
@@ -13,26 +14,29 @@ import {
   PlanId,
 } from '../data/plans';
 
-function getPersonalizedMessage(planId: PlanId): string {
+function getPersonalizedMessage(planId: PlanId, firstName: string): string {
+  const name = firstName ? `, ${firstName}` : '';
+
   switch (planId) {
     case 'jawline_90':
     case 'jawline_monthly':
-      return 'On a trouvé le meilleur programme pour sculpter ta mâchoire.';
+      return `Voici le programme qu'on te recommande${name} pour sculpter ta mâchoire.`;
     case 'double_60':
     case 'double_monthly':
-      return 'On a trouvé le meilleur programme pour affiner ton cou.';
-    case 'all_in_one_monthly':
-      return 'On a trouvé le programme complet pour transformer tout ton visage.';
+      return `Voici le programme qu'on te recommande${name} pour affiner ton cou.`;
+    case 'all_in_one':
+      return `Voici le programme qu'on te recommande${name} pour transformer tout ton visage.`;
     default:
-      return 'Voici le programme parfait pour toi.';
+      return `Voici le programme parfait pour toi${name}.`;
   }
 }
 
 export default function ResultScreen() {
   const router = useRouter();
+  const { firstName } = useUser();
   const { planId } = useLocalSearchParams<{ planId: PlanId }>();
 
-  const selectedPlanId = planId || 'all_in_one_monthly';
+  const selectedPlanId = planId || 'all_in_one';
   const plan = getPlanById(selectedPlanId);
   const alternativePlan = getAlternativePlan(selectedPlanId);
 
@@ -62,7 +66,9 @@ export default function ResultScreen() {
   if (!plan) {
     return (
       <BackgroundScreen>
-        <Text style={styles.errorText}>Erreur: Programme non trouvé</Text>
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>Erreur: Programme non trouvé</Text>
+        </View>
       </BackgroundScreen>
     );
   }
@@ -81,10 +87,12 @@ export default function ResultScreen() {
           }}
         >
           {/* Message personnalisé */}
-          <Text style={styles.message}>{getPersonalizedMessage(selectedPlanId)}</Text>
+          <Text style={styles.message}>
+            {getPersonalizedMessage(selectedPlanId, firstName)}
+          </Text>
 
           {/* Carte principale - Programme recommandé */}
-          <GlassCard style={styles.mainCard}>
+          <GlassCard>
             <View style={styles.tagContainer}>
               <Text style={styles.tag}>Programme recommandé pour toi</Text>
             </View>
@@ -112,9 +120,9 @@ export default function ResultScreen() {
           {alternativePlan && (
             <View style={styles.alternativeSection}>
               <Text style={styles.alternativeLabel}>
-                Ou paie au mois, sans engagement
+                Tu préfères payer au mois ?{'\n'}Découvre la version mensuelle de ce programme.
               </Text>
-              <GlassCard style={styles.alternativeCard}>
+              <GlassCard compact>
                 <Text style={styles.altPlanName}>{alternativePlan.name}</Text>
                 <Text style={styles.altPlanDuration}>
                   {alternativePlan.durationLabel}
@@ -160,42 +168,44 @@ const styles = StyleSheet.create({
     marginBottom: 28,
     lineHeight: 32,
   },
-  mainCard: {
-    marginBottom: 24,
-  },
   tagContainer: {
-    alignSelf: 'flex-start',
+    alignSelf: 'center',
     backgroundColor: 'rgba(59, 130, 246, 0.2)',
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    marginBottom: 16,
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    marginBottom: 20,
   },
   tag: {
     color: '#60A5FA',
     fontSize: 13,
     fontWeight: '600',
+    textAlign: 'center',
   },
   planName: {
     color: '#FFFFFF',
     fontSize: 24,
     fontWeight: '700',
     marginBottom: 8,
+    textAlign: 'center',
   },
   planDuration: {
     color: '#9CA3AF',
     fontSize: 15,
     marginBottom: 16,
+    textAlign: 'center',
   },
   planDescription: {
     color: '#D1D5DB',
     fontSize: 15,
     lineHeight: 23,
     marginBottom: 20,
+    textAlign: 'center',
   },
   badgesContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
+    justifyContent: 'center',
     gap: 8,
     marginBottom: 24,
   },
@@ -209,45 +219,53 @@ const styles = StyleSheet.create({
     color: '#9CA3AF',
     fontSize: 12,
     fontWeight: '500',
+    textAlign: 'center',
   },
   mainButton: {
     marginTop: 4,
+    width: '100%',
   },
   alternativeSection: {
+    marginTop: 28,
     marginBottom: 20,
   },
   alternativeLabel: {
     color: '#6B7280',
     fontSize: 14,
     textAlign: 'center',
-    marginBottom: 12,
-  },
-  alternativeCard: {
-    opacity: 0.85,
+    marginBottom: 16,
+    lineHeight: 20,
   },
   altPlanName: {
     color: '#FFFFFF',
     fontSize: 18,
     fontWeight: '600',
     marginBottom: 6,
+    textAlign: 'center',
   },
   altPlanDuration: {
     color: '#9CA3AF',
     fontSize: 14,
     marginBottom: 12,
+    textAlign: 'center',
   },
   altPlanDescription: {
     color: '#D1D5DB',
     fontSize: 14,
     lineHeight: 21,
-    marginBottom: 8,
+    marginBottom: 12,
+    textAlign: 'center',
   },
   altButton: {
-    alignSelf: 'flex-start',
-    paddingHorizontal: 0,
+    alignSelf: 'center',
   },
   allProgramsLink: {
-    marginTop: 12,
+    marginTop: 16,
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   errorText: {
     color: '#EF4444',

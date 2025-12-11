@@ -1,4 +1,4 @@
-export type ScoreKey = 'jawline' | 'doubleChin' | 'fullFace' | 'fast' | 'durable';
+export type ScoreKey = 'jawline' | 'doubleChin' | 'fullFace';
 
 export type ScoreBuckets = Record<ScoreKey, number>;
 
@@ -20,15 +20,15 @@ export const questions: Question[] = [
     options: [
       {
         text: 'Ma jawline / mâchoire pas assez dessinée',
-        scores: { jawline: 2 },
+        scores: { jawline: 3 },
       },
       {
         text: 'Mon double menton / cou',
-        scores: { doubleChin: 2 },
+        scores: { doubleChin: 3 },
       },
       {
         text: 'Mon visage de manière générale (gonflements, manque de structure)',
-        scores: { fullFace: 2 },
+        scores: { fullFace: 3 },
       },
     ],
   },
@@ -37,12 +37,12 @@ export const questions: Question[] = [
     title: 'Quel type de résultat tu recherches ?',
     options: [
       {
-        text: 'Un changement visible rapidement',
-        scores: { fast: 2 },
+        text: 'Un changement visible rapidement sur une zone précise',
+        scores: { jawline: 1, doubleChin: 1 },
       },
       {
-        text: "Un résultat plus durable même si c'est un peu plus long",
-        scores: { durable: 2 },
+        text: 'Une transformation globale de mon visage',
+        scores: { fullFace: 2 },
       },
     ],
   },
@@ -52,15 +52,15 @@ export const questions: Question[] = [
     options: [
       {
         text: '5 minutes ou moins',
-        scores: { fast: 1 },
+        scores: {},
       },
       {
         text: '5–10 minutes',
-        scores: { durable: 1 },
+        scores: {},
       },
       {
         text: 'Plus de 10 minutes',
-        scores: { durable: 2, fullFace: 1 },
+        scores: { fullFace: 1 },
       },
     ],
   },
@@ -103,8 +103,6 @@ export function createInitialScores(): ScoreBuckets {
     jawline: 0,
     doubleChin: 0,
     fullFace: 0,
-    fast: 0,
-    durable: 0,
   };
 }
 
@@ -116,8 +114,6 @@ export function addScores(
     jawline: current.jawline + (toAdd.jawline ?? 0),
     doubleChin: current.doubleChin + (toAdd.doubleChin ?? 0),
     fullFace: current.fullFace + (toAdd.fullFace ?? 0),
-    fast: current.fast + (toAdd.fast ?? 0),
-    durable: current.durable + (toAdd.durable ?? 0),
   };
 }
 
@@ -126,22 +122,22 @@ export type PlanId =
   | 'jawline_monthly'
   | 'double_60'
   | 'double_monthly'
-  | 'all_in_one_monthly';
+  | 'all_in_one';
 
 export function calculateRecommendedPlan(scores: ScoreBuckets): PlanId {
-  const { jawline, doubleChin, fullFace, fast, durable } = scores;
+  const { jawline, doubleChin, fullFace } = scores;
 
-  // Si fullFace est clairement dominant
+  // Si fullFace est clairement dominant ou égal aux autres
   if (fullFace >= jawline && fullFace >= doubleChin && fullFace >= 3) {
-    return 'all_in_one_monthly';
+    return 'all_in_one';
   }
 
   // Sinon, on compare jawline vs doubleChin
+  // On recommande TOUJOURS les programmes principaux (90 jours ou 60 jours)
+  // jamais les versions mensuelles
   if (jawline >= doubleChin) {
-    // Pack jawline
-    return durable >= fast ? 'jawline_90' : 'jawline_monthly';
+    return 'jawline_90';
   } else {
-    // Pack double menton
-    return durable >= fast ? 'double_60' : 'double_monthly';
+    return 'double_60';
   }
 }
