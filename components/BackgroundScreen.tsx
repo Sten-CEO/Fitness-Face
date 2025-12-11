@@ -9,7 +9,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 // Image de fond importee depuis assets
-const backgroundImage = require('@/assets/images/background.jpeg');
+const backgroundImage = require('../assets/images/background.jpeg');
 
 interface BackgroundScreenProps {
   children: React.ReactNode;
