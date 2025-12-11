@@ -1,10 +1,13 @@
 import React from 'react';
 import {
+  Platform,
   StyleSheet,
   Text,
   View,
   TouchableOpacity,
 } from 'react-native';
+
+const fontFamily = Platform.select({ ios: 'System', android: 'Roboto', default: 'System' });
 
 interface Tab {
   key: string;
@@ -71,6 +74,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#3B82F6',
   },
   tabText: {
+    fontFamily,
     color: 'rgba(255, 255, 255, 0.6)',
     fontSize: 15,
     fontWeight: '500',
@@ -89,6 +93,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
   },
   badgeText: {
+    fontFamily,
     color: '#FFFFFF',
     fontSize: 11,
     fontWeight: '600',

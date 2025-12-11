@@ -2,6 +2,8 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useRef, useState } from 'react';
 import {
   Animated,
+  Dimensions,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -21,20 +23,28 @@ import {
   PlanId,
 } from '../data/plans';
 
+const { width } = Dimensions.get('window');
+const fontFamily = Platform.select({ ios: 'System', android: 'Roboto', default: 'System' });
+
 export default function ResultScreen() {
   const router = useRouter();
   const { firstName } = useUser();
   const { planId } = useLocalSearchParams<{ planId: PlanId }>();
 
   const selectedPlanId = planId || 'jawline_90';
-  const plan = getPlanById(selectedPlanId);
+  const mainPlan = getPlanById(selectedPlanId);
   const alternativePlan = getAlternativePlan(selectedPlanId);
 
-  // Tab state: '90_days' ou 'monthly'
+  // Determiner quel plan est le principal (90/60 jours) et lequel est mensuel
   const isMonthlyPlan = selectedPlanId.includes('monthly');
-  const [activeTab, setActiveTab] = useState(isMonthlyPlan ? 'monthly' : '90_days');
+  const planMain = isMonthlyPlan ? alternativePlan : mainPlan;
+  const planMonthly = isMonthlyPlan ? mainPlan : alternativePlan;
+
+  const [activeTab, setActiveTab] = useState(isMonthlyPlan ? 'monthly' : 'main');
+  const [currentPlan, setCurrentPlan] = useState(mainPlan);
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     Animated.timing(fadeAnim, {
@@ -44,30 +54,43 @@ export default function ResultScreen() {
     }).start();
   }, []);
 
-  // Changer de plan selon l'onglet
+  // Animation de glissement pour changer de programme
   const handleTabChange = (key: string) => {
-    setActiveTab(key);
-    if (key === 'monthly' && alternativePlan) {
-      router.replace({
-        pathname: '/result',
-        params: { planId: alternativePlan.id },
-      });
-    } else if (key === '90_days' && plan?.alternativeId) {
-      // Revenir au plan principal
-      const mainPlanId = selectedPlanId.replace('_monthly', '_90');
-      router.replace({
-        pathname: '/result',
-        params: { planId: mainPlanId },
-      });
+    if (key === activeTab) return;
+
+    const slideDirection = key === 'monthly' ? -1 : 1;
+    const newPlan = key === 'monthly' ? planMonthly : planMain;
+
+    // Animation de sortie
+    Animated.timing(slideAnim, {
+      toValue: slideDirection * width * 0.3,
+      duration: 200,
+      useNativeDriver: true,
+    }).start(() => {
+      // Changer le plan
+      setActiveTab(key);
+      setCurrentPlan(newPlan);
+
+      // Repositionner de l'autre cote
+      slideAnim.setValue(-slideDirection * width * 0.3);
+
+      // Animation d'entree
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }).start();
+    });
+  };
+
+  const handleSelectPlan = (selectedPlan: Plan | undefined) => {
+    if (selectedPlan) {
+      console.log('Programme selectionne:', selectedPlan.name);
+      // TODO: Naviguer vers le paiement
     }
   };
 
-  const handleSelectPlan = (selectedPlan: Plan) => {
-    console.log('Programme selectionne:', selectedPlan.name);
-    // TODO: Naviguer vers le paiement
-  };
-
-  if (!plan) {
+  if (!mainPlan) {
     return (
       <BackgroundScreen>
         <View style={styles.errorContainer}>
@@ -77,8 +100,10 @@ export default function ResultScreen() {
     );
   }
 
+  // Determiner le label selon le type de programme
+  const is60DayProgram = selectedPlanId.includes('double');
   const tabs = [
-    { key: '90_days', label: '90 jours', badge: 'Conseille' },
+    { key: 'main', label: is60DayProgram ? '60 jours' : '90 jours', badge: 'Conseille' },
     { key: 'monthly', label: 'Mensuel' },
   ];
 
@@ -101,7 +126,7 @@ export default function ResultScreen() {
             </Text>
           </View>
 
-          {/* Tab slider Premium/Monthly */}
+          {/* Tab slider */}
           {alternativePlan && (
             <TabSlider
               tabs={tabs}
@@ -110,49 +135,57 @@ export default function ResultScreen() {
             />
           )}
 
-          {/* Carte programme */}
-          <CleanCard style={styles.programCard}>
-            {/* Badge */}
-            <View style={styles.badge}>
-              <Text style={styles.badgeText}>Recommande</Text>
-            </View>
-
-            {/* Nom du programme */}
-            <Text style={styles.planName}>{plan.name}</Text>
-            <Text style={styles.planDuration}>{plan.durationLabel}</Text>
-
-            {/* Separator */}
-            <View style={styles.separator} />
-
-            {/* Features list */}
-            <View style={styles.featuresList}>
-              {plan.features.slice(0, 4).map((feature, index) => (
-                <View key={index} style={styles.featureItem}>
-                  <View style={styles.featureIcon}>
-                    <Text style={styles.featureCheck}>✓</Text>
-                  </View>
-                  <Text style={styles.featureText}>{feature.text}</Text>
-                </View>
-              ))}
-            </View>
-
-            {/* Separator */}
-            <View style={styles.separator} />
-
-            {/* Prix */}
-            {plan.priceInfo && (
-              <View style={styles.priceSection}>
-                <Text style={styles.priceLabel}>Tarif</Text>
-                <Text style={styles.priceValue}>{plan.priceInfo}</Text>
+          {/* Carte programme avec animation de glissement */}
+          <Animated.View
+            style={{
+              transform: [{ translateX: slideAnim }],
+            }}
+          >
+            <CleanCard style={styles.programCard}>
+              {/* Badge */}
+              <View style={styles.badge}>
+                <Text style={styles.badgeText}>
+                  {activeTab === 'main' ? 'Recommande' : 'Flexible'}
+                </Text>
               </View>
-            )}
-          </CleanCard>
+
+              {/* Nom du programme */}
+              <Text style={styles.planName}>{currentPlan?.name}</Text>
+              <Text style={styles.planDuration}>{currentPlan?.durationLabel}</Text>
+
+              {/* Separator */}
+              <View style={styles.separator} />
+
+              {/* Features list */}
+              <View style={styles.featuresList}>
+                {currentPlan?.features.slice(0, 4).map((feature, index) => (
+                  <View key={index} style={styles.featureItem}>
+                    <View style={styles.featureIcon}>
+                      <Text style={styles.featureCheck}>✓</Text>
+                    </View>
+                    <Text style={styles.featureText}>{feature.text}</Text>
+                  </View>
+                ))}
+              </View>
+
+              {/* Separator */}
+              <View style={styles.separator} />
+
+              {/* Prix */}
+              {currentPlan?.priceInfo && (
+                <View style={styles.priceSection}>
+                  <Text style={styles.priceLabel}>Tarif</Text>
+                  <Text style={styles.priceValue}>{currentPlan.priceInfo}</Text>
+                </View>
+              )}
+            </CleanCard>
+          </Animated.View>
 
           {/* Bouton CTA */}
           <View style={styles.ctaContainer}>
             <PrimaryButton
               title="Continuer"
-              onPress={() => handleSelectPlan(plan)}
+              onPress={() => handleSelectPlan(currentPlan)}
             />
           </View>
 
@@ -184,6 +217,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   title: {
+    fontFamily,
     color: '#FFFFFF',
     fontSize: 32,
     fontWeight: '700',
@@ -196,6 +230,7 @@ const styles = StyleSheet.create({
     color: '#3B82F6',
   },
   subtitle: {
+    fontFamily,
     color: 'rgba(255, 255, 255, 0.6)',
     fontSize: 16,
     textAlign: 'center',
@@ -212,17 +247,20 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   badgeText: {
+    fontFamily,
     color: '#FFFFFF',
     fontSize: 12,
     fontWeight: '600',
   },
   planName: {
+    fontFamily,
     color: '#FFFFFF',
     fontSize: 24,
     fontWeight: '700',
     marginBottom: 4,
   },
   planDuration: {
+    fontFamily,
     color: 'rgba(255, 255, 255, 0.5)',
     fontSize: 14,
     marginBottom: 16,
@@ -254,6 +292,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   featureText: {
+    fontFamily,
     flex: 1,
     color: 'rgba(255, 255, 255, 0.8)',
     fontSize: 15,
@@ -265,10 +304,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   priceLabel: {
+    fontFamily,
     color: 'rgba(255, 255, 255, 0.5)',
     fontSize: 14,
   },
   priceValue: {
+    fontFamily,
     color: '#FFFFFF',
     fontSize: 18,
     fontWeight: '600',
@@ -281,6 +322,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   secondaryLinkText: {
+    fontFamily,
     color: 'rgba(255, 255, 255, 0.5)',
     fontSize: 15,
     fontWeight: '500',
@@ -291,6 +333,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   errorText: {
+    fontFamily,
     color: '#EF4444',
     fontSize: 16,
     textAlign: 'center',

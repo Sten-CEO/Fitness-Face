@@ -1,9 +1,11 @@
 import { useRouter } from 'expo-router';
 import React, { useEffect, useRef } from 'react';
-import { Animated, StyleSheet, View } from 'react-native';
+import { Animated, Platform, StyleSheet, View } from 'react-native';
 
 import BackgroundScreen from '../components/BackgroundScreen';
 import { useUser } from '../contexts/UserContext';
+
+const fontFamily = Platform.select({ ios: 'System', android: 'Roboto', default: 'System' });
 
 export default function WelcomeScreen() {
   const router = useRouter();
@@ -91,6 +93,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   char: {
+    fontFamily,
     color: '#FFFFFF',
     fontSize: 32,
     fontWeight: '700',

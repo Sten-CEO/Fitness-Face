@@ -1,6 +1,7 @@
 import React, { useRef } from 'react';
 import {
   Animated,
+  Platform,
   TouchableWithoutFeedback,
   Text,
   StyleSheet,
@@ -8,6 +9,8 @@ import {
   TextStyle,
   View,
 } from 'react-native';
+
+const fontFamily = Platform.select({ ios: 'System', android: 'Roboto', default: 'System' });
 
 interface PrimaryButtonProps {
   title: string;
@@ -88,6 +91,7 @@ const styles = StyleSheet.create({
     borderRadius: 14,
   },
   text: {
+    fontFamily,
     color: '#FFFFFF',
     fontSize: 17,
     fontWeight: '600',

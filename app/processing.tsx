@@ -1,9 +1,11 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useRef } from 'react';
-import { Animated, Easing, StyleSheet, Text, View } from 'react-native';
+import { Animated, Easing, Platform, StyleSheet, Text, View } from 'react-native';
 
 import BackgroundScreen from '../components/BackgroundScreen';
 import type { PlanId } from '../data/plans';
+
+const fontFamily = Platform.select({ ios: 'System', android: 'Roboto', default: 'System' });
 
 export default function ProcessingScreen() {
   const router = useRouter();
@@ -115,6 +117,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
   },
   title: {
+    fontFamily,
     color: '#FFFFFF',
     fontSize: 24,
     fontWeight: '700',
@@ -123,6 +126,7 @@ const styles = StyleSheet.create({
     lineHeight: 32,
   },
   subtitle: {
+    fontFamily,
     color: 'rgba(255, 255, 255, 0.6)',
     fontSize: 15,
     textAlign: 'center',

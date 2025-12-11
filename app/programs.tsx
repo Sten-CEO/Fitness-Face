@@ -2,6 +2,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useRef } from 'react';
 import {
   Animated,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -13,6 +14,8 @@ import BackgroundScreen from '../components/BackgroundScreen';
 import CleanCard from '../components/CleanCard';
 import PrimaryButton from '../components/PrimaryButton';
 import { Plan, plans } from '../data/plans';
+
+const fontFamily = Platform.select({ ios: 'System', android: 'Roboto', default: 'System' });
 
 export default function ProgramsScreen() {
   const router = useRouter();
@@ -160,11 +163,13 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   backButtonText: {
+    fontFamily,
     color: 'rgba(255, 255, 255, 0.5)',
     fontSize: 16,
     fontWeight: '500',
   },
   title: {
+    fontFamily,
     color: '#FFFFFF',
     fontSize: 32,
     fontWeight: '700',
@@ -176,6 +181,7 @@ const styles = StyleSheet.create({
     color: '#3B82F6',
   },
   subtitle: {
+    fontFamily,
     color: 'rgba(255, 255, 255, 0.6)',
     fontSize: 16,
   },
@@ -197,22 +203,26 @@ const styles = StyleSheet.create({
     backgroundColor: '#3B82F6',
   },
   badgeText: {
+    fontFamily,
     color: '#FFFFFF',
     fontSize: 12,
     fontWeight: '600',
   },
   planName: {
+    fontFamily,
     color: '#FFFFFF',
     fontSize: 22,
     fontWeight: '700',
     marginBottom: 4,
   },
   planDuration: {
+    fontFamily,
     color: 'rgba(255, 255, 255, 0.5)',
     fontSize: 14,
     marginBottom: 12,
   },
   planDescription: {
+    fontFamily,
     color: 'rgba(255, 255, 255, 0.7)',
     fontSize: 14,
     lineHeight: 22,
@@ -244,6 +254,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   featureText: {
+    fontFamily,
     flex: 1,
     color: 'rgba(255, 255, 255, 0.7)',
     fontSize: 14,
@@ -255,10 +266,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   priceLabel: {
+    fontFamily,
     color: 'rgba(255, 255, 255, 0.5)',
     fontSize: 14,
   },
   priceValue: {
+    fontFamily,
     color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '600',
