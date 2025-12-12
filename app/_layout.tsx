@@ -1,16 +1,19 @@
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, View } from 'react-native';
+import { ImageBackground, StyleSheet, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { ProgressProvider } from '../contexts/ProgressContext';
 import { UserProvider } from '../contexts/UserContext';
+
+const backgroundImage = require('../assets/images/background.jpeg');
 
 export default function RootLayout() {
   return (
     <UserProvider>
       <ProgressProvider>
         <SafeAreaProvider>
-          <View style={styles.container}>
+          <ImageBackground source={backgroundImage} style={styles.background} resizeMode="cover">
+            <View style={styles.overlay} pointerEvents="none" />
             <StatusBar style="light" />
             <Stack
               screenOptions={{
@@ -20,7 +23,7 @@ export default function RootLayout() {
                 animationDuration: 250,
               }}
             />
-          </View>
+          </ImageBackground>
         </SafeAreaProvider>
       </ProgressProvider>
     </UserProvider>
@@ -28,8 +31,11 @@ export default function RootLayout() {
 }
 
 const styles = StyleSheet.create({
-  container: {
+  background: {
     flex: 1,
-    backgroundColor: 'transparent',
+  },
+  overlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
   },
 });

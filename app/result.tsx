@@ -5,7 +5,6 @@ import {
   Alert,
   Animated,
   Dimensions,
-  Pressable,
   ScrollView,
   StyleSheet,
   Text,
@@ -251,28 +250,6 @@ export default function ResultScreen() {
             />
             <Text style={styles.trialDisclaimer}>essai gratuit sans engagement</Text>
           </View>
-
-          {/* DEBUG BUTTONS - TEMPORARY */}
-          <Pressable
-            onPress={() => {
-              console.log('[DEBUG NAV] push /(tabs)/dashboard');
-              router.push('/(tabs)/dashboard');
-            }}
-            style={{ backgroundColor: 'red', padding: 15, marginVertical: 10, borderRadius: 8 }}
-          >
-            <Text style={{ color: 'white', textAlign: 'center', fontWeight: 'bold' }}>DEBUG GO DASH (tabs)</Text>
-          </Pressable>
-
-          <Pressable
-            onPress={() => {
-              console.log('[DEBUG NAV] push /dashboard');
-              router.push('/dashboard');
-            }}
-            style={{ backgroundColor: 'orange', padding: 15, marginVertical: 10, borderRadius: 8 }}
-          >
-            <Text style={{ color: 'white', textAlign: 'center', fontWeight: 'bold' }}>DEBUG GO DASH (root)</Text>
-          </Pressable>
-          {/* END DEBUG BUTTONS */}
 
           <TouchableOpacity
             onPress={() => router.push('/programs')}
