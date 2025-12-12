@@ -10,7 +10,7 @@ export interface AnswerOption {
 export interface Question {
   id: number;
   title: string;
-  icon: string;
+  icon: string; // Ionicons icon name
   options: AnswerOption[];
   isPersonalization?: boolean;
 }
@@ -20,7 +20,7 @@ export const questions: Question[] = [
   {
     id: 1,
     title: 'Quel est ton âge ?',
-    icon: '🎂',
+    icon: 'calendar-outline',
     options: [
       { text: '- de 18 ans', scores: {} },
       { text: '18–25 ans', scores: {} },
@@ -34,7 +34,7 @@ export const questions: Question[] = [
   {
     id: 2,
     title: "Qu'est-ce qui te motive le plus ?",
-    icon: '🎯',
+    icon: 'flag-outline',
     options: [
       { text: 'Me sentir mieux dans ma peau', scores: {} },
       { text: 'Avoir un visage plus défini sur les photos', scores: {} },
@@ -47,7 +47,7 @@ export const questions: Question[] = [
   {
     id: 3,
     title: 'Comment décrirais-tu ta routine actuelle ?',
-    icon: '📅',
+    icon: 'repeat-outline',
     options: [
       { text: "Je n'ai aucune routine beauté/soin", scores: {} },
       { text: "J'ai quelques habitudes basiques", scores: {} },
@@ -60,7 +60,7 @@ export const questions: Question[] = [
   {
     id: 4,
     title: "Qu'est-ce qui te complexe le plus sur ton visage ?",
-    icon: '🪞',
+    icon: 'scan-outline',
     options: [
       {
         text: 'Ma jawline / mâchoire pas assez dessinée',
@@ -79,7 +79,7 @@ export const questions: Question[] = [
   {
     id: 5,
     title: 'Quel type de résultat tu recherches ?',
-    icon: '✨',
+    icon: 'sparkles-outline',
     options: [
       {
         text: 'Un changement visible rapidement sur une zone précise',
@@ -94,7 +94,7 @@ export const questions: Question[] = [
   {
     id: 6,
     title: 'Combien de temps par jour tu es prêt à y consacrer ?',
-    icon: '⏱️',
+    icon: 'time-outline',
     options: [
       {
         text: '5 minutes ou moins',
@@ -113,7 +113,7 @@ export const questions: Question[] = [
   {
     id: 7,
     title: 'Tu veux travailler uniquement une zone ou tout le visage ?',
-    icon: '👤',
+    icon: 'person-outline',
     options: [
       {
         text: 'Principalement la mâchoire',
@@ -132,7 +132,7 @@ export const questions: Question[] = [
   {
     id: 8,
     title: 'Tu préfères :',
-    icon: '📋',
+    icon: 'list-outline',
     options: [
       {
         text: 'Un programme ciblé sur un point précis',

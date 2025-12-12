@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useRef, useState } from 'react';
 import {
@@ -33,13 +34,13 @@ const additionalBenefits = [
 ];
 
 // Get icon based on plan type
-function getPlanIcon(planId: string): string {
+function getPlanIconName(planId: string): keyof typeof Ionicons.glyphMap {
   if (planId.includes('jawline')) {
-    return '💪'; // Jawline/mâchoire
+    return 'fitness-outline'; // Jawline/mâchoire
   } else if (planId.includes('double')) {
-    return '🎯'; // Double menton
+    return 'body-outline'; // Double menton
   } else {
-    return '✨'; // All in one
+    return 'star-outline'; // All in one
   }
 }
 
@@ -128,7 +129,7 @@ export default function ResultScreen() {
     { key: 'monthly', label: 'Mensuel' },
   ];
 
-  const currentPlanIcon = currentPlan ? getPlanIcon(currentPlan.id) : '✨';
+  const currentPlanIconName = currentPlan ? getPlanIconName(currentPlan.id) : 'star-outline';
 
   return (
     <BackgroundScreen centered={false}>
@@ -165,7 +166,7 @@ export default function ResultScreen() {
                     {activeTab === 'main' ? 'Recommande' : 'Flexible'}
                   </Text>
                 </View>
-                <Text style={styles.planIcon}>{currentPlanIcon}</Text>
+                <Ionicons name={currentPlanIconName} size={32} color={textColors.accent} />
               </View>
 
               <Text style={styles.planName}>{currentPlan?.name}</Text>
@@ -276,9 +277,6 @@ const styles = StyleSheet.create({
     ...typography.labelSmall,
     color: textColors.primary,
     fontSize: 11,
-  },
-  planIcon: {
-    fontSize: 32,
   },
   planName: {
     ...typography.h3,
