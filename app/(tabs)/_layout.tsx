@@ -7,6 +7,8 @@ import { textColors } from '../../theme/typography';
 export default function TabLayout() {
   return (
     <Tabs
+      // @ts-ignore - sceneContainerStyle works but types are missing
+      sceneContainerStyle={{ backgroundColor: 'transparent' }}
       screenOptions={{
         headerShown: false,
         tabBarStyle: styles.tabBar,
