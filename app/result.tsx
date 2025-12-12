@@ -128,6 +128,8 @@ export default function ResultScreen() {
   };
 
   const handleSelectPlan = async (selectedPlan: Plan | undefined) => {
+    console.log('CONTINUER_PRESS', selectedPlan?.name);
+
     if (!selectedPlan || isProcessing) return;
 
     setIsProcessing(true);
