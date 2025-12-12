@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useRef, useState } from 'react';
 import {
+  Alert,
   Animated,
   Dimensions,
   ScrollView,
@@ -15,6 +16,7 @@ import BackgroundScreen from '../components/BackgroundScreen';
 import CleanCard from '../components/CleanCard';
 import PrimaryButton from '../components/PrimaryButton';
 import TabSlider from '../components/TabSlider';
+import { useProgress } from '../contexts/ProgressContext';
 import { useUser } from '../contexts/UserContext';
 import {
   getAlternativePlan,
@@ -58,9 +60,26 @@ function renderPriceInfo(priceInfo: string) {
   return <Text style={styles.priceValue}>{priceInfo}</Text>;
 }
 
+// Mock purchase function - ready for Apple Pay integration
+async function mockPurchase(planId: PlanId): Promise<boolean> {
+  // Simulate payment processing delay
+  await new Promise((resolve) => setTimeout(resolve, 800));
+  // In production, this would call Apple Pay / RevenueCat
+  // For now, always return success
+  return true;
+}
+
+// Get total days based on plan
+function getTotalDaysForPlan(planId: PlanId): number {
+  if (planId.includes('double')) return 60;
+  if (planId === 'all_in_one') return 90;
+  return 90;
+}
+
 export default function ResultScreen() {
   const router = useRouter();
   const { firstName } = useUser();
+  const { completePurchase } = useProgress();
   const { planId } = useLocalSearchParams<{ planId: PlanId }>();
 
   const selectedPlanId = planId || 'jawline_90';
@@ -73,6 +92,7 @@ export default function ResultScreen() {
 
   const [activeTab, setActiveTab] = useState(isMonthlyPlan ? 'monthly' : 'main');
   const [currentPlan, setCurrentPlan] = useState(mainPlan);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(0)).current;
@@ -107,9 +127,32 @@ export default function ResultScreen() {
     });
   };
 
-  const handleSelectPlan = (selectedPlan: Plan | undefined) => {
-    if (selectedPlan) {
-      console.log('Programme selectionne:', selectedPlan.name);
+  const handleSelectPlan = async (selectedPlan: Plan | undefined) => {
+    if (!selectedPlan || isProcessing) return;
+
+    setIsProcessing(true);
+
+    try {
+      // Mock purchase - ready for Apple Pay integration
+      const success = await mockPurchase(selectedPlan.id);
+
+      if (success) {
+        // Save purchase to progress context
+        const totalDays = getTotalDaysForPlan(selectedPlan.id);
+        await completePurchase(selectedPlan.id, selectedPlan.name, totalDays);
+
+        // Navigate to transition screen
+        router.push({
+          pathname: '/payment-transition',
+          params: { planName: selectedPlan.name },
+        });
+      } else {
+        Alert.alert('Erreur', 'Le paiement a echoue. Veuillez reessayer.');
+      }
+    } catch (error) {
+      Alert.alert('Erreur', 'Une erreur est survenue. Veuillez reessayer.');
+    } finally {
+      setIsProcessing(false);
     }
   };
 
@@ -212,8 +255,9 @@ export default function ResultScreen() {
 
           <View style={styles.ctaContainer}>
             <PrimaryButton
-              title="Continuer"
+              title={isProcessing ? 'Traitement...' : 'Continuer'}
               onPress={() => handleSelectPlan(currentPlan)}
+              disabled={isProcessing}
             />
             <Text style={styles.trialDisclaimer}>essai gratuit sans engagement</Text>
           </View>
