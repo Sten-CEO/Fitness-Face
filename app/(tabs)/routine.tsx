@@ -11,10 +11,9 @@ import { typography, textColors } from '../../theme/typography';
 
 export default function RoutineScreen() {
   const router = useRouter();
-  const { selectedPlanId, completedDays } = useProgress();
+  const { selectedPlanId, currentDay, hasCompletedTodayRoutine } = useProgress();
 
   const currentRoutine = selectedPlanId ? getRoutineForPlan(selectedPlanId) : routines[0];
-  const currentDay = completedDays.length + 1;
 
   return (
     <View style={styles.container}>

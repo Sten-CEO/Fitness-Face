@@ -19,10 +19,9 @@ import { typography, textColors } from '../theme/typography';
 
 export default function RoutineDetailScreen() {
   const router = useRouter();
-  const { selectedPlanId, completedDays, completeDay } = useProgress();
+  const { selectedPlanId, currentDay, completeDay, hasCompletedTodayRoutine } = useProgress();
 
   const routine = selectedPlanId ? getRoutineForPlan(selectedPlanId) : routines[0];
-  const currentDay = completedDays.length + 1;
 
   // Timer state
   const [isRunning, setIsRunning] = useState(false);
@@ -88,7 +87,8 @@ export default function RoutineDetailScreen() {
   };
 
   const handleCompleteSession = async () => {
-    await completeDay(currentDay);
+    // Passe le nom de la routine pour le tracking
+    await completeDay(currentDay, routine.name);
     router.replace('/(tabs)/dashboard');
   };
 
@@ -110,7 +110,9 @@ export default function RoutineDetailScreen() {
               </TouchableOpacity>
               <View style={styles.headerInfo}>
                 <Text style={styles.headerTitle}>{routine.name}</Text>
-                <Text style={styles.headerSubtitle}>Jour {currentDay}</Text>
+                <Text style={styles.headerSubtitle}>
+                  Jour {currentDay}{hasCompletedTodayRoutine ? ' – terminé' : ''}
+                </Text>
               </View>
               <View style={styles.headerSpacer} />
             </View>

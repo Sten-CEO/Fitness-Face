@@ -60,13 +60,6 @@ function renderPriceInfo(priceInfo: string) {
   return <Text style={styles.priceValue}>{priceInfo}</Text>;
 }
 
-// Get total days based on plan
-function getTotalDaysForPlan(planId: PlanId): number {
-  if (planId.includes('double')) return 60;
-  if (planId === 'all_in_one') return 90;
-  return 90;
-}
-
 export default function ResultScreen() {
   const router = useRouter();
   const { firstName } = useUser();
@@ -131,8 +124,8 @@ export default function ResultScreen() {
     try {
       // Save to context (mock payment success)
       console.log('STEP 1: Saving purchase...');
-      const totalDays = getTotalDaysForPlan(selectedPlan.id);
-      await completePurchase(selectedPlan.id, selectedPlan.name, totalDays);
+      // La durée est maintenant stockée dans les données du plan
+      await completePurchase(selectedPlan.id, selectedPlan.name);
       console.log('STEP 2: Purchase saved OK');
 
       // Navigate to dashboard

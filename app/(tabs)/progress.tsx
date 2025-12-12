@@ -8,10 +8,16 @@ import { useProgress } from '../../contexts/ProgressContext';
 import { typography, textColors } from '../../theme/typography';
 
 export default function ProgressScreen() {
-  const { completedDays, streak, totalDays, selectedPlanName } = useProgress();
-
-  const progressPercent = (completedDays.length / totalDays) * 100;
-  const daysRemaining = totalDays - completedDays.length;
+  const {
+    completedDaysCount,
+    completedDayNumbers,
+    streak,
+    totalDays,
+    selectedPlanName,
+    isFixedProgram,
+    progressPercent,
+    daysRemaining,
+  } = useProgress();
 
   // Generate calendar-like grid for last 30 days
   const generateDaysGrid = () => {
@@ -21,7 +27,7 @@ export default function ProgressScreen() {
       const date = new Date(today);
       date.setDate(date.getDate() - i);
       const dayNumber = 30 - i;
-      const isCompleted = completedDays.includes(dayNumber);
+      const isCompleted = completedDayNumbers.includes(dayNumber);
       days.push({ dayNumber, isCompleted, isToday: i === 0 });
     }
     return days;
@@ -42,33 +48,54 @@ export default function ProgressScreen() {
             <Text style={styles.subtitle}>{selectedPlanName || 'Programme'}</Text>
           </View>
 
-          {/* Main stats */}
+          {/* Main stats - Adapté selon le type de programme */}
           <CleanCard style={styles.statsCard}>
-            <View style={styles.mainStat}>
-              <Text style={styles.mainStatValue}>{Math.round(progressPercent)}%</Text>
-              <Text style={styles.mainStatLabel}>Complete</Text>
-            </View>
+            {/* Affichage différent selon programme fixe ou abonnement */}
+            {isFixedProgram && progressPercent !== null ? (
+              <>
+                <View style={styles.mainStat}>
+                  <Text style={styles.mainStatValue}>{Math.round(progressPercent)}%</Text>
+                  <Text style={styles.mainStatLabel}>Complété</Text>
+                </View>
 
-            <View style={styles.progressBarLarge}>
-              <View style={[styles.progressBarFillLarge, { width: `${progressPercent}%` }]} />
-            </View>
+                <View style={styles.progressBarLarge}>
+                  <View style={[styles.progressBarFillLarge, { width: `${progressPercent}%` }]} />
+                </View>
+              </>
+            ) : (
+              <View style={styles.mainStat}>
+                <Text style={styles.mainStatValue}>{completedDaysCount}</Text>
+                <Text style={styles.mainStatLabel}>Routines complétées</Text>
+              </View>
+            )}
 
             <View style={styles.statsGrid}>
               <View style={styles.statBox}>
                 <Ionicons name="checkmark-circle-outline" size={24} color={textColors.accent} />
-                <Text style={styles.statBoxValue}>{completedDays.length}</Text>
-                <Text style={styles.statBoxLabel}>Jours{'\n'}completes</Text>
+                <Text style={styles.statBoxValue}>{completedDaysCount}</Text>
+                <Text style={styles.statBoxLabel}>
+                  {isFixedProgram ? 'Jours\ncomplétés' : 'Routines\nfaites'}
+                </Text>
               </View>
               <View style={styles.statBox}>
                 <Ionicons name="flame-outline" size={24} color="#FF6B35" />
                 <Text style={styles.statBoxValue}>{streak}</Text>
-                <Text style={styles.statBoxLabel}>Jours{'\n'}d'affilee</Text>
+                <Text style={styles.statBoxLabel}>Jours{'\n'}d'affilée</Text>
               </View>
-              <View style={styles.statBox}>
-                <Ionicons name="flag-outline" size={24} color={textColors.tertiary} />
-                <Text style={styles.statBoxValue}>{daysRemaining}</Text>
-                <Text style={styles.statBoxLabel}>Jours{'\n'}restants</Text>
-              </View>
+              {/* Jours restants seulement pour programmes à durée fixe */}
+              {isFixedProgram && daysRemaining !== null ? (
+                <View style={styles.statBox}>
+                  <Ionicons name="flag-outline" size={24} color={textColors.tertiary} />
+                  <Text style={styles.statBoxValue}>{daysRemaining}</Text>
+                  <Text style={styles.statBoxLabel}>Jours{'\n'}restants</Text>
+                </View>
+              ) : (
+                <View style={styles.statBox}>
+                  <Ionicons name="infinite-outline" size={24} color={textColors.accent} />
+                  <Text style={styles.statBoxValue}>∞</Text>
+                  <Text style={styles.statBoxLabel}>Sans{'\n'}limite</Text>
+                </View>
+              )}
             </View>
           </CleanCard>
 
@@ -94,7 +121,7 @@ export default function ProgressScreen() {
             <View style={styles.calendarLegend}>
               <View style={styles.legendItem}>
                 <View style={[styles.legendDot, styles.legendDotCompleted]} />
-                <Text style={styles.legendText}>Complete</Text>
+                <Text style={styles.legendText}>Complété</Text>
               </View>
               <View style={styles.legendItem}>
                 <View style={[styles.legendDot, styles.legendDotToday]} />
@@ -108,35 +135,35 @@ export default function ProgressScreen() {
             <Text style={styles.achievementsTitle}>Prochains objectifs</Text>
 
             <View style={styles.achievementItem}>
-              <View style={[styles.achievementIcon, completedDays.length >= 7 && styles.achievementIconUnlocked]}>
+              <View style={[styles.achievementIcon, completedDaysCount >= 7 && styles.achievementIconUnlocked]}>
                 <Ionicons
                   name="trophy-outline"
                   size={20}
-                  color={completedDays.length >= 7 ? textColors.accent : 'rgba(255, 255, 255, 0.3)'}
+                  color={completedDaysCount >= 7 ? textColors.accent : 'rgba(255, 255, 255, 0.3)'}
                 />
               </View>
               <View style={styles.achievementInfo}>
-                <Text style={styles.achievementName}>Premiere semaine</Text>
-                <Text style={styles.achievementDesc}>Complete 7 jours</Text>
+                <Text style={styles.achievementName}>Première semaine</Text>
+                <Text style={styles.achievementDesc}>Complète 7 jours</Text>
               </View>
-              {completedDays.length >= 7 && (
+              {completedDaysCount >= 7 && (
                 <Ionicons name="checkmark-circle" size={20} color={textColors.accent} />
               )}
             </View>
 
             <View style={styles.achievementItem}>
-              <View style={[styles.achievementIcon, completedDays.length >= 30 && styles.achievementIconUnlocked]}>
+              <View style={[styles.achievementIcon, completedDaysCount >= 30 && styles.achievementIconUnlocked]}>
                 <Ionicons
                   name="medal-outline"
                   size={20}
-                  color={completedDays.length >= 30 ? textColors.accent : 'rgba(255, 255, 255, 0.3)'}
+                  color={completedDaysCount >= 30 ? textColors.accent : 'rgba(255, 255, 255, 0.3)'}
                 />
               </View>
               <View style={styles.achievementInfo}>
                 <Text style={styles.achievementName}>Premier mois</Text>
-                <Text style={styles.achievementDesc}>Complete 30 jours</Text>
+                <Text style={styles.achievementDesc}>Complète 30 jours</Text>
               </View>
-              {completedDays.length >= 30 && (
+              {completedDaysCount >= 30 && (
                 <Ionicons name="checkmark-circle" size={20} color={textColors.accent} />
               )}
             </View>
@@ -151,7 +178,7 @@ export default function ProgressScreen() {
               </View>
               <View style={styles.achievementInfo}>
                 <Text style={styles.achievementName}>En feu</Text>
-                <Text style={styles.achievementDesc}>7 jours d'affilee</Text>
+                <Text style={styles.achievementDesc}>7 jours d'affilée</Text>
               </View>
               {streak >= 7 && (
                 <Ionicons name="checkmark-circle" size={20} color="#FF6B35" />

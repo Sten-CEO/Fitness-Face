@@ -21,7 +21,18 @@ import { typography, textColors } from '../../theme/typography';
 export default function DashboardScreen() {
   const router = useRouter();
   const { firstName } = useUser();
-  const { selectedPlanId, completedDays, streak, totalDays } = useProgress();
+  const {
+    selectedPlanId,
+    currentDay,
+    totalDays,
+    completedDaysCount,
+    streak,
+    isFixedProgram,
+    progressPercent,
+    daysRemaining,
+    hasCompletedTodayRoutine,
+    completedRoutines,
+  } = useProgress();
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnims = useRef([
@@ -29,14 +40,13 @@ export default function DashboardScreen() {
     new Animated.Value(30),
     new Animated.Value(30),
     new Animated.Value(30),
+    new Animated.Value(30),
   ]).current;
 
-  const currentDay = completedDays.length + 1;
   const routine = selectedPlanId ? getRoutineForPlan(selectedPlanId) : null;
   const todayTip = getTodayTip();
-  const progressPercent = (completedDays.length / totalDays) * 100;
-  const daysUntilUnlock = Math.max(0, 7 - completedDays.length);
-  const isProgressUnlocked = completedDays.length >= 7;
+  const daysUntilUnlock = Math.max(0, 7 - completedDaysCount);
+  const isProgressUnlocked = completedDaysCount >= 7;
 
   useEffect(() => {
     Animated.timing(fadeAnim, {
@@ -71,7 +81,11 @@ export default function DashboardScreen() {
                 <Text style={styles.greeting}>
                   Bonjour{firstName ? `, ${firstName}` : ''}
                 </Text>
-                <Text style={styles.subtitle}>Jour {currentDay} de ton programme</Text>
+                <Text style={styles.subtitle}>
+                  {hasCompletedTodayRoutine
+                    ? `Jour ${currentDay} – terminé`
+                    : `Jour ${currentDay} de ton programme`}
+                </Text>
               </View>
               <View style={styles.streakBadge}>
                 <Ionicons name="flame-outline" size={18} color="#FF6B35" />
@@ -93,9 +107,15 @@ export default function DashboardScreen() {
                 <CleanCard style={styles.routineCard}>
                   <View style={styles.routineHeader}>
                     <View style={styles.routineBadge}>
-                      <Text style={styles.routineBadgeText}>Routine du jour</Text>
+                      <Text style={styles.routineBadgeText}>
+                        {hasCompletedTodayRoutine ? 'Routine terminée' : 'Routine du jour'}
+                      </Text>
                     </View>
-                    <Ionicons name="play-circle-outline" size={28} color={textColors.accent} />
+                    <Ionicons
+                      name={hasCompletedTodayRoutine ? 'checkmark-circle' : 'play-circle-outline'}
+                      size={28}
+                      color={hasCompletedTodayRoutine ? '#10B981' : textColors.accent}
+                    />
                   </View>
 
                   <Text style={styles.routineTitle}>{routine?.name || 'Routine'}</Text>
@@ -104,9 +124,18 @@ export default function DashboardScreen() {
                   </Text>
 
                   <View style={styles.routineCta}>
-                    <View style={styles.routineCtaButton}>
-                      <Text style={styles.routineCtaText}>Commencer</Text>
-                      <Ionicons name="arrow-forward" size={16} color={textColors.primary} />
+                    <View style={[
+                      styles.routineCtaButton,
+                      hasCompletedTodayRoutine && styles.routineCtaButtonCompleted
+                    ]}>
+                      <Text style={styles.routineCtaText}>
+                        {hasCompletedTodayRoutine ? 'Revoir' : 'Commencer'}
+                      </Text>
+                      <Ionicons
+                        name={hasCompletedTodayRoutine ? 'refresh-outline' : 'arrow-forward'}
+                        size={16}
+                        color={textColors.primary}
+                      />
                     </View>
                   </View>
                 </CleanCard>
@@ -144,7 +173,7 @@ export default function DashboardScreen() {
                   <View
                     style={[
                       styles.miniProgressFill,
-                      { width: `${Math.min((completedDays.length / 7) * 100, 100)}%` },
+                      { width: `${Math.min((completedDaysCount / 7) * 100, 100)}%` },
                     ]}
                   />
                 </View>
@@ -183,36 +212,83 @@ export default function DashboardScreen() {
 
                 <View style={styles.statsRow}>
                   <View style={styles.statItem}>
-                    <Text style={styles.statValue}>{completedDays.length}</Text>
-                    <Text style={styles.statLabel}>Jours completes</Text>
+                    <Text style={styles.statValue}>{completedDaysCount}</Text>
+                    <Text style={styles.statLabel}>
+                      {isFixedProgram ? 'Jours completes' : 'Routines faites'}
+                    </Text>
                   </View>
                   <View style={styles.statDivider} />
                   <View style={styles.statItem}>
                     <Text style={styles.statValue}>{streak}</Text>
                     <Text style={styles.statLabel}>Jours d'affilee</Text>
                   </View>
-                  <View style={styles.statDivider} />
-                  <View style={styles.statItem}>
-                    <Text style={styles.statValue}>{totalDays - completedDays.length}</Text>
-                    <Text style={styles.statLabel}>Jours restants</Text>
-                  </View>
+                  {/* Afficher jours restants SEULEMENT pour programmes à durée fixe */}
+                  {isFixedProgram && daysRemaining !== null && (
+                    <>
+                      <View style={styles.statDivider} />
+                      <View style={styles.statItem}>
+                        <Text style={styles.statValue}>{daysRemaining}</Text>
+                        <Text style={styles.statLabel}>Jours restants</Text>
+                      </View>
+                    </>
+                  )}
                 </View>
 
-                <View style={styles.progressBarContainer}>
-                  <View style={styles.progressBarBg}>
-                    <View
-                      style={[styles.progressBarFill, { width: `${progressPercent}%` }]}
-                    />
-                  </View>
-                  <Text style={styles.progressPercent}>
-                    {Math.round(progressPercent)}%
+                {/* Barre de progression SEULEMENT pour programmes à durée fixe */}
+                {isFixedProgram && totalDays !== null && progressPercent !== null && (
+                  <>
+                    <View style={styles.progressBarContainer}>
+                      <View style={styles.progressBarBg}>
+                        <View
+                          style={[styles.progressBarFill, { width: `${progressPercent}%` }]}
+                        />
+                      </View>
+                      <Text style={styles.progressPercent}>
+                        {Math.round(progressPercent)}%
+                      </Text>
+                    </View>
+
+                    <Text style={styles.progressGoal}>
+                      Objectif : {totalDays} jours
+                    </Text>
+                  </>
+                )}
+
+                {/* Message pour abonnements */}
+                {!isFixedProgram && (
+                  <Text style={styles.subscriptionNote}>
+                    Abonnement sans limite - Continue a ton rythme !
                   </Text>
-                </View>
-
-                <Text style={styles.progressGoal}>
-                  Objectif : {totalDays} jours
-                </Text>
+                )}
               </CleanCard>
+            </Animated.View>
+
+            {/* Module E: Routines terminées */}
+            <Animated.View
+              style={{
+                opacity: fadeAnim,
+                transform: [{ translateY: slideAnims[4] }],
+              }}
+            >
+              <TouchableOpacity
+                activeOpacity={0.9}
+                onPress={() => router.push('/completed-routines')}
+              >
+                <CleanCard style={styles.completedCard}>
+                  <View style={styles.completedHeader}>
+                    <View style={styles.completedIconContainer}>
+                      <Ionicons name="list-outline" size={22} color={textColors.accent} />
+                    </View>
+                    <View style={styles.completedInfo}>
+                      <Text style={styles.completedTitle}>Routines terminees</Text>
+                      <Text style={styles.completedSubtitle}>
+                        {completedRoutines.length} routine{completedRoutines.length > 1 ? 's' : ''} au total
+                      </Text>
+                    </View>
+                    <Ionicons name="chevron-forward" size={20} color={textColors.tertiary} />
+                  </View>
+                </CleanCard>
+              </TouchableOpacity>
             </Animated.View>
           </Animated.View>
 
@@ -310,6 +386,9 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderRadius: 8,
     gap: 8,
+  },
+  routineCtaButtonCompleted: {
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
   },
   routineCtaText: {
     ...typography.bodySmall,
@@ -436,6 +515,41 @@ const styles = StyleSheet.create({
     ...typography.caption,
     color: textColors.tertiary,
     textAlign: 'center',
+  },
+  subscriptionNote: {
+    ...typography.caption,
+    color: textColors.tertiary,
+    textAlign: 'center',
+    fontStyle: 'italic',
+  },
+  completedCard: {
+    marginBottom: 16,
+  },
+  completedHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  completedIconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(59, 130, 246, 0.15)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  completedInfo: {
+    flex: 1,
+  },
+  completedTitle: {
+    ...typography.bodySmall,
+    color: textColors.primary,
+    fontWeight: '600',
+    marginBottom: 2,
+  },
+  completedSubtitle: {
+    ...typography.caption,
+    color: textColors.tertiary,
   },
   bottomSpacer: {
     height: 100,
