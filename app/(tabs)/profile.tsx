@@ -12,7 +12,7 @@ import { typography, textColors } from '../../theme/typography';
 export default function ProfileScreen() {
   const router = useRouter();
   const { firstName } = useUser();
-  const { selectedPlanName, completedDays, streak, resetProgress } = useProgress();
+  const { selectedPlanName, completedDaysCount, streak, resetProgress } = useProgress();
 
   const handleLogout = () => {
     Alert.alert(
@@ -54,7 +54,7 @@ export default function ProfileScreen() {
 
             <View style={styles.userStats}>
               <View style={styles.userStat}>
-                <Text style={styles.userStatValue}>{completedDays.length}</Text>
+                <Text style={styles.userStatValue}>{completedDaysCount}</Text>
                 <Text style={styles.userStatLabel}>Jours</Text>
               </View>
               <View style={styles.userStatDivider} />

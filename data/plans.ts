@@ -5,6 +5,9 @@ export type PlanId =
   | 'double_monthly'
   | 'all_in_one';
 
+// Type de programme: fixed = durée définie, subscription = abonnement sans fin
+export type ProgramType = 'fixed' | 'subscription';
+
 export interface PlanFeature {
   text: string;
 }
@@ -20,6 +23,10 @@ export interface Plan {
   priceInfo?: string;
   alternativeId?: PlanId;
   isMainProgram: boolean;
+  // NOUVEAU: durée en jours (null = abonnement sans durée fixe)
+  durationDays: number | null;
+  // NOUVEAU: type de programme
+  programType: ProgramType;
 }
 
 export const plans: Plan[] = [
@@ -41,6 +48,8 @@ export const plans: Plan[] = [
     priceInfo: '7 € / mois pendant 3 mois (21 € au total)',
     alternativeId: 'jawline_monthly',
     isMainProgram: true,
+    durationDays: 90,
+    programType: 'fixed',
   },
   {
     id: 'jawline_monthly',
@@ -57,6 +66,8 @@ export const plans: Plan[] = [
     badges: ['Sans engagement', 'Flexible'],
     priceInfo: '9 € / mois sans engagement',
     isMainProgram: false,
+    durationDays: null,
+    programType: 'subscription',
   },
   {
     id: 'double_60',
@@ -76,6 +87,8 @@ export const plans: Plan[] = [
     priceInfo: '7 € / mois pendant 2 mois (14 € au total)',
     alternativeId: 'double_monthly',
     isMainProgram: true,
+    durationDays: 60,
+    programType: 'fixed',
   },
   {
     id: 'double_monthly',
@@ -92,6 +105,8 @@ export const plans: Plan[] = [
     badges: ['Sans engagement', 'Flexible'],
     priceInfo: '9 € / mois sans engagement',
     isMainProgram: false,
+    durationDays: null,
+    programType: 'subscription',
   },
   {
     id: 'all_in_one',
@@ -110,6 +125,8 @@ export const plans: Plan[] = [
     badges: ['Transformation globale', 'Le plus populaire'],
     priceInfo: '29 € (accès à vie)',
     isMainProgram: true,
+    durationDays: null,
+    programType: 'subscription',
   },
 ];
 
@@ -125,4 +142,16 @@ export function getAlternativePlan(id: PlanId): Plan | undefined {
     return getPlanById(plan.alternativeId);
   }
   return undefined;
+}
+
+// Helper: récupère la durée du programme (null si abonnement)
+export function getPlanDuration(planId: PlanId): number | null {
+  const plan = getPlanById(planId);
+  return plan?.durationDays ?? null;
+}
+
+// Helper: vérifie si c'est un programme à durée fixe
+export function isFixedDurationPlan(planId: PlanId): boolean {
+  const plan = getPlanById(planId);
+  return plan?.programType === 'fixed';
 }

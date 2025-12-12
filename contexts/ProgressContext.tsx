@@ -1,37 +1,121 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { PlanId } from '../data/plans';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
+import { PlanId, getPlanById, isFixedDurationPlan } from '../data/plans';
 
 const STORAGE_KEY = '@fitness_face_progress';
+
+// Structure d'une routine terminée
+export interface CompletedRoutine {
+  routineName: string;
+  dayNumber: number;
+  completedAt: string; // ISO timestamp
+}
 
 interface ProgressData {
   isPaid: boolean;
   selectedPlanId: PlanId | null;
   selectedPlanName: string;
-  completedDays: number[];
+  // Date de début du programme (ISO)
+  programStartDate: string | null;
+  // Liste des routines terminées avec détails
+  completedRoutines: CompletedRoutine[];
+  // Streak (jours d'affilée)
   streak: number;
-  lastCompletedDate: string | null;
-  totalDays: number;
+  // Dernier jour de Paris où une routine a été terminée (YYYY-MM-DD)
+  lastCompletedParisDate: string | null;
 }
 
 interface ProgressContextType extends ProgressData {
-  completePurchase: (planId: PlanId, planName: string, totalDays: number) => Promise<void>;
-  completeDay: (dayNumber: number) => Promise<void>;
+  // Actions
+  completePurchase: (planId: PlanId, planName: string) => Promise<void>;
+  completeDay: (dayNumber: number, routineName: string) => Promise<void>;
   resetProgress: () => Promise<void>;
+
+  // Données calculées
   isLoading: boolean;
+  // Jour actuel du programme (basé sur l'heure de Paris)
+  currentDay: number;
+  // Total de jours du programme (null si abonnement)
+  totalDays: number | null;
+  // Nombre de jours complétés
+  completedDaysCount: number;
+  // Liste des numéros de jours complétés
+  completedDayNumbers: number[];
+  // Est-ce que la routine du jour actuel est terminée ?
+  hasCompletedTodayRoutine: boolean;
+  // Est-ce un programme à durée fixe ?
+  isFixedProgram: boolean;
+  // Pourcentage de progression (null si abonnement)
+  progressPercent: number | null;
+  // Jours restants (null si abonnement)
+  daysRemaining: number | null;
 }
 
 const defaultProgress: ProgressData = {
   isPaid: false,
   selectedPlanId: null,
   selectedPlanName: '',
-  completedDays: [],
+  programStartDate: null,
+  completedRoutines: [],
   streak: 0,
-  lastCompletedDate: null,
-  totalDays: 90,
+  lastCompletedParisDate: null,
 };
 
 const ProgressContext = createContext<ProgressContextType | undefined>(undefined);
+
+// ============================================
+// UTILITAIRES PARIS TIME
+// ============================================
+
+/**
+ * Retourne la date actuelle à Paris au format YYYY-MM-DD
+ * Le "jour" change à 02:00 du matin heure de Paris
+ */
+function getParisDate(): string {
+  const now = new Date();
+
+  // Convertir en heure de Paris
+  const parisTime = new Date(now.toLocaleString('en-US', { timeZone: 'Europe/Paris' }));
+
+  // Si avant 02:00, on considère que c'est encore le jour précédent
+  if (parisTime.getHours() < 2) {
+    parisTime.setDate(parisTime.getDate() - 1);
+  }
+
+  return parisTime.toISOString().split('T')[0];
+}
+
+/**
+ * Retourne la date de Paris d'hier (pour le calcul de streak)
+ */
+function getYesterdayParisDate(): string {
+  const today = getParisDate();
+  const date = new Date(today);
+  date.setDate(date.getDate() - 1);
+  return date.toISOString().split('T')[0];
+}
+
+/**
+ * Calcule le numéro du jour actuel depuis le début du programme
+ * Basé sur l'heure de Paris avec changement à 02:00
+ */
+function calculateCurrentDay(programStartDate: string | null): number {
+  if (!programStartDate) return 1;
+
+  const startDate = new Date(programStartDate);
+  const todayParis = getParisDate();
+  const today = new Date(todayParis);
+
+  const diffTime = today.getTime() - startDate.getTime();
+  const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+
+  // Jour 1 = premier jour, pas jour 0
+  return Math.max(1, diffDays + 1);
+}
+
+// ============================================
+// PROVIDER
+// ============================================
 
 export function ProgressProvider({ children }: { children: ReactNode }) {
   const [progress, setProgress] = useState<ProgressData>(defaultProgress);
@@ -46,7 +130,26 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
     try {
       const stored = await AsyncStorage.getItem(STORAGE_KEY);
       if (stored) {
-        setProgress(JSON.parse(stored));
+        const parsed = JSON.parse(stored);
+        // Migration: convertir l'ancien format si nécessaire
+        if (parsed.completedDays && !parsed.completedRoutines) {
+          parsed.completedRoutines = parsed.completedDays.map((day: number) => ({
+            routineName: 'Routine',
+            dayNumber: day,
+            completedAt: new Date().toISOString(),
+          }));
+          delete parsed.completedDays;
+        }
+        // Migration: ajouter programStartDate si absent
+        if (!parsed.programStartDate && parsed.isPaid) {
+          parsed.programStartDate = getParisDate();
+        }
+        // Migration: convertir lastCompletedDate en lastCompletedParisDate
+        if (parsed.lastCompletedDate && !parsed.lastCompletedParisDate) {
+          parsed.lastCompletedParisDate = parsed.lastCompletedDate;
+          delete parsed.lastCompletedDate;
+        }
+        setProgress(parsed);
       }
     } catch (error) {
       console.error('Failed to load progress:', error);
@@ -64,39 +167,51 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const completePurchase = async (planId: PlanId, planName: string, totalDays: number) => {
+  const completePurchase = async (planId: PlanId, planName: string) => {
     const newProgress: ProgressData = {
       ...defaultProgress,
       isPaid: true,
       selectedPlanId: planId,
       selectedPlanName: planName,
-      totalDays,
+      programStartDate: getParisDate(),
     };
     await saveProgress(newProgress);
   };
 
-  const completeDay = async (dayNumber: number) => {
-    const today = new Date().toISOString().split('T')[0];
-    const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+  const completeDay = async (dayNumber: number, routineName: string) => {
+    const todayParis = getParisDate();
+    const yesterdayParis = getYesterdayParisDate();
 
-    // Check if already completed today
-    if (progress.completedDays.includes(dayNumber)) {
+    // Vérifier si ce jour a déjà été complété
+    const alreadyCompleted = progress.completedRoutines.some(
+      (r) => r.dayNumber === dayNumber
+    );
+    if (alreadyCompleted) {
       return;
     }
 
-    // Calculate new streak
+    // Calculer le nouveau streak
     let newStreak = 1;
-    if (progress.lastCompletedDate === yesterday) {
+    if (progress.lastCompletedParisDate === yesterdayParis) {
+      // Continue le streak
       newStreak = progress.streak + 1;
-    } else if (progress.lastCompletedDate === today) {
+    } else if (progress.lastCompletedParisDate === todayParis) {
+      // Déjà complété aujourd'hui, garde le streak
       newStreak = progress.streak;
     }
+    // Sinon, streak reset à 1
+
+    const newRoutine: CompletedRoutine = {
+      routineName,
+      dayNumber,
+      completedAt: new Date().toISOString(),
+    };
 
     const newProgress: ProgressData = {
       ...progress,
-      completedDays: [...progress.completedDays, dayNumber],
+      completedRoutines: [...progress.completedRoutines, newRoutine],
       streak: newStreak,
-      lastCompletedDate: today,
+      lastCompletedParisDate: todayParis,
     };
 
     await saveProgress(newProgress);
@@ -106,6 +221,44 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
     await saveProgress(defaultProgress);
   };
 
+  // ============================================
+  // VALEURS CALCULÉES
+  // ============================================
+
+  const selectedPlan = progress.selectedPlanId
+    ? getPlanById(progress.selectedPlanId)
+    : null;
+
+  // Durée totale du programme (null si abonnement)
+  const totalDays = selectedPlan?.durationDays ?? null;
+
+  // Est-ce un programme à durée fixe ?
+  const isFixedProgram = progress.selectedPlanId
+    ? isFixedDurationPlan(progress.selectedPlanId)
+    : false;
+
+  // Jour actuel du programme
+  const currentDay = calculateCurrentDay(progress.programStartDate);
+
+  // Nombre de jours complétés
+  const completedDaysCount = progress.completedRoutines.length;
+
+  // Liste des numéros de jours complétés
+  const completedDayNumbers = progress.completedRoutines.map((r) => r.dayNumber);
+
+  // Est-ce que la routine du jour actuel est terminée ?
+  const hasCompletedTodayRoutine = completedDayNumbers.includes(currentDay);
+
+  // Pourcentage de progression (null si abonnement)
+  const progressPercent = isFixedProgram && totalDays
+    ? (completedDaysCount / totalDays) * 100
+    : null;
+
+  // Jours restants (null si abonnement)
+  const daysRemaining = isFixedProgram && totalDays
+    ? Math.max(0, totalDays - completedDaysCount)
+    : null;
+
   return (
     <ProgressContext.Provider
       value={{
@@ -114,6 +267,14 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
         completeDay,
         resetProgress,
         isLoading,
+        currentDay,
+        totalDays,
+        completedDaysCount,
+        completedDayNumbers,
+        hasCompletedTodayRoutine,
+        isFixedProgram,
+        progressPercent,
+        daysRemaining,
       }}
     >
       {children}
