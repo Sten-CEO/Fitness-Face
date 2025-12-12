@@ -9,8 +9,8 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 
+import BackgroundScreen from '../components/BackgroundScreen';
 import CleanCard from '../components/CleanCard';
 import PrimaryButton from '../components/PrimaryButton';
 import { useProgress } from '../contexts/ProgressContext';
@@ -93,13 +93,12 @@ export default function RoutineDetailScreen() {
   };
 
   return (
-    <View style={styles.container}>
-      <SafeAreaView style={styles.safeArea}>
-        <ScrollView
-          style={styles.scrollView}
-          contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
-        >
+    <BackgroundScreen centered={false} style={styles.safeArea}>
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
           <Animated.View style={{ opacity: fadeAnim }}>
             {/* Header */}
             <View style={styles.header}>
@@ -202,8 +201,7 @@ export default function RoutineDetailScreen() {
             </View>
           </Animated.View>
         </ScrollView>
-      </SafeAreaView>
-    </View>
+    </BackgroundScreen>
   );
 }
 
