@@ -1,5 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { PlanId, getPlanById, isFixedDurationPlan } from '../data/plans';
 
 const STORAGE_KEY = '@fitness_face_progress';
@@ -8,6 +8,14 @@ const STORAGE_KEY = '@fitness_face_progress';
 export interface CompletedRoutine {
   routineName: string;
   dayNumber: number;
+  completedAt: string; // ISO timestamp
+  bonusCompleted?: boolean; // Exercice bonus effectué ?
+}
+
+// Structure d'un bonus terminé
+export interface CompletedBonus {
+  dayNumber: number;
+  exerciseName: string;
   completedAt: string; // ISO timestamp
 }
 
@@ -19,6 +27,8 @@ interface ProgressData {
   programStartDate: string | null;
   // Liste des routines terminées avec détails
   completedRoutines: CompletedRoutine[];
+  // Liste des bonus terminés
+  completedBonuses: CompletedBonus[];
   // Streak (jours d'affilée)
   streak: number;
   // Dernier jour de Paris où une routine a été terminée (YYYY-MM-DD)
@@ -29,6 +39,7 @@ interface ProgressContextType extends ProgressData {
   // Actions
   completePurchase: (planId: PlanId, planName: string) => Promise<void>;
   completeDay: (dayNumber: number, routineName: string) => Promise<void>;
+  completeBonusExercise: (dayNumber: number, exerciseName: string) => Promise<void>;
   resetProgress: () => Promise<void>;
 
   // Données calculées
@@ -39,10 +50,14 @@ interface ProgressContextType extends ProgressData {
   totalDays: number | null;
   // Nombre de jours complétés
   completedDaysCount: number;
+  // Nombre de bonus complétés
+  completedBonusesCount: number;
   // Liste des numéros de jours complétés
   completedDayNumbers: number[];
   // Est-ce que la routine du jour actuel est terminée ?
   hasCompletedTodayRoutine: boolean;
+  // Est-ce que le bonus du jour actuel est terminé ?
+  hasCompletedTodayBonus: boolean;
   // Est-ce un programme à durée fixe ?
   isFixedProgram: boolean;
   // Pourcentage de progression (null si abonnement)
@@ -57,6 +72,7 @@ const defaultProgress: ProgressData = {
   selectedPlanName: '',
   programStartDate: null,
   completedRoutines: [],
+  completedBonuses: [],
   streak: 0,
   lastCompletedParisDate: null,
 };
@@ -167,6 +183,10 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
           parsed.lastCompletedParisDate = parsed.lastCompletedDate;
           delete parsed.lastCompletedDate;
         }
+        // Migration: ajouter completedBonuses si absent
+        if (!parsed.completedBonuses) {
+          parsed.completedBonuses = [];
+        }
         setProgress(parsed);
       }
     } catch (error) {
@@ -223,6 +243,7 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
       routineName,
       dayNumber,
       completedAt: new Date().toISOString(),
+      bonusCompleted: false,
     };
 
     const newProgress: ProgressData = {
@@ -230,6 +251,43 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
       completedRoutines: [...progress.completedRoutines, newRoutine],
       streak: newStreak,
       lastCompletedParisDate: todayParis,
+    };
+
+    await saveProgress(newProgress);
+  };
+
+  /**
+   * Marquer l'exercice bonus comme terminé pour un jour donné
+   * L'exercice bonus n'affecte PAS le streak ou la progression principale
+   * Il ajoute juste une mention "Exercice bonus effectué"
+   */
+  const completeBonusExercise = async (dayNumber: number, exerciseName: string) => {
+    // Vérifier si le bonus de ce jour a déjà été complété
+    const alreadyCompleted = progress.completedBonuses.some(
+      (b) => b.dayNumber === dayNumber
+    );
+    if (alreadyCompleted) {
+      return;
+    }
+
+    const newBonus: CompletedBonus = {
+      dayNumber,
+      exerciseName,
+      completedAt: new Date().toISOString(),
+    };
+
+    // Mettre à jour la routine correspondante si elle existe
+    const updatedRoutines = progress.completedRoutines.map((routine) => {
+      if (routine.dayNumber === dayNumber) {
+        return { ...routine, bonusCompleted: true };
+      }
+      return routine;
+    });
+
+    const newProgress: ProgressData = {
+      ...progress,
+      completedRoutines: updatedRoutines,
+      completedBonuses: [...progress.completedBonuses, newBonus],
     };
 
     await saveProgress(newProgress);
@@ -261,11 +319,19 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
   // Nombre de jours complétés
   const completedDaysCount = progress.completedRoutines.length;
 
+  // Nombre de bonus complétés
+  const completedBonusesCount = progress.completedBonuses.length;
+
   // Liste des numéros de jours complétés
   const completedDayNumbers = progress.completedRoutines.map((r) => r.dayNumber);
 
   // Est-ce que la routine du jour actuel est terminée ?
   const hasCompletedTodayRoutine = completedDayNumbers.includes(currentDay);
+
+  // Est-ce que le bonus du jour actuel est terminé ?
+  const hasCompletedTodayBonus = progress.completedBonuses.some(
+    (b) => b.dayNumber === currentDay
+  );
 
   // Pourcentage de progression (null si abonnement)
   const progressPercent = isFixedProgram && totalDays
@@ -283,13 +349,16 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
         ...progress,
         completePurchase,
         completeDay,
+        completeBonusExercise,
         resetProgress,
         isLoading,
         currentDay,
         totalDays,
         completedDaysCount,
+        completedBonusesCount,
         completedDayNumbers,
         hasCompletedTodayRoutine,
+        hasCompletedTodayBonus,
         isFixedProgram,
         progressPercent,
         daysRemaining,
