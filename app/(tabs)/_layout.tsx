@@ -1,31 +1,24 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
 import React from 'react';
-import { ImageBackground, Platform, StyleSheet, View } from 'react-native';
+import { Platform, StyleSheet, View } from 'react-native';
 import { textColors } from '../../theme/typography';
-
-const backgroundImage = require('../../assets/images/background.jpeg');
 
 export default function TabLayout() {
   return (
-    <ImageBackground source={backgroundImage} style={styles.container} resizeMode="cover">
-      <View style={styles.overlay} pointerEvents="none" />
-      <Tabs
-        // @ts-ignore - sceneContainerStyle works but types are missing
-        sceneContainerStyle={{ backgroundColor: 'transparent' }}
-        screenOptions={{
-          headerShown: false,
-          contentStyle: { backgroundColor: 'transparent' },
-          tabBarStyle: styles.tabBar,
-          tabBarActiveTintColor: textColors.primary,
-          tabBarInactiveTintColor: 'rgba(255, 255, 255, 0.5)',
-          tabBarShowLabel: false,
-          tabBarItemStyle: styles.tabBarItem,
-          tabBarBackground: () => (
-            <View style={styles.tabBarBackground} />
-          ),
-        }}
-      >
+    <Tabs
+      screenOptions={{
+        headerShown: false,
+        tabBarStyle: styles.tabBar,
+        tabBarActiveTintColor: textColors.primary,
+        tabBarInactiveTintColor: 'rgba(255, 255, 255, 0.5)',
+        tabBarShowLabel: false,
+        tabBarItemStyle: styles.tabBarItem,
+        tabBarBackground: () => (
+          <View style={styles.tabBarBackground} />
+        ),
+      }}
+    >
       <Tabs.Screen
         name="dashboard"
         options={{
@@ -70,8 +63,7 @@ export default function TabLayout() {
           ),
         }}
       />
-      </Tabs>
-    </ImageBackground>
+    </Tabs>
   );
 }
 
@@ -79,13 +71,6 @@ const TAB_BAR_HEIGHT = 70;
 const ICON_CONTAINER_SIZE = 44;
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  overlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0, 0, 0, 0.3)',
-  },
   tabBar: {
     position: 'absolute',
     bottom: Platform.OS === 'ios' ? 28 : 20,

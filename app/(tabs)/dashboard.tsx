@@ -12,6 +12,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import CleanCard from '../../components/CleanCard';
+import TabBackground from '../../components/TabBackground';
 import { useProgress } from '../../contexts/ProgressContext';
 import { useUser } from '../../contexts/UserContext';
 import { getRoutineForPlan } from '../../data/routines';
@@ -67,7 +68,7 @@ export default function DashboardScreen() {
   }, []);
 
   return (
-    <View style={styles.container}>
+    <TabBackground>
       <SafeAreaView style={styles.safeArea} edges={['top']}>
         <ScrollView
           style={styles.scrollView}
@@ -296,7 +297,7 @@ export default function DashboardScreen() {
           <View style={styles.bottomSpacer} />
         </ScrollView>
       </SafeAreaView>
-    </View>
+    </TabBackground>
   );
 }
 
