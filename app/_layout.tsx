@@ -13,14 +13,16 @@ export default function RootLayout() {
       <ProgressProvider>
         <SafeAreaProvider>
           <View style={styles.container}>
-            {/* Background image visible pendant les transitions */}
-            <ImageBackground
-              source={backgroundImage}
-              style={StyleSheet.absoluteFill}
-              resizeMode="cover"
-            >
-              <View style={styles.overlay} />
-            </ImageBackground>
+            {/* Background image visible pendant les transitions - pointerEvents none to allow taps */}
+            <View style={StyleSheet.absoluteFill} pointerEvents="none">
+              <ImageBackground
+                source={backgroundImage}
+                style={StyleSheet.absoluteFill}
+                resizeMode="cover"
+              >
+                <View style={styles.overlay} />
+              </ImageBackground>
+            </View>
             <StatusBar style="light" />
             <Stack
               screenOptions={{
