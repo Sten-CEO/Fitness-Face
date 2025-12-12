@@ -74,15 +74,33 @@ const ProgressContext = createContext<ProgressContextType | undefined>(undefined
 function getParisDate(): string {
   const now = new Date();
 
-  // Convertir en heure de Paris
-  const parisTime = new Date(now.toLocaleString('en-US', { timeZone: 'Europe/Paris' }));
+  // Utiliser Intl.DateTimeFormat pour obtenir les composants de date à Paris
+  const formatter = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Europe/Paris',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    hour12: false,
+  });
+
+  const parts = formatter.formatToParts(now);
+  const year = parts.find(p => p.type === 'year')?.value || '2024';
+  const month = parts.find(p => p.type === 'month')?.value || '01';
+  const day = parts.find(p => p.type === 'day')?.value || '01';
+  const hour = parseInt(parts.find(p => p.type === 'hour')?.value || '12', 10);
+
+  // Construire la date
+  let parisDate = `${year}-${month}-${day}`;
 
   // Si avant 02:00, on considère que c'est encore le jour précédent
-  if (parisTime.getHours() < 2) {
-    parisTime.setDate(parisTime.getDate() - 1);
+  if (hour < 2) {
+    const date = new Date(`${parisDate}T12:00:00`);
+    date.setDate(date.getDate() - 1);
+    parisDate = date.toISOString().split('T')[0];
   }
 
-  return parisTime.toISOString().split('T')[0];
+  return parisDate;
 }
 
 /**
@@ -90,7 +108,7 @@ function getParisDate(): string {
  */
 function getYesterdayParisDate(): string {
   const today = getParisDate();
-  const date = new Date(today);
+  const date = new Date(`${today}T12:00:00`);
   date.setDate(date.getDate() - 1);
   return date.toISOString().split('T')[0];
 }
@@ -102,9 +120,9 @@ function getYesterdayParisDate(): string {
 function calculateCurrentDay(programStartDate: string | null): number {
   if (!programStartDate) return 1;
 
-  const startDate = new Date(programStartDate);
+  const startDate = new Date(`${programStartDate}T12:00:00`);
   const todayParis = getParisDate();
-  const today = new Date(todayParis);
+  const today = new Date(`${todayParis}T12:00:00`);
 
   const diffTime = today.getTime() - startDate.getTime();
   const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
