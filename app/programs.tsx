@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useRef } from 'react';
 import {
@@ -23,13 +24,13 @@ const additionalBenefits = [
 ];
 
 // Get icon based on plan type
-function getPlanIcon(planId: string): string {
+function getPlanIconName(planId: string): keyof typeof Ionicons.glyphMap {
   if (planId.includes('jawline')) {
-    return '💪';
+    return 'fitness-outline';
   } else if (planId.includes('double')) {
-    return '🎯';
+    return 'body-outline';
   } else {
-    return '✨';
+    return 'star-outline';
   }
 }
 
@@ -94,7 +95,7 @@ export default function ProgramsScreen() {
           <View style={styles.programsList}>
             {plans.map((plan, index) => {
               const isHighlighted = highlightPlan === plan.id || plan.isMainProgram;
-              const planIcon = getPlanIcon(plan.id);
+              const planIconName = getPlanIconName(plan.id);
 
               return (
                 <Animated.View
@@ -120,7 +121,7 @@ export default function ProgramsScreen() {
                       ]}>
                         <Text style={styles.badgeText}>{plan.tag}</Text>
                       </View>
-                      <Text style={styles.planIcon}>{planIcon}</Text>
+                      <Ionicons name={planIconName} size={32} color={textColors.accent} />
                     </View>
 
                     <Text style={styles.planName}>{plan.name}</Text>
@@ -240,9 +241,6 @@ const styles = StyleSheet.create({
     ...typography.labelSmall,
     color: textColors.primary,
     fontSize: 11,
-  },
-  planIcon: {
-    fontSize: 32,
   },
   planName: {
     ...typography.h3,

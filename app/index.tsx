@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React from 'react';
 import { ImageBackground, StyleSheet, Text, View } from 'react-native';
@@ -20,7 +21,7 @@ export default function HomeScreen() {
           <View style={styles.content}>
             {/* Label Jaw */}
             <View style={styles.labelContainer}>
-              <Text style={styles.labelIcon}>◇</Text>
+              <Ionicons name="diamond-outline" size={18} color="rgba(255, 255, 255, 0.9)" />
               <Text style={styles.labelText}>Jaw</Text>
             </View>
 
@@ -66,17 +67,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 16,
-    gap: 6,
-  },
-  labelIcon: {
-    color: 'rgba(255, 255, 255, 0.6)',
-    fontSize: 14,
+    gap: 8,
   },
   labelText: {
-    ...typography.labelSmall,
-    color: 'rgba(255, 255, 255, 0.6)',
-    fontSize: 13,
-    letterSpacing: 1,
+    fontSize: 17,
+    fontWeight: '600',
+    color: 'rgba(255, 255, 255, 0.9)',
+    letterSpacing: 1.5,
   },
   title: {
     ...typography.h1,

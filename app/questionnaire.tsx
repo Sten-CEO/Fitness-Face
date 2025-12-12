@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useRef, useState } from 'react';
 import {
@@ -125,7 +126,11 @@ export default function QuestionnaireScreen() {
           >
             {/* Question Icon */}
             <View style={styles.iconContainer}>
-              <Text style={styles.questionIcon}>{currentQuestion.icon}</Text>
+              <Ionicons
+                name={currentQuestion.icon as keyof typeof Ionicons.glyphMap}
+                size={30}
+                color={textColors.accent}
+              />
             </View>
 
             <Text style={styles.questionTitle}>{currentQuestion.title}</Text>
@@ -221,9 +226,6 @@ const styles = StyleSheet.create({
   iconContainer: {
     alignItems: 'center',
     marginBottom: 20,
-  },
-  questionIcon: {
-    fontSize: 40,
   },
   questionTitle: {
     ...typography.h3,
