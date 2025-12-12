@@ -1,13 +1,10 @@
 import React from 'react';
 import {
-  ImageBackground,
   StyleSheet,
   View,
   ViewStyle,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-
-const backgroundImage = require('../assets/images/background.jpeg');
 
 interface BackgroundScreenProps {
   children: React.ReactNode;
@@ -21,8 +18,7 @@ export default function BackgroundScreen({
   centered = true,
 }: BackgroundScreenProps) {
   return (
-    <ImageBackground source={backgroundImage} style={styles.background} resizeMode="cover">
-      <View style={styles.overlay} />
+    <View style={styles.container}>
       <SafeAreaView
         style={[
           styles.safeArea,
@@ -32,18 +28,14 @@ export default function BackgroundScreen({
       >
         {children}
       </SafeAreaView>
-    </ImageBackground>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  background: {
+  container: {
     flex: 1,
-  },
-  overlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0, 0, 0, 0.3)',
-    pointerEvents: 'none',
+    backgroundColor: 'transparent',
   },
   safeArea: {
     flex: 1,
