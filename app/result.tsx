@@ -25,9 +25,26 @@ import { typography, textColors } from '../theme/typography';
 
 const { width } = Dimensions.get('window');
 
+// Additional benefits to show on all plans
+const additionalBenefits = [
+  'Guide vidéo',
+  'Suivi journalier des progrès',
+  'Conseils journaliers',
+];
+
+// Get icon based on plan type
+function getPlanIcon(planId: string): string {
+  if (planId.includes('jawline')) {
+    return '💪'; // Jawline/mâchoire
+  } else if (planId.includes('double')) {
+    return '🎯'; // Double menton
+  } else {
+    return '✨'; // All in one
+  }
+}
+
 // Parse price info to highlight amount only
 function renderPriceInfo(priceInfo: string) {
-  // Match patterns like "7 € / mois" or "29 €"
   const match = priceInfo.match(/^(\d+\s*€(?:\s*\/\s*mois)?)(.*)/);
   if (match) {
     return (
@@ -111,6 +128,8 @@ export default function ResultScreen() {
     { key: 'monthly', label: 'Mensuel' },
   ];
 
+  const currentPlanIcon = currentPlan ? getPlanIcon(currentPlan.id) : '✨';
+
   return (
     <BackgroundScreen centered={false}>
       <ScrollView
@@ -139,10 +158,14 @@ export default function ResultScreen() {
 
           <Animated.View style={{ transform: [{ translateX: slideAnim }] }}>
             <CleanCard style={styles.programCard}>
-              <View style={styles.badge}>
-                <Text style={styles.badgeText}>
-                  {activeTab === 'main' ? 'Recommande' : 'Flexible'}
-                </Text>
+              {/* Card header with badge and icon */}
+              <View style={styles.cardHeader}>
+                <View style={styles.badge}>
+                  <Text style={styles.badgeText}>
+                    {activeTab === 'main' ? 'Recommande' : 'Flexible'}
+                  </Text>
+                </View>
+                <Text style={styles.planIcon}>{currentPlanIcon}</Text>
               </View>
 
               <Text style={styles.planName}>{currentPlan?.name}</Text>
@@ -150,6 +173,7 @@ export default function ResultScreen() {
 
               <View style={styles.separator} />
 
+              {/* Features list */}
               <View style={styles.featuresList}>
                 {currentPlan?.features.slice(0, 4).map((feature, index) => (
                   <View key={index} style={styles.featureItem}>
@@ -159,14 +183,27 @@ export default function ResultScreen() {
                     <Text style={styles.featureText}>{feature.text}</Text>
                   </View>
                 ))}
+                {/* Additional benefits */}
+                {additionalBenefits.map((benefit, index) => (
+                  <View key={`extra-${index}`} style={styles.featureItem}>
+                    <View style={styles.featureIcon}>
+                      <Text style={styles.featureCheck}>✓</Text>
+                    </View>
+                    <Text style={styles.featureText}>{benefit}</Text>
+                  </View>
+                ))}
               </View>
 
               <View style={styles.separator} />
 
+              {/* Price section */}
               {currentPlan?.priceInfo && (
                 <View style={styles.priceSection}>
-                  <Text style={styles.priceLabel}>Tarif</Text>
-                  {renderPriceInfo(currentPlan.priceInfo)}
+                  <View style={styles.priceRow}>
+                    <Text style={styles.priceLabel}>Tarif</Text>
+                    {renderPriceInfo(currentPlan.priceInfo)}
+                  </View>
+                  <Text style={styles.tryFreeText}>essayer gratuitement</Text>
                 </View>
               )}
             </CleanCard>
@@ -177,6 +214,7 @@ export default function ResultScreen() {
               title="Continuer"
               onPress={() => handleSelectPlan(currentPlan)}
             />
+            <Text style={styles.trialDisclaimer}>essai gratuit sans engagement</Text>
           </View>
 
           <TouchableOpacity
@@ -222,18 +260,25 @@ const styles = StyleSheet.create({
   programCard: {
     marginBottom: 24,
   },
+  cardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 14,
+  },
   badge: {
-    alignSelf: 'flex-start',
     backgroundColor: textColors.accent,
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderRadius: 6,
-    marginBottom: 14,
   },
   badgeText: {
     ...typography.labelSmall,
     color: textColors.primary,
     fontSize: 11,
+  },
+  planIcon: {
+    fontSize: 32,
   },
   planName: {
     ...typography.h3,
@@ -277,6 +322,9 @@ const styles = StyleSheet.create({
     color: 'rgba(255, 255, 255, 0.7)',
   },
   priceSection: {
+    gap: 8,
+  },
+  priceRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
@@ -299,8 +347,19 @@ const styles = StyleSheet.create({
     color: textColors.tertiary,
     fontWeight: '400',
   },
+  tryFreeText: {
+    ...typography.caption,
+    color: textColors.tertiary,
+    textAlign: 'right',
+  },
   ctaContainer: {
     marginBottom: 16,
+    alignItems: 'center',
+  },
+  trialDisclaimer: {
+    ...typography.caption,
+    color: textColors.tertiary,
+    marginTop: 10,
   },
   secondaryLink: {
     alignItems: 'center',

@@ -19,7 +19,7 @@ import {
   questions,
   ScoreBuckets,
 } from '../data/questions';
-import { typography, textColors, fontFamily } from '../theme/typography';
+import { typography, textColors } from '../theme/typography';
 
 const { width } = Dimensions.get('window');
 
@@ -123,6 +123,11 @@ export default function QuestionnaireScreen() {
               },
             ]}
           >
+            {/* Question Icon */}
+            <View style={styles.iconContainer}>
+              <Text style={styles.questionIcon}>{currentQuestion.icon}</Text>
+            </View>
+
             <Text style={styles.questionTitle}>{currentQuestion.title}</Text>
 
             <View style={styles.optionsContainer}>
@@ -183,7 +188,7 @@ const styles = StyleSheet.create({
     paddingBottom: 32,
   },
   header: {
-    marginBottom: 32,
+    marginBottom: 24,
     alignItems: 'center',
   },
   questionCount: {
@@ -213,11 +218,18 @@ const styles = StyleSheet.create({
   questionContainer: {
     paddingBottom: 16,
   },
+  iconContainer: {
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  questionIcon: {
+    fontSize: 40,
+  },
   questionTitle: {
     ...typography.h3,
     color: textColors.primary,
     textAlign: 'center',
-    marginBottom: 32,
+    marginBottom: 28,
   },
   optionsContainer: {
     gap: 12,
