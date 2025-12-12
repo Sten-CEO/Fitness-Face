@@ -2,7 +2,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useRef, useState } from 'react';
 import {
-  Alert,
   Animated,
   Dimensions,
   ScrollView,
@@ -119,22 +118,14 @@ export default function ResultScreen() {
   };
 
   const handleSelectPlan = (selectedPlan: Plan | undefined) => {
-    // DEBUG: Show alert to confirm tap is working
-    Alert.alert('DEBUG', `Tap detected: ${selectedPlan?.name || 'no plan'}`);
+    if (!selectedPlan) return;
 
-    console.log('CONTINUER_PRESS', selectedPlan?.name);
-
-    if (!selectedPlan) {
-      console.log('No plan selected!');
-      return;
-    }
-
-    // Save to context (fire and forget)
+    // Save to context
     const totalDays = getTotalDaysForPlan(selectedPlan.id);
     completePurchase(selectedPlan.id, selectedPlan.name, totalDays);
 
-    // Navigate immediately
-    router.push('/post-payment-transition');
+    // Go directly to dashboard
+    router.replace('/(tabs)/dashboard');
   };
 
   if (!mainPlan) {
