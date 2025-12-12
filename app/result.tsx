@@ -1,8 +1,8 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useRef, useState } from 'react';
 import {
-  Alert,
   Animated,
   Dimensions,
   ScrollView,
@@ -60,14 +60,8 @@ function renderPriceInfo(priceInfo: string) {
   return <Text style={styles.priceValue}>{priceInfo}</Text>;
 }
 
-// Mock purchase function - ready for Apple Pay integration
-async function mockPurchase(planId: PlanId): Promise<boolean> {
-  // Simulate payment processing delay
-  await new Promise((resolve) => setTimeout(resolve, 800));
-  // In production, this would call Apple Pay / RevenueCat
-  // For now, always return success
-  return true;
-}
+// DEV: Skip payment for testing
+const DEV_SKIP_PAYMENT = true;
 
 // Get total days based on plan
 function getTotalDaysForPlan(planId: PlanId): number {
@@ -130,31 +124,29 @@ export default function ResultScreen() {
   const handleSelectPlan = async (selectedPlan: Plan | undefined) => {
     console.log('CONTINUER_PRESS', selectedPlan?.name);
 
-    if (!selectedPlan || isProcessing) return;
+    if (!selectedPlan) return;
 
-    setIsProcessing(true);
+    // DEV: Skip payment, go directly to transition
+    if (DEV_SKIP_PAYMENT) {
+      try {
+        // Mark as paid in AsyncStorage
+        await AsyncStorage.setItem('hasPaid', 'true');
 
-    try {
-      // Mock purchase - ready for Apple Pay integration
-      const success = await mockPurchase(selectedPlan.id);
-
-      if (success) {
-        // Save purchase to progress context
+        // Save to progress context
         const totalDays = getTotalDaysForPlan(selectedPlan.id);
         await completePurchase(selectedPlan.id, selectedPlan.name, totalDays);
 
-        // Navigate to transition screen
+        console.log('Navigating to post-payment-transition...');
+
+        // Navigate to transition
         router.push({
-          pathname: '/payment-transition',
+          pathname: '/post-payment-transition',
           params: { planName: selectedPlan.name },
         });
-      } else {
-        Alert.alert('Erreur', 'Le paiement a echoue. Veuillez reessayer.');
+      } catch (error) {
+        console.error('Navigation error:', error);
       }
-    } catch (error) {
-      Alert.alert('Erreur', 'Une erreur est survenue. Veuillez reessayer.');
-    } finally {
-      setIsProcessing(false);
+      return;
     }
   };
 
@@ -257,9 +249,8 @@ export default function ResultScreen() {
 
           <View style={styles.ctaContainer}>
             <PrimaryButton
-              title={isProcessing ? 'Traitement...' : 'Continuer'}
+              title="Continuer"
               onPress={() => handleSelectPlan(currentPlan)}
-              disabled={isProcessing}
             />
             <Text style={styles.trialDisclaimer}>essai gratuit sans engagement</Text>
           </View>
