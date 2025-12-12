@@ -12,6 +12,9 @@ const firstPageBg = require('../assets/images/first-page.png');
 export default function HomeScreen() {
   const router = useRouter();
 
+  // DEBUG: Confirm first-page.png is loaded
+  console.log('BG source: first-page.png loaded', firstPageBg);
+
   return (
     <ImageBackground source={firstPageBg} style={styles.background} resizeMode="cover">
       <SafeAreaView style={styles.safeArea}>

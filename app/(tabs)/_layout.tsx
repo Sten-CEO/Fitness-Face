@@ -1,23 +1,27 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
 import React from 'react';
-import { StyleSheet, View } from 'react-native';
+import { ImageBackground, StyleSheet, View } from 'react-native';
 import { textColors } from '../../theme/typography';
+
+const backgroundImage = require('../../assets/images/background.jpeg');
 
 export default function TabLayout() {
   return (
-    <Tabs
-      screenOptions={{
-        headerShown: false,
-        tabBarStyle: styles.tabBar,
-        tabBarActiveTintColor: textColors.primary,
-        tabBarInactiveTintColor: 'rgba(255, 255, 255, 0.5)',
-        tabBarShowLabel: false,
-        tabBarBackground: () => (
-          <View style={styles.tabBarBackground} />
-        ),
-      }}
-    >
+    <ImageBackground source={backgroundImage} style={styles.background} resizeMode="cover">
+      <View style={styles.overlay} />
+      <Tabs
+        screenOptions={{
+          headerShown: false,
+          tabBarStyle: styles.tabBar,
+          tabBarActiveTintColor: textColors.primary,
+          tabBarInactiveTintColor: 'rgba(255, 255, 255, 0.5)',
+          tabBarShowLabel: false,
+          tabBarBackground: () => (
+            <View style={styles.tabBarBackground} />
+          ),
+        }}
+      >
       <Tabs.Screen
         name="dashboard"
         options={{
@@ -63,10 +67,19 @@ export default function TabLayout() {
         }}
       />
     </Tabs>
+    </ImageBackground>
   );
 }
 
 const styles = StyleSheet.create({
+  background: {
+    flex: 1,
+  },
+  overlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+    pointerEvents: 'none',
+  },
   tabBar: {
     position: 'absolute',
     bottom: 24,
