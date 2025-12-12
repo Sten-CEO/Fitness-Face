@@ -41,6 +41,14 @@ export const typography = {
     lineHeight: 28,
   } as TextStyle,
 
+  h4: {
+    fontFamily,
+    fontSize: 17,
+    fontWeight: fontWeights.semibold,
+    letterSpacing: -0.1,
+    lineHeight: 24,
+  } as TextStyle,
+
   // Body text - regular (400)
   body: {
     fontFamily,
