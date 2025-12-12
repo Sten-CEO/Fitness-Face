@@ -117,15 +117,32 @@ export default function ResultScreen() {
     });
   };
 
-  const handleSelectPlan = (selectedPlan: Plan | undefined) => {
-    if (!selectedPlan) return;
+  const handleSelectPlan = async (selectedPlan: Plan | undefined) => {
+    console.log('NAV_DEBUG_V2: start', selectedPlan?.id);
 
-    // Save to context
-    const totalDays = getTotalDaysForPlan(selectedPlan.id);
-    completePurchase(selectedPlan.id, selectedPlan.name, totalDays);
+    if (!selectedPlan) {
+      console.log('NAV_DEBUG_V2: no plan selected');
+      return;
+    }
 
-    // Go directly to dashboard
-    router.replace('/(tabs)/dashboard');
+    try {
+      // Save to context
+      const totalDays = getTotalDaysForPlan(selectedPlan.id);
+      await completePurchase(selectedPlan.id, selectedPlan.name, totalDays);
+      console.log('NAV_DEBUG_V2: after purchase');
+
+      // Go directly to dashboard
+      router.replace('/(tabs)/dashboard');
+      console.log('NAV_DEBUG_V2: after replace');
+
+      // Fallback if replace doesn't work
+      setTimeout(() => {
+        console.log('NAV_DEBUG_V2: fallback timeout');
+        router.push('/(tabs)/dashboard');
+      }, 100);
+    } catch (error) {
+      console.log('NAV_DEBUG_V2: error', error);
+    }
   };
 
   if (!mainPlan) {
