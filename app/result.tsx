@@ -1,8 +1,8 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useRef, useState } from 'react';
 import {
+  Alert,
   Animated,
   Dimensions,
   ScrollView,
@@ -59,9 +59,6 @@ function renderPriceInfo(priceInfo: string) {
   }
   return <Text style={styles.priceValue}>{priceInfo}</Text>;
 }
-
-// DEV: Skip payment for testing
-const DEV_SKIP_PAYMENT = true;
 
 // Get total days based on plan
 function getTotalDaysForPlan(planId: PlanId): number {
@@ -121,33 +118,23 @@ export default function ResultScreen() {
     });
   };
 
-  const handleSelectPlan = async (selectedPlan: Plan | undefined) => {
+  const handleSelectPlan = (selectedPlan: Plan | undefined) => {
+    // DEBUG: Show alert to confirm tap is working
+    Alert.alert('DEBUG', `Tap detected: ${selectedPlan?.name || 'no plan'}`);
+
     console.log('CONTINUER_PRESS', selectedPlan?.name);
 
-    if (!selectedPlan) return;
-
-    // DEV: Skip payment, go directly to transition
-    if (DEV_SKIP_PAYMENT) {
-      try {
-        // Mark as paid in AsyncStorage
-        await AsyncStorage.setItem('hasPaid', 'true');
-
-        // Save to progress context
-        const totalDays = getTotalDaysForPlan(selectedPlan.id);
-        await completePurchase(selectedPlan.id, selectedPlan.name, totalDays);
-
-        console.log('Navigating to post-payment-transition...');
-
-        // Navigate to transition
-        router.push({
-          pathname: '/post-payment-transition',
-          params: { planName: selectedPlan.name },
-        });
-      } catch (error) {
-        console.error('Navigation error:', error);
-      }
+    if (!selectedPlan) {
+      console.log('No plan selected!');
       return;
     }
+
+    // Save to context (fire and forget)
+    const totalDays = getTotalDaysForPlan(selectedPlan.id);
+    completePurchase(selectedPlan.id, selectedPlan.name, totalDays);
+
+    // Navigate immediately
+    router.push('/post-payment-transition');
   };
 
   if (!mainPlan) {
