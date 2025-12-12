@@ -5,6 +5,7 @@ import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-nati
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import CleanCard from '../../components/CleanCard';
+import TabBackground from '../../components/TabBackground';
 import { useProgress } from '../../contexts/ProgressContext';
 import { getRoutineForPlan, routines } from '../../data/routines';
 import { typography, textColors } from '../../theme/typography';
@@ -16,7 +17,7 @@ export default function RoutineScreen() {
   const currentRoutine = selectedPlanId ? getRoutineForPlan(selectedPlanId) : routines[0];
 
   return (
-    <View style={styles.container}>
+    <TabBackground>
       <SafeAreaView style={styles.safeArea} edges={['top']}>
         <ScrollView
           style={styles.scrollView}
@@ -72,7 +73,7 @@ export default function RoutineScreen() {
           <View style={styles.bottomSpacer} />
         </ScrollView>
       </SafeAreaView>
-    </View>
+    </TabBackground>
   );
 }
 

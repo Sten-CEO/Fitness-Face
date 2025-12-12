@@ -4,6 +4,7 @@ import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import CleanCard from '../../components/CleanCard';
+import TabBackground from '../../components/TabBackground';
 import { useProgress } from '../../contexts/ProgressContext';
 import { typography, textColors } from '../../theme/typography';
 
@@ -36,7 +37,7 @@ export default function ProgressScreen() {
   const daysGrid = generateDaysGrid();
 
   return (
-    <View style={styles.container}>
+    <TabBackground>
       <SafeAreaView style={styles.safeArea} edges={['top']}>
         <ScrollView
           style={styles.scrollView}
@@ -189,15 +190,11 @@ export default function ProgressScreen() {
           <View style={styles.bottomSpacer} />
         </ScrollView>
       </SafeAreaView>
-    </View>
+    </TabBackground>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: 'transparent',
-  },
   safeArea: {
     flex: 1,
   },
