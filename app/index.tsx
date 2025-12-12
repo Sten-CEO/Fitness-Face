@@ -1,41 +1,58 @@
 import { useRouter } from 'expo-router';
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { ImageBackground, StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
-import BackgroundScreen from '../components/BackgroundScreen';
 import PrimaryButton from '../components/PrimaryButton';
 import { typography, textColors } from '../theme/typography';
+
+const firstPageBg = require('../assets/images/first-page.png');
 
 export default function HomeScreen() {
   const router = useRouter();
 
   return (
-    <BackgroundScreen centered={false}>
-      <View style={styles.container}>
-        <View style={styles.spacer} />
+    <ImageBackground source={firstPageBg} style={styles.background} resizeMode="cover">
+      <SafeAreaView style={styles.safeArea}>
+        <View style={styles.container}>
+          <View style={styles.spacer} />
 
-        <View style={styles.content}>
-          <Text style={styles.title}>
-            Transforme ton{'\n'}
-            <Text style={styles.titleBlue}>visage</Text> en 5 min{'\n'}
-            par jour.
-          </Text>
+          <View style={styles.content}>
+            {/* Label Jaw */}
+            <View style={styles.labelContainer}>
+              <Text style={styles.labelIcon}>◇</Text>
+              <Text style={styles.labelText}>Jaw</Text>
+            </View>
 
-          <Text style={styles.subtitle}>
-            Programmes guides pour jawline, double menton et un visage plus sculpte.
-          </Text>
+            <Text style={styles.title}>
+              Transforme ton{'\n'}
+              <Text style={styles.titleBlue}>visage</Text> en 5 min{'\n'}
+              par jour.
+            </Text>
 
-          <PrimaryButton
-            title="Commencer"
-            onPress={() => router.push('/auth')}
-          />
+            <Text style={styles.subtitle}>
+              Programmes guides pour jawline, double menton et un visage plus sculpte.
+            </Text>
+
+            <PrimaryButton
+              title="Commencer"
+              onPress={() => router.push('/auth')}
+            />
+          </View>
         </View>
-      </View>
-    </BackgroundScreen>
+      </SafeAreaView>
+    </ImageBackground>
   );
 }
 
 const styles = StyleSheet.create({
+  background: {
+    flex: 1,
+  },
+  safeArea: {
+    flex: 1,
+    paddingHorizontal: 24,
+  },
   container: {
     flex: 1,
   },
@@ -44,6 +61,22 @@ const styles = StyleSheet.create({
   },
   content: {
     paddingBottom: 60,
+  },
+  labelContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+    gap: 6,
+  },
+  labelIcon: {
+    color: 'rgba(255, 255, 255, 0.6)',
+    fontSize: 14,
+  },
+  labelText: {
+    ...typography.labelSmall,
+    color: 'rgba(255, 255, 255, 0.6)',
+    fontSize: 13,
+    letterSpacing: 1,
   },
   title: {
     ...typography.h1,

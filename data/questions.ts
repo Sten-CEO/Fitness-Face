@@ -10,13 +10,57 @@ export interface AnswerOption {
 export interface Question {
   id: number;
   title: string;
+  icon: string;
   options: AnswerOption[];
+  isPersonalization?: boolean;
 }
 
 export const questions: Question[] = [
+  // Personalization question 1: Age
   {
     id: 1,
+    title: 'Quel est ton âge ?',
+    icon: '🎂',
+    options: [
+      { text: '- de 18 ans', scores: {} },
+      { text: '18–25 ans', scores: {} },
+      { text: '25–31 ans', scores: {} },
+      { text: '31–40 ans', scores: {} },
+      { text: '+ de 40 ans', scores: {} },
+    ],
+    isPersonalization: true,
+  },
+  // Personalization question 2: Motivation
+  {
+    id: 2,
+    title: "Qu'est-ce qui te motive le plus ?",
+    icon: '🎯',
+    options: [
+      { text: 'Me sentir mieux dans ma peau', scores: {} },
+      { text: 'Avoir un visage plus défini sur les photos', scores: {} },
+      { text: 'Ralentir les effets du temps', scores: {} },
+      { text: 'Simple curiosité, je veux tester', scores: {} },
+    ],
+    isPersonalization: true,
+  },
+  // Personalization question 3: Routine
+  {
+    id: 3,
+    title: 'Comment décrirais-tu ta routine actuelle ?',
+    icon: '📅',
+    options: [
+      { text: "Je n'ai aucune routine beauté/soin", scores: {} },
+      { text: "J'ai quelques habitudes basiques", scores: {} },
+      { text: "J'ai une routine bien établie", scores: {} },
+      { text: 'Je suis déjà très rigoureux(se)', scores: {} },
+    ],
+    isPersonalization: true,
+  },
+  // Original scoring questions
+  {
+    id: 4,
     title: "Qu'est-ce qui te complexe le plus sur ton visage ?",
+    icon: '🪞',
     options: [
       {
         text: 'Ma jawline / mâchoire pas assez dessinée',
@@ -33,8 +77,9 @@ export const questions: Question[] = [
     ],
   },
   {
-    id: 2,
+    id: 5,
     title: 'Quel type de résultat tu recherches ?',
+    icon: '✨',
     options: [
       {
         text: 'Un changement visible rapidement sur une zone précise',
@@ -47,8 +92,9 @@ export const questions: Question[] = [
     ],
   },
   {
-    id: 3,
+    id: 6,
     title: 'Combien de temps par jour tu es prêt à y consacrer ?',
+    icon: '⏱️',
     options: [
       {
         text: '5 minutes ou moins',
@@ -65,8 +111,9 @@ export const questions: Question[] = [
     ],
   },
   {
-    id: 4,
+    id: 7,
     title: 'Tu veux travailler uniquement une zone ou tout le visage ?',
+    icon: '👤',
     options: [
       {
         text: 'Principalement la mâchoire',
@@ -83,8 +130,9 @@ export const questions: Question[] = [
     ],
   },
   {
-    id: 5,
+    id: 8,
     title: 'Tu préfères :',
+    icon: '📋',
     options: [
       {
         text: 'Un programme ciblé sur un point précis',
@@ -127,14 +175,10 @@ export type PlanId =
 export function calculateRecommendedPlan(scores: ScoreBuckets): PlanId {
   const { jawline, doubleChin, fullFace } = scores;
 
-  // Si fullFace est clairement dominant ou égal aux autres
   if (fullFace >= jawline && fullFace >= doubleChin && fullFace >= 3) {
     return 'all_in_one';
   }
 
-  // Sinon, on compare jawline vs doubleChin
-  // On recommande TOUJOURS les programmes principaux (90 jours ou 60 jours)
-  // jamais les versions mensuelles
   if (jawline >= doubleChin) {
     return 'jawline_90';
   } else {

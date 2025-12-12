@@ -15,9 +15,26 @@ import PrimaryButton from '../components/PrimaryButton';
 import { Plan, plans } from '../data/plans';
 import { typography, textColors } from '../theme/typography';
 
+// Additional benefits to show on all plans
+const additionalBenefits = [
+  'Guide vidéo',
+  'Suivi journalier des progrès',
+  'Conseils journaliers',
+];
+
+// Get icon based on plan type
+function getPlanIcon(planId: string): string {
+  if (planId.includes('jawline')) {
+    return '💪';
+  } else if (planId.includes('double')) {
+    return '🎯';
+  } else {
+    return '✨';
+  }
+}
+
 // Parse price info to highlight amount only
 function renderPriceInfo(priceInfo: string) {
-  // Match patterns like "7 € / mois" or "29 €"
   const match = priceInfo.match(/^(\d+\s*€(?:\s*\/\s*mois)?)(.*)/);
   if (match) {
     return (
@@ -77,6 +94,7 @@ export default function ProgramsScreen() {
           <View style={styles.programsList}>
             {plans.map((plan, index) => {
               const isHighlighted = highlightPlan === plan.id || plan.isMainProgram;
+              const planIcon = getPlanIcon(plan.id);
 
               return (
                 <Animated.View
@@ -94,11 +112,15 @@ export default function ProgramsScreen() {
                   }}
                 >
                   <CleanCard style={styles.programCard}>
-                    <View style={[
-                      styles.badge,
-                      isHighlighted && styles.badgeHighlight
-                    ]}>
-                      <Text style={styles.badgeText}>{plan.tag}</Text>
+                    {/* Card header with badge and icon */}
+                    <View style={styles.cardHeader}>
+                      <View style={[
+                        styles.badge,
+                        isHighlighted && styles.badgeHighlight
+                      ]}>
+                        <Text style={styles.badgeText}>{plan.tag}</Text>
+                      </View>
+                      <Text style={styles.planIcon}>{planIcon}</Text>
                     </View>
 
                     <Text style={styles.planName}>{plan.name}</Text>
@@ -120,6 +142,14 @@ export default function ProgramsScreen() {
                               <Text style={styles.featureText}>{feature.text}</Text>
                             </View>
                           ))}
+                          {additionalBenefits.map((benefit, idx) => (
+                            <View key={`extra-${idx}`} style={styles.featureItem}>
+                              <View style={styles.featureIcon}>
+                                <Text style={styles.featureCheck}>✓</Text>
+                              </View>
+                              <Text style={styles.featureText}>{benefit}</Text>
+                            </View>
+                          ))}
                         </View>
                       </>
                     )}
@@ -127,9 +157,12 @@ export default function ProgramsScreen() {
                     {plan.priceInfo && (
                       <>
                         <View style={styles.separator} />
-                        <View style={styles.priceRow}>
-                          <Text style={styles.priceLabel}>Tarif</Text>
-                          {renderPriceInfo(plan.priceInfo)}
+                        <View style={styles.priceSection}>
+                          <View style={styles.priceRow}>
+                            <Text style={styles.priceLabel}>Tarif</Text>
+                            {renderPriceInfo(plan.priceInfo)}
+                          </View>
+                          <Text style={styles.tryFreeText}>essayer gratuitement</Text>
                         </View>
                       </>
                     )}
@@ -139,6 +172,7 @@ export default function ProgramsScreen() {
                         title="Choisir"
                         onPress={() => handleSelectPlan(plan)}
                       />
+                      <Text style={styles.trialDisclaimer}>essai gratuit sans engagement</Text>
                     </View>
                   </CleanCard>
                 </Animated.View>
@@ -186,16 +220,18 @@ const styles = StyleSheet.create({
   programsList: {
     gap: 20,
   },
-  programCard: {
-    // pas de style supplementaire
+  programCard: {},
+  cardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 14,
   },
   badge: {
-    alignSelf: 'flex-start',
     backgroundColor: 'rgba(255, 255, 255, 0.1)',
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 8,
-    marginBottom: 14,
   },
   badgeHighlight: {
     backgroundColor: textColors.accent,
@@ -204,6 +240,9 @@ const styles = StyleSheet.create({
     ...typography.labelSmall,
     color: textColors.primary,
     fontSize: 11,
+  },
+  planIcon: {
+    fontSize: 32,
   },
   planName: {
     ...typography.h3,
@@ -250,6 +289,9 @@ const styles = StyleSheet.create({
     flex: 1,
     color: 'rgba(255, 255, 255, 0.7)',
   },
+  priceSection: {
+    gap: 8,
+  },
   priceRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -273,7 +315,18 @@ const styles = StyleSheet.create({
     color: textColors.tertiary,
     fontWeight: '400',
   },
+  tryFreeText: {
+    ...typography.caption,
+    color: textColors.tertiary,
+    textAlign: 'right',
+  },
   buttonContainer: {
     marginTop: 20,
+    alignItems: 'center',
+  },
+  trialDisclaimer: {
+    ...typography.caption,
+    color: textColors.tertiary,
+    marginTop: 10,
   },
 });

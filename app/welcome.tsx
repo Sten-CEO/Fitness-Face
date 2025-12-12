@@ -19,9 +19,11 @@ export default function WelcomeScreen() {
   const { firstName } = useUser();
   const [phase, setPhase] = useState(PHASE_WELCOME);
 
-  const welcomeText = firstName
-    ? `Bienvenue ${firstName}`
-    : 'Bienvenue sur Fitness Face';
+  // Build welcome text with blue word info
+  const welcomePrefix = 'Bienvenue ';
+  const blueWord = firstName || 'Fitness Face';
+  const welcomeText = welcomePrefix + blueWord;
+  const blueStartIndex = welcomePrefix.length;
 
   // Animation values for welcome text
   const welcomeOpacity = useRef(new Animated.Value(0)).current;
@@ -56,7 +58,6 @@ export default function WelcomeScreen() {
       }),
       Animated.stagger(35, letterAnimations),
     ]).start(() => {
-      // Wait a moment after letters appear
       setTimeout(() => {
         setPhase(PHASE_SLIDE_UP);
       }, 800);
@@ -65,7 +66,6 @@ export default function WelcomeScreen() {
 
   useEffect(() => {
     if (phase === PHASE_SLIDE_UP) {
-      // PHASE 2: Welcome text slides up to top
       Animated.timing(welcomeTranslateY, {
         toValue: -height * 0.25,
         duration: 600,
@@ -77,7 +77,6 @@ export default function WelcomeScreen() {
     }
 
     if (phase === PHASE_SECOND_TEXT) {
-      // PHASE 3: Second text slides in from bottom
       Animated.parallel([
         Animated.timing(secondOpacity, {
           toValue: 1,
@@ -91,7 +90,6 @@ export default function WelcomeScreen() {
           useNativeDriver: true,
         }),
       ]).start(() => {
-        // Wait then exit
         setTimeout(() => {
           setPhase(PHASE_EXIT);
         }, 1800);
@@ -99,7 +97,6 @@ export default function WelcomeScreen() {
     }
 
     if (phase === PHASE_EXIT) {
-      // PHASE 4: Both texts exit upward
       Animated.parallel([
         Animated.timing(exitTranslateY, {
           toValue: -height,
@@ -118,7 +115,6 @@ export default function WelcomeScreen() {
           useNativeDriver: true,
         }),
       ]).start(() => {
-        // Wait 1 second with empty screen then navigate
         setTimeout(() => {
           router.replace('/questionnaire');
         }, 1000);
@@ -143,27 +139,31 @@ export default function WelcomeScreen() {
           ]}
         >
           <View style={styles.textRow}>
-            {welcomeText.split('').map((char, index) => (
-              <Animated.Text
-                key={index}
-                style={[
-                  styles.welcomeChar,
-                  {
-                    opacity: charAnimations[index],
-                    transform: [
-                      {
-                        translateY: charAnimations[index].interpolate({
-                          inputRange: [0, 1],
-                          outputRange: [20, 0],
-                        }),
-                      },
-                    ],
-                  },
-                ]}
-              >
-                {char === ' ' ? '\u00A0' : char}
-              </Animated.Text>
-            ))}
+            {welcomeText.split('').map((char, index) => {
+              const isBlue = index >= blueStartIndex;
+              return (
+                <Animated.Text
+                  key={index}
+                  style={[
+                    styles.welcomeChar,
+                    isBlue && styles.blueChar,
+                    {
+                      opacity: charAnimations[index],
+                      transform: [
+                        {
+                          translateY: charAnimations[index].interpolate({
+                            inputRange: [0, 1],
+                            outputRange: [20, 0],
+                          }),
+                        },
+                      ],
+                    },
+                  ]}
+                >
+                  {char === ' ' ? '\u00A0' : char}
+                </Animated.Text>
+              );
+            })}
           </View>
         </Animated.View>
 
@@ -181,10 +181,11 @@ export default function WelcomeScreen() {
           ]}
         >
           <Text style={styles.secondTitle}>
-            On va te proposer le programme parfait pour ton visage.
+            On va te proposer le programme{' '}
+            <Text style={styles.blueText}>parfait</Text> pour ton visage.
           </Text>
           <Text style={styles.secondSubtitle}>
-            Reponds a quelques questions pour commencer.
+            Reponds a quelques <Text style={styles.blueText}>questions</Text> pour commencer.
           </Text>
         </Animated.View>
       </View>
@@ -214,6 +215,12 @@ const styles = StyleSheet.create({
     ...typography.h2,
     color: textColors.primary,
     textAlign: 'center',
+  },
+  blueChar: {
+    color: textColors.accent,
+  },
+  blueText: {
+    color: textColors.accent,
   },
   secondContainer: {
     position: 'absolute',
