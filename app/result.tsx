@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useRef, useState } from 'react';
 import {
+  Alert,
   Animated,
   Dimensions,
   Pressable,
@@ -119,30 +120,30 @@ export default function ResultScreen() {
   };
 
   const handleSelectPlan = async (selectedPlan: Plan | undefined) => {
-    console.log('NAV_DEBUG_V2: start', selectedPlan?.id);
+    console.log('=== CLICK_CONTINUER_V3 ===');
+    console.log('Plan:', selectedPlan?.name, selectedPlan?.id);
 
     if (!selectedPlan) {
-      console.log('NAV_DEBUG_V2: no plan selected');
+      console.log('ERROR: No plan selected');
+      Alert.alert('Erreur', 'Aucun plan selectionne');
       return;
     }
 
     try {
-      // Save to context
+      // Save to context (mock payment success)
+      console.log('STEP 1: Saving purchase...');
       const totalDays = getTotalDaysForPlan(selectedPlan.id);
       await completePurchase(selectedPlan.id, selectedPlan.name, totalDays);
-      console.log('NAV_DEBUG_V2: after purchase');
+      console.log('STEP 2: Purchase saved OK');
 
-      // Go directly to dashboard
-      router.replace('/(tabs)/dashboard');
-      console.log('NAV_DEBUG_V2: after replace');
+      // Navigate to dashboard
+      console.log('STEP 3: Navigating to /(tabs)/dashboard...');
+      router.push('/(tabs)/dashboard');
+      console.log('STEP 4: router.push called');
 
-      // Fallback if replace doesn't work
-      setTimeout(() => {
-        console.log('NAV_DEBUG_V2: fallback timeout');
-        router.push('/(tabs)/dashboard');
-      }, 100);
     } catch (error) {
-      console.log('NAV_DEBUG_V2: error', error);
+      console.error('=== NAV ERROR ===', error);
+      Alert.alert('Erreur navigation', String(error));
     }
   };
 
