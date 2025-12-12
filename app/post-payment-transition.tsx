@@ -1,6 +1,7 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useRef } from 'react';
-import { Animated, StyleSheet, Text, View } from 'react-native';
+import { Animated, StyleSheet, Text } from 'react-native';
+import TransitionBackground from '../components/TransitionBackground';
 import { useUser } from '../contexts/UserContext';
 import { typography, textColors } from '../theme/typography';
 
@@ -55,7 +56,7 @@ export default function PostPaymentTransitionScreen() {
   }, []);
 
   return (
-    <View style={styles.container}>
+    <TransitionBackground style={styles.container}>
       <Animated.View
         style={[
           styles.content,
@@ -75,7 +76,7 @@ export default function PostPaymentTransitionScreen() {
           {displayName}
         </Text>
       </Animated.View>
-    </View>
+    </TransitionBackground>
   );
 }
 
