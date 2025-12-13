@@ -1,50 +1,26 @@
 import { Ionicons } from '@expo/vector-icons';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useRef, useState } from 'react';
 import {
   Dimensions,
   Image,
   NativeScrollEvent,
   NativeSyntheticEvent,
-  Platform,
   ScrollView,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
 
-import { getAllPossibleImageURIs } from '../utils/exerciseImages';
+import { getExerciseImagesFromRegistry } from '../data/exerciseImageRegistry';
 import { textColors, typography } from '../theme/typography';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const SLIDER_WIDTH = SCREEN_WIDTH - 48;
 const IMAGE_HEIGHT = 220;
 
-// Timeout pour le chargement (ms)
-const LOADING_TIMEOUT = 2500;
-
 interface ExerciseImageSliderProps {
   exerciseId: string;
   exerciseName?: string;
-}
-
-// Tester si une image existe via prefetch
-async function testImageExists(uri: string): Promise<boolean> {
-  try {
-    await Image.prefetch(uri);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-// Trouver la première image qui existe parmi les variantes
-async function findFirstValidImage(variants: string[]): Promise<string | null> {
-  for (const uri of variants) {
-    if (await testImageExists(uri)) {
-      return uri;
-    }
-  }
-  return null;
 }
 
 export default function ExerciseImageSlider({
@@ -53,51 +29,9 @@ export default function ExerciseImageSlider({
 }: ExerciseImageSliderProps) {
   const scrollViewRef = useRef<ScrollView>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [loadedImages, setLoadedImages] = useState<string[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
 
-  // Get all possible URIs grouped by image number
-  const imageGroups = getAllPossibleImageURIs(exerciseId);
-
-  // Charger les images au montage ou changement d'exercice
-  useEffect(() => {
-    let mounted = true;
-    setCurrentIndex(0);
-    setIsLoading(true);
-    setLoadedImages([]);
-
-    const loadImages = async () => {
-      const validImages: string[] = [];
-
-      // Pour chaque groupe (image 1, 2, 3), trouver la première variante qui existe
-      for (const variants of imageGroups) {
-        const validUri = await findFirstValidImage(variants);
-        if (validUri && mounted) {
-          validImages.push(validUri);
-        }
-      }
-
-      if (mounted) {
-        setLoadedImages(validImages);
-        setIsLoading(false);
-      }
-    };
-
-    // Lancer le chargement
-    loadImages();
-
-    // Timeout de sécurité
-    const timeoutId = setTimeout(() => {
-      if (mounted) {
-        setIsLoading(false);
-      }
-    }, LOADING_TIMEOUT);
-
-    return () => {
-      mounted = false;
-      clearTimeout(timeoutId);
-    };
-  }, [exerciseId]);
+  // Récupérer les images depuis le registre statique
+  const images = getExerciseImagesFromRegistry(exerciseId);
 
   const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
     const offsetX = event.nativeEvent.contentOffset.x;
@@ -105,22 +39,8 @@ export default function ExerciseImageSlider({
     setCurrentIndex(index);
   };
 
-  // Afficher le placeholder pendant le chargement
-  if (isLoading) {
-    return (
-      <View style={styles.container}>
-        <View style={styles.placeholderContainer}>
-          <View style={styles.iconCircle}>
-            <Ionicons name="hourglass-outline" size={36} color={textColors.accent} />
-          </View>
-          <Text style={styles.placeholderText}>Chargement...</Text>
-        </View>
-      </View>
-    );
-  }
-
-  // Aucune image chargée → placeholder
-  if (loadedImages.length === 0) {
+  // Aucune image → placeholder
+  if (images.length === 0) {
     return (
       <View style={styles.container}>
         <View style={styles.placeholderContainer}>
@@ -138,13 +58,13 @@ export default function ExerciseImageSlider({
     );
   }
 
-  // Une seule image → pas de slider
-  if (loadedImages.length === 1) {
+  // Une seule image → affichage simple sans slider
+  if (images.length === 1) {
     return (
       <View style={styles.container}>
         <View style={styles.imageContainer}>
           <Image
-            source={{ uri: loadedImages[0] }}
+            source={images[0]}
             style={styles.image}
             resizeMode="contain"
           />
@@ -153,7 +73,7 @@ export default function ExerciseImageSlider({
     );
   }
 
-  // Plusieurs images → slider horizontal
+  // Plusieurs images → slider horizontal avec swipe
   return (
     <View style={styles.container}>
       <ScrollView
@@ -167,10 +87,10 @@ export default function ExerciseImageSlider({
         snapToInterval={SLIDER_WIDTH}
         contentContainerStyle={styles.scrollContent}
       >
-        {loadedImages.map((uri, index) => (
-          <View key={uri} style={styles.imageContainer}>
+        {images.map((imageSource, index) => (
+          <View key={index} style={styles.imageContainer}>
             <Image
-              source={{ uri }}
+              source={imageSource}
               style={styles.image}
               resizeMode="contain"
             />
@@ -180,7 +100,7 @@ export default function ExerciseImageSlider({
 
       {/* Points de pagination */}
       <View style={styles.pagination}>
-        {loadedImages.map((_, index) => (
+        {images.map((_, index) => (
           <View
             key={index}
             style={[
@@ -194,7 +114,7 @@ export default function ExerciseImageSlider({
       {/* Indicateur d'étape */}
       <View style={styles.stepIndicator}>
         <Text style={styles.stepText}>
-          Étape {currentIndex + 1}/{loadedImages.length}
+          Étape {currentIndex + 1}/{images.length}
         </Text>
       </View>
     </View>
