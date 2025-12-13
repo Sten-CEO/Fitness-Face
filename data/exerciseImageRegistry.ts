@@ -1,6 +1,6 @@
 // ============================================
 // REGISTRE STATIQUE DES IMAGES D'EXERCICES
-// Généré automatiquement basé sur la structure des fichiers
+// NOTE: Les fichiers .PNG avec métadonnées C2PA sont exclus (corrompus)
 // ============================================
 
 import { ImageSourcePropType } from 'react-native';
@@ -9,21 +9,20 @@ type ExerciseImageRegistry = Record<string, ImageSourcePropType[]>;
 
 // ============================================
 // JAWLINE EXERCISES (jaw_1 à jaw_15)
+// NOTE: Fichiers .PNG exclus car corrompus par métadonnées C2PA
 // ============================================
 
 const jawlineImages: ExerciseImageRegistry = {
   jaw_1: [
     require('../public/exercises/jawline/jawline-exo-1/1.png'),
-    require('../public/exercises/jawline/jawline-exo-1/2.PNG'),
-    require('../public/exercises/jawline/jawline-exo-1/3.PNG'),
+    // 2.PNG et 3.PNG exclus - métadonnées C2PA corrompues
   ],
   jaw_2: [
     require('../public/exercises/jawline/jawline-exo-2/1.jpeg'),
-    require('../public/exercises/jawline/jawline-exo-2/2.PNG'),
+    // 2.PNG exclu - métadonnées C2PA corrompues
   ],
   jaw_3: [
-    require('../public/exercises/jawline/jawline-exo-3/1.PNG'),
-    require('../public/exercises/jawline/jawline-exo-3/2.PNG'),
+    // 1.PNG et 2.PNG exclus - métadonnées C2PA corrompues
     // 3.HEIC non supporté par React Native
   ],
   jaw_4: [],
@@ -39,7 +38,7 @@ const jawlineImages: ExerciseImageRegistry = {
   ],
   jaw_8: [
     require('../public/exercises/jawline/jawline-exo-8/1.jpeg'),
-    require('../public/exercises/jawline/jawline-exo-8/2.PNG'),
+    // 2.PNG exclu - métadonnées C2PA corrompues
     require('../public/exercises/jawline/jawline-exo-8/3.jpeg'),
   ],
   jaw_9: [],
@@ -56,7 +55,7 @@ const jawlineImages: ExerciseImageRegistry = {
   ],
   jaw_13: [
     require('../public/exercises/jawline/jawline-exo-13/1.jpeg'),
-    require('../public/exercises/jawline/jawline-exo-13/2.PNG'),
+    // 2.PNG exclu - métadonnées C2PA corrompues
     require('../public/exercises/jawline/jawline-exo-13/3.jpeg'),
   ],
   jaw_14: [
@@ -108,7 +107,7 @@ const doubleMentonImages: ExerciseImageRegistry = {
   ],
   dc_9: [
     require('../public/exercises/double-menton/dm-exo-9/1.jpeg'),
-    require('../public/exercises/double-menton/dm-exo-9/2.PNG'),
+    // 2.PNG exclu - métadonnées C2PA potentiellement corrompues
   ],
   dc_10: [
     require('../public/exercises/double-menton/dm-exo-10/1.jpeg'),
