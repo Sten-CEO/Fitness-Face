@@ -75,13 +75,13 @@ export default function TabLayout() {
   );
 }
 
-const TAB_BAR_HEIGHT = 70;
+const TAB_BAR_HEIGHT = 60;
 const ICON_CONTAINER_SIZE = 44;
 
 const styles = StyleSheet.create({
   tabBar: {
     position: 'absolute',
-    bottom: Platform.OS === 'ios' ? 28 : 20,
+    bottom: Platform.OS === 'ios' ? 34 : 20,
     left: 20,
     right: 20,
     height: TAB_BAR_HEIGHT,
@@ -114,11 +114,9 @@ const styles = StyleSheet.create({
     marginTop: 0,
     marginBottom: 0,
   },
-  // Container that fills the full height and centers the icon
   iconContainer: {
-    flex: 1,
-    height: '100%',
     width: '100%',
+    height: TAB_BAR_HEIGHT,
     justifyContent: 'center',
     alignItems: 'center',
   },
