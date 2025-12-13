@@ -1,8 +1,15 @@
 // ============================================
 // EXERCISE IMAGE UTILITIES
+// Images served from public/exercises/
 // ============================================
 
 import { ImageSourcePropType } from 'react-native';
+
+// Supported image extensions (in order of priority)
+const IMAGE_EXTENSIONS = ['png', 'PNG', 'jpeg', 'JPEG', 'jpg', 'JPG'];
+
+// Maximum number of images per exercise
+const MAX_IMAGES_PER_EXERCISE = 3;
 
 // Map exercise IDs to folder names
 export function getExerciseImageFolder(exerciseId: string): { category: string; folder: string } | null {
@@ -27,83 +34,94 @@ export function getExerciseImageFolder(exerciseId: string): { category: string; 
   return null;
 }
 
-// In React Native, we need to statically require images
-// This creates a registry of all possible exercise images
-// Images should be placed in: assets/exercises/{category}/{folder}/{1,2,3}.{png,jpg,jpeg}
-
-// Create image registry for jawline exercises
-const jawlineImages: Record<string, ImageSourcePropType[]> = {};
-const doubleMentonImages: Record<string, ImageSourcePropType[]> = {};
-
-// Attempt to load images for jawline exercises (1-15)
-// Since we can't dynamically require, we need to check at runtime if images exist
-// For now, we'll use a placeholder system
-
-// Placeholder for missing images
-export const placeholderImage: ImageSourcePropType = require('../assets/images/icon.png');
-
-// Get all images for an exercise (returns array of image sources)
-export function getExerciseImages(exerciseId: string): ImageSourcePropType[] {
+// Generate image URIs for an exercise from public/exercises/
+// Returns array of possible image URIs (1.png, 2.png, 3.png or .jpeg variants)
+export function getExerciseImageURIs(exerciseId: string): string[] {
   const folder = getExerciseImageFolder(exerciseId);
-  if (!folder) return [placeholderImage];
+  if (!folder) return [];
 
-  // Check the pre-loaded registry
-  if (folder.category === 'jawline' && jawlineImages[folder.folder]) {
-    return jawlineImages[folder.folder];
-  }
-  if (folder.category === 'double-menton' && doubleMentonImages[folder.folder]) {
-    return doubleMentonImages[folder.folder];
+  const uris: string[] = [];
+
+  // Generate URIs for images 1, 2, 3 with all possible extensions
+  for (let i = 1; i <= MAX_IMAGES_PER_EXERCISE; i++) {
+    // For each image number, we'll try different extensions
+    // The actual availability will be checked by the Image component or a validator
+    for (const ext of IMAGE_EXTENSIONS) {
+      uris.push(`/exercises/${folder.category}/${folder.folder}/${i}.${ext}`);
+    }
   }
 
-  // Return placeholder if no images found
-  return [placeholderImage];
+  return uris;
 }
 
-// Check if exercise has real images (not placeholder)
+// Get primary image URIs (one per image number, prioritizing common extensions)
+export function getPrimaryImageURIs(exerciseId: string): string[] {
+  const folder = getExerciseImageFolder(exerciseId);
+  if (!folder) return [];
+
+  const uris: string[] = [];
+
+  // Generate URIs for images 1, 2, 3 with primary extension
+  for (let i = 1; i <= MAX_IMAGES_PER_EXERCISE; i++) {
+    // Jawline uses .png, double-menton uses .jpeg
+    const ext = folder.category === 'jawline' ? 'png' : 'jpeg';
+    uris.push(`/exercises/${folder.category}/${folder.folder}/${i}.${ext}`);
+  }
+
+  return uris;
+}
+
+// Image sources for the slider component
+export interface ExerciseImageSource {
+  uri: string;
+  index: number;
+}
+
+// Get image sources for an exercise (ready for Image component)
+export function getExerciseImages(exerciseId: string): ImageSourcePropType[] {
+  const uris = getPrimaryImageURIs(exerciseId);
+
+  if (uris.length === 0) {
+    return [];
+  }
+
+  // Return image sources with URIs
+  return uris.map(uri => ({ uri }));
+}
+
+// Check if exercise might have images (based on folder mapping)
 export function hasExerciseImages(exerciseId: string): boolean {
-  const images = getExerciseImages(exerciseId);
-  return images.length > 0 && images[0] !== placeholderImage;
+  const folder = getExerciseImageFolder(exerciseId);
+  return folder !== null;
 }
 
-// ============================================
-// STATIC IMAGE REGISTRY
-// This section needs to be updated when images are added
-// React Native requires static require() calls
-// ============================================
+// Get the base path for exercise images
+export function getExerciseImageBasePath(exerciseId: string): string | null {
+  const folder = getExerciseImageFolder(exerciseId);
+  if (!folder) return null;
+  return `/exercises/${folder.category}/${folder.folder}`;
+}
 
-// Try to require images - will fail silently if not found
-function tryRequire(path: string): ImageSourcePropType | null {
-  try {
-    // This won't work at runtime, but keeps the structure ready
-    return null;
-  } catch {
-    return null;
+// Registry to track which images have been validated as existing
+// This gets populated at runtime when images load successfully
+const validatedImages: Record<string, string[]> = {};
+
+// Mark an image as validated (exists and loaded successfully)
+export function markImageAsValid(exerciseId: string, uri: string): void {
+  if (!validatedImages[exerciseId]) {
+    validatedImages[exerciseId] = [];
+  }
+  if (!validatedImages[exerciseId].includes(uri)) {
+    validatedImages[exerciseId].push(uri);
   }
 }
 
-// Initialize image registries
-// When images are added, uncomment and update these sections:
+// Get only validated images for an exercise
+export function getValidatedImages(exerciseId: string): string[] {
+  return validatedImages[exerciseId] || [];
+}
 
-/*
-// Jawline Exercise 1 Images
-try {
-  jawlineImages['jawline-exo-1'] = [
-    require('../assets/exercises/jawline/jawline-exo-1/1.png'),
-    require('../assets/exercises/jawline/jawline-exo-1/2.png'),
-    require('../assets/exercises/jawline/jawline-exo-1/3.png'),
-  ].filter(Boolean);
-} catch {}
-
-// Repeat for jawline-exo-2 through jawline-exo-15...
-
-// Double Menton Exercise 1 Images
-try {
-  doubleMentonImages['dm-exo-1'] = [
-    require('../assets/exercises/double-menton/dm-exo-1/1.png'),
-    require('../assets/exercises/double-menton/dm-exo-1/2.png'),
-    require('../assets/exercises/double-menton/dm-exo-1/3.png'),
-  ].filter(Boolean);
-} catch {}
-
-// Repeat for dm-exo-2 through dm-exo-12...
-*/
+// Check if any images have been validated for an exercise
+export function hasValidatedImages(exerciseId: string): boolean {
+  return (validatedImages[exerciseId]?.length || 0) > 0;
+}

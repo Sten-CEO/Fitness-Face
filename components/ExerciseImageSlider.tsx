@@ -1,8 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
-import React, { useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Dimensions,
   Image,
+  ImageSourcePropType,
   NativeScrollEvent,
   NativeSyntheticEvent,
   ScrollView,
@@ -11,7 +12,7 @@ import {
   View,
 } from 'react-native';
 
-import { getExerciseImages, hasExerciseImages } from '../utils/exerciseImages';
+import { getPrimaryImageURIs, markImageAsValid } from '../utils/exerciseImages';
 import { textColors, typography } from '../theme/typography';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -23,15 +24,54 @@ interface ExerciseImageSliderProps {
   exerciseName?: string;
 }
 
+interface LoadedImage {
+  uri: string;
+  index: number;
+}
+
 export default function ExerciseImageSlider({
   exerciseId,
   exerciseName,
 }: ExerciseImageSliderProps) {
   const scrollViewRef = useRef<ScrollView>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [loadedImages, setLoadedImages] = useState<LoadedImage[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [attemptedURIs, setAttemptedURIs] = useState<Set<string>>(new Set());
 
-  const images = getExerciseImages(exerciseId);
-  const hasImages = hasExerciseImages(exerciseId);
+  // Get image URIs for this exercise
+  const imageURIs = getPrimaryImageURIs(exerciseId);
+
+  // Reset state when exercise changes
+  useEffect(() => {
+    setLoadedImages([]);
+    setIsLoading(true);
+    setAttemptedURIs(new Set());
+    setCurrentIndex(0);
+  }, [exerciseId]);
+
+  // Check when all images have been attempted
+  useEffect(() => {
+    if (attemptedURIs.size >= imageURIs.length) {
+      setIsLoading(false);
+    }
+  }, [attemptedURIs.size, imageURIs.length]);
+
+  const handleImageLoad = useCallback((uri: string, index: number) => {
+    setLoadedImages(prev => {
+      // Avoid duplicates
+      if (prev.some(img => img.uri === uri)) return prev;
+      const newImages = [...prev, { uri, index }];
+      // Sort by index to maintain order
+      return newImages.sort((a, b) => a.index - b.index);
+    });
+    setAttemptedURIs(prev => new Set(prev).add(uri));
+    markImageAsValid(exerciseId, uri);
+  }, [exerciseId]);
+
+  const handleImageError = useCallback((uri: string) => {
+    setAttemptedURIs(prev => new Set(prev).add(uri));
+  }, []);
 
   const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
     const offsetX = event.nativeEvent.contentOffset.x;
@@ -39,8 +79,32 @@ export default function ExerciseImageSlider({
     setCurrentIndex(index);
   };
 
-  // If no real images, show placeholder with exercise icon
-  if (!hasImages) {
+  // Show placeholder while loading
+  if (isLoading) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.placeholderContainer}>
+          <View style={styles.iconCircle}>
+            <Ionicons name="hourglass-outline" size={36} color={textColors.accent} />
+          </View>
+          <Text style={styles.placeholderText}>Chargement...</Text>
+        </View>
+        {/* Hidden images for loading detection */}
+        {imageURIs.map((uri, index) => (
+          <Image
+            key={uri}
+            source={{ uri }}
+            style={styles.hiddenImage}
+            onLoad={() => handleImageLoad(uri, index)}
+            onError={() => handleImageError(uri)}
+          />
+        ))}
+      </View>
+    );
+  }
+
+  // Show placeholder if no images loaded
+  if (loadedImages.length === 0) {
     return (
       <View style={styles.container}>
         <View style={styles.placeholderContainer}>
@@ -58,6 +122,22 @@ export default function ExerciseImageSlider({
     );
   }
 
+  // Show single image without slider if only one image
+  if (loadedImages.length === 1) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.imageContainer}>
+          <Image
+            source={{ uri: loadedImages[0].uri }}
+            style={styles.image}
+            resizeMode="contain"
+          />
+        </View>
+      </View>
+    );
+  }
+
+  // Show slider for multiple images
   return (
     <View style={styles.container}>
       <ScrollView
@@ -71,10 +151,10 @@ export default function ExerciseImageSlider({
         snapToInterval={SLIDER_WIDTH}
         contentContainerStyle={styles.scrollContent}
       >
-        {images.map((imageSource, index) => (
-          <View key={index} style={styles.imageContainer}>
+        {loadedImages.map((img, displayIndex) => (
+          <View key={img.uri} style={styles.imageContainer}>
             <Image
-              source={imageSource}
+              source={{ uri: img.uri }}
               style={styles.image}
               resizeMode="contain"
             />
@@ -83,28 +163,24 @@ export default function ExerciseImageSlider({
       </ScrollView>
 
       {/* Pagination Dots */}
-      {images.length > 1 && (
-        <View style={styles.pagination}>
-          {images.map((_, index) => (
-            <View
-              key={index}
-              style={[
-                styles.dot,
-                index === currentIndex && styles.dotActive,
-              ]}
-            />
-          ))}
-        </View>
-      )}
+      <View style={styles.pagination}>
+        {loadedImages.map((_, index) => (
+          <View
+            key={index}
+            style={[
+              styles.dot,
+              index === currentIndex && styles.dotActive,
+            ]}
+          />
+        ))}
+      </View>
 
       {/* Step Indicator */}
-      {images.length > 1 && (
-        <View style={styles.stepIndicator}>
-          <Text style={styles.stepText}>
-            Étape {currentIndex + 1}/{images.length}
-          </Text>
-        </View>
-      )}
+      <View style={styles.stepIndicator}>
+        <Text style={styles.stepText}>
+          Étape {currentIndex + 1}/{loadedImages.length}
+        </Text>
+      </View>
     </View>
   );
 }
@@ -129,6 +205,12 @@ const styles = StyleSheet.create({
   image: {
     width: '100%',
     height: '100%',
+  },
+  hiddenImage: {
+    width: 1,
+    height: 1,
+    position: 'absolute',
+    opacity: 0,
   },
   placeholderContainer: {
     width: '100%',
