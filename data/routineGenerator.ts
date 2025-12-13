@@ -1,5 +1,6 @@
 // ============================================
 // GÉNÉRATEUR DE ROUTINES QUOTIDIENNES
+// MAX 3 exercices par routine, uniquement exercices validés
 // ============================================
 
 import { PlanId } from './plans';
@@ -11,6 +12,43 @@ import {
   doubleChinExercises,
   createBonusVersion,
 } from './exercises';
+
+// ============================================
+// EXERCICES VALIDÉS (ceux avec images)
+// ============================================
+
+// IDs des exercices jawline qui ont des images
+const VALID_JAWLINE_IDS = [
+  'jaw_1',  // Mewing
+  'jaw_2',  // Chin Lifts
+  'jaw_5',  // Fish Face
+  'jaw_7',  // Jaw Forward
+  'jaw_8',  // Tongue Press Palate
+  'jaw_11', // Vowel Articulation
+  'jaw_12', // Jaw Rotation
+  'jaw_13', // Neck Flexion
+  'jaw_14', // Lip Pull
+  'jaw_15', // Platysma Stretch
+];
+
+// IDs des exercices double menton qui ont des images
+const VALID_DOUBLE_CHIN_IDS = [
+  'dc_1',  // Tongue Press
+  'dc_2',  // Neck Stretch
+  'dc_3',  // Jaw Jut
+  'dc_5',  // Platysma Tone
+  'dc_6',  // Lymphatic Drainage
+  'dc_7',  // Head Tilt Back
+  'dc_8',  // Kiss The Ceiling
+  'dc_9',  // Chin Scoop
+  'dc_10', // Tongue Out Stretch
+  'dc_11', // Neck Roll
+  'dc_12', // Collar Bone Backup
+];
+
+// Filtrer les exercices pour ne garder que les validés
+const validJawlineExercises = jawlineExercises.filter(e => VALID_JAWLINE_IDS.includes(e.id));
+const validDoubleChinExercises = doubleChinExercises.filter(e => VALID_DOUBLE_CHIN_IDS.includes(e.id));
 
 // ============================================
 // TYPES
@@ -39,6 +77,12 @@ export interface DailyRoutine {
   totalDurationMinutes: number;
   level: ExerciseLevel;
 }
+
+// ============================================
+// CONFIGURATION
+// ============================================
+
+const MAX_EXERCISES_PER_ROUTINE = 3;
 
 // ============================================
 // THÈMES DES SEMAINES
@@ -275,19 +319,22 @@ function getRoutineName(
 }
 
 // ============================================
-// SÉLECTION DES EXERCICES
+// SÉLECTION DES EXERCICES (MAX 3, validés uniquement)
 // ============================================
 
 function selectExercisesForDay(
   exercises: Exercise[],
   dayNumber: number,
-  count: number = 6
+  count: number = MAX_EXERCISES_PER_ROUTINE
 ): Exercise[] {
-  // Rotation des exercices basée sur le jour
+  // Assurer qu'on ne dépasse pas MAX_EXERCISES_PER_ROUTINE
+  const actualCount = Math.min(count, MAX_EXERCISES_PER_ROUTINE);
+
+  // Rotation des exercices basée sur le jour pour varier
   const startIndex = (dayNumber - 1) % exercises.length;
   const selected: Exercise[] = [];
 
-  for (let i = 0; i < count; i++) {
+  for (let i = 0; i < actualCount; i++) {
     const index = (startIndex + i) % exercises.length;
     selected.push(exercises[index]);
   }
@@ -318,7 +365,8 @@ export function generateDoubleChin60DayRoutine(dayNumber: number): DailyRoutine 
   const dayName = getDayName(dayNumber, phase);
   const routineName = getRoutineName(dayNumber, phase, 'double_chin');
 
-  const selectedExercises = selectExercisesForDay(doubleChinExercises, dayNumber, 6);
+  // Utiliser uniquement les exercices validés, max 3
+  const selectedExercises = selectExercisesForDay(validDoubleChinExercises, dayNumber);
 
   const steps: DailyRoutineStep[] = selectedExercises.map((exercise, index) => ({
     exerciseId: exercise.id,
@@ -328,7 +376,7 @@ export function generateDoubleChin60DayRoutine(dayNumber: number): DailyRoutine 
   }));
 
   const usedIds = selectedExercises.map(e => e.id);
-  const bonusExercise = selectBonusExercise(doubleChinExercises, dayNumber, usedIds);
+  const bonusExercise = selectBonusExercise(validDoubleChinExercises, dayNumber, usedIds);
 
   const bonus: BonusExercise = {
     exerciseId: bonusExercise.id,
@@ -362,7 +410,8 @@ export function generateJawline90DayRoutine(dayNumber: number): DailyRoutine {
   const dayName = getDayName(dayNumber, phase);
   const routineName = getRoutineName(dayNumber, phase, 'jawline');
 
-  const selectedExercises = selectExercisesForDay(jawlineExercises, dayNumber, 7);
+  // Utiliser uniquement les exercices validés, max 3
+  const selectedExercises = selectExercisesForDay(validJawlineExercises, dayNumber);
 
   const steps: DailyRoutineStep[] = selectedExercises.map((exercise, index) => ({
     exerciseId: exercise.id,
@@ -372,7 +421,7 @@ export function generateJawline90DayRoutine(dayNumber: number): DailyRoutine {
   }));
 
   const usedIds = selectedExercises.map(e => e.id);
-  const bonusExercise = selectBonusExercise(jawlineExercises, dayNumber, usedIds);
+  const bonusExercise = selectBonusExercise(validJawlineExercises, dayNumber, usedIds);
 
   const bonus: BonusExercise = {
     exerciseId: bonusExercise.id,
@@ -412,7 +461,8 @@ export function generateDoubleChinSubscriptionRoutine(dayNumber: number): DailyR
   const dayName = `Jour ${dayNumber} – Cycle ${cycleNumber}`;
   const routineName = getRoutineName(cycleDay, phase, 'double_chin');
 
-  const selectedExercises = selectExercisesForDay(doubleChinExercises, cycleDay, 6);
+  // Utiliser uniquement les exercices validés, max 3
+  const selectedExercises = selectExercisesForDay(validDoubleChinExercises, cycleDay);
 
   const steps: DailyRoutineStep[] = selectedExercises.map((exercise, index) => ({
     exerciseId: exercise.id,
@@ -422,7 +472,7 @@ export function generateDoubleChinSubscriptionRoutine(dayNumber: number): DailyR
   }));
 
   const usedIds = selectedExercises.map(e => e.id);
-  const bonusExercise = selectBonusExercise(doubleChinExercises, cycleDay, usedIds);
+  const bonusExercise = selectBonusExercise(validDoubleChinExercises, cycleDay, usedIds);
 
   const bonus: BonusExercise = {
     exerciseId: bonusExercise.id,
@@ -455,7 +505,8 @@ export function generateJawlineSubscriptionRoutine(dayNumber: number): DailyRout
   const dayName = `Jour ${dayNumber} – Cycle ${cycleNumber}`;
   const routineName = getRoutineName(cycleDay, phase, 'jawline');
 
-  const selectedExercises = selectExercisesForDay(jawlineExercises, cycleDay, 7);
+  // Utiliser uniquement les exercices validés, max 3
+  const selectedExercises = selectExercisesForDay(validJawlineExercises, cycleDay);
 
   const steps: DailyRoutineStep[] = selectedExercises.map((exercise, index) => ({
     exerciseId: exercise.id,
@@ -465,7 +516,7 @@ export function generateJawlineSubscriptionRoutine(dayNumber: number): DailyRout
   }));
 
   const usedIds = selectedExercises.map(e => e.id);
-  const bonusExercise = selectBonusExercise(jawlineExercises, cycleDay, usedIds);
+  const bonusExercise = selectBonusExercise(validJawlineExercises, cycleDay, usedIds);
 
   const bonus: BonusExercise = {
     exerciseId: bonusExercise.id,
@@ -492,8 +543,8 @@ export function generateJawlineSubscriptionRoutine(dayNumber: number): DailyRout
 // ============================================
 
 export function generateAllInOneRoutine(dayNumber: number): DailyRoutine {
-  // Alternance: Jawline / Double Menton / Visage Complet
-  const dayType = dayNumber % 3; // 0 = complet, 1 = jawline, 2 = double menton
+  // Alternance: Jawline / Double Menton / Mix
+  const dayType = dayNumber % 3; // 0 = mix, 1 = jawline, 2 = double menton
   const cycleDay = ((dayNumber - 1) % SUBSCRIPTION_CYCLE_DAYS) + 1;
   const cycleNumber = Math.floor((dayNumber - 1) / SUBSCRIPTION_CYCLE_DAYS) + 1;
 
@@ -503,27 +554,33 @@ export function generateAllInOneRoutine(dayNumber: number): DailyRoutine {
 
   let category: 'jawline' | 'double_chin' | 'full_face';
   let exercises: Exercise[];
-  let stepCount: number;
 
   if (dayType === 1) {
     category = 'jawline';
-    exercises = jawlineExercises;
-    stepCount = 6;
+    exercises = validJawlineExercises;
   } else if (dayType === 2) {
     category = 'double_chin';
-    exercises = doubleChinExercises;
-    stepCount = 5;
+    exercises = validDoubleChinExercises;
   } else {
-    // Visage complet: mix des deux
+    // Mix: alterner entre les deux pools
     category = 'full_face';
-    exercises = [...jawlineExercises.slice(0, 8), ...doubleChinExercises.slice(0, 6)];
-    stepCount = 8;
+    // Prendre 2 jawline + 1 double menton (ou inverse selon le jour)
+    const jawOffset = Math.floor(dayNumber / 3) % validJawlineExercises.length;
+    const dcOffset = Math.floor(dayNumber / 3) % validDoubleChinExercises.length;
+    exercises = [
+      validJawlineExercises[jawOffset % validJawlineExercises.length],
+      validDoubleChinExercises[dcOffset % validDoubleChinExercises.length],
+      validJawlineExercises[(jawOffset + 1) % validJawlineExercises.length],
+    ];
   }
 
   const dayName = `Jour ${dayNumber} – ${category === 'jawline' ? 'Jawline' : category === 'double_chin' ? 'Menton' : 'Complet'}`;
   const routineName = getRoutineName(cycleDay, phase, category);
 
-  const selectedExercises = selectExercisesForDay(exercises, dayNumber, stepCount);
+  // Max 3 exercices
+  const selectedExercises = category === 'full_face'
+    ? exercises.slice(0, MAX_EXERCISES_PER_ROUTINE)
+    : selectExercisesForDay(exercises, dayNumber);
 
   const steps: DailyRoutineStep[] = selectedExercises.map((exercise, index) => ({
     exerciseId: exercise.id,
@@ -534,7 +591,7 @@ export function generateAllInOneRoutine(dayNumber: number): DailyRoutine {
 
   const usedIds = selectedExercises.map(e => e.id);
   // Pour le bonus, alterner entre jawline et double menton
-  const bonusPool = dayType === 2 ? jawlineExercises : doubleChinExercises;
+  const bonusPool = dayType === 2 ? validJawlineExercises : validDoubleChinExercises;
   const bonusExercise = selectBonusExercise(bonusPool, dayNumber, usedIds);
 
   const bonus: BonusExercise = {
@@ -584,7 +641,7 @@ export function getDailyRoutine(planId: PlanId, dayNumber: number): DailyRoutine
 // ============================================
 
 export function formatDuration(minutes: number): string {
-  return `${minutes}-${minutes + 2} min`;
+  return `${minutes}-${minutes + 1} min`;
 }
 
 export function getLevelLabel(level: ExerciseLevel): string {
@@ -594,3 +651,9 @@ export function getLevelLabel(level: ExerciseLevel): string {
     case 'advanced': return 'Avancé';
   }
 }
+
+// ============================================
+// EXPORT DES LISTES VALIDÉES (pour debug/tests)
+// ============================================
+
+export { VALID_JAWLINE_IDS, VALID_DOUBLE_CHIN_IDS };
