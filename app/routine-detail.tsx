@@ -15,7 +15,7 @@ import CleanCard from '../components/CleanCard';
 import ExerciseImageSlider from '../components/ExerciseImageSlider';
 import PrimaryButton from '../components/PrimaryButton';
 import { useProgress } from '../contexts/ProgressContext';
-import { getDailyRoutine, getLevelLabel, formatDuration } from '../data/routineGenerator';
+import { getDailyRoutine, getIntensityLabel, formatDuration, formatSeries } from '../data/routineGenerator';
 import { typography, textColors } from '../theme/typography';
 
 export default function RoutineDetailScreen() {
@@ -112,7 +112,7 @@ export default function RoutineDetailScreen() {
 
   const handleCompleteBonus = async () => {
     if (dailyRoutine) {
-      await completeBonusExercise(currentDay, dailyRoutine.bonus.exerciseName);
+      await completeBonusExercise(currentDay, dailyRoutine.bonus.baseName);
     }
     router.replace('/(tabs)/dashboard');
   };
@@ -151,8 +151,8 @@ export default function RoutineDetailScreen() {
             <View style={styles.headerInfo}>
               <Text style={styles.headerTitle}>{dailyRoutine.routineName}</Text>
               <Text style={styles.headerSubtitle}>
-                {dailyRoutine.dayName}
-                {hasCompletedTodayRoutine ? ' – termine' : ''}
+                {dailyRoutine.dayName} • {getIntensityLabel(dailyRoutine.intensity)}
+                {hasCompletedTodayRoutine ? ' – terminé' : ''}
               </Text>
             </View>
             <View style={styles.headerSpacer} />
@@ -164,11 +164,11 @@ export default function RoutineDetailScreen() {
             <Text style={styles.themeBadgeText}>{dailyRoutine.weekTheme}</Text>
           </View>
 
-          {/* Level indicator */}
+          {/* Intensity indicator */}
           <View style={styles.levelBadge}>
-            <Ionicons name="trending-up-outline" size={14} color={textColors.tertiary} />
+            <Ionicons name="flame-outline" size={14} color={textColors.tertiary} />
             <Text style={styles.levelBadgeText}>
-              Niveau : {getLevelLabel(dailyRoutine.level)}
+              Intensité : {getIntensityLabel(dailyRoutine.intensity)}
             </Text>
           </View>
 
@@ -177,13 +177,13 @@ export default function RoutineDetailScreen() {
             <View style={styles.imageSliderSection}>
               <ExerciseImageSlider
                 exerciseId={dailyRoutine.steps[activeExerciseIndex].exerciseId}
-                exerciseName={dailyRoutine.steps[activeExerciseIndex].variant.name}
+                exerciseName={dailyRoutine.steps[activeExerciseIndex].displayName}
               />
               <Text style={styles.activeExerciseName}>
-                {dailyRoutine.steps[activeExerciseIndex].variant.name}
+                {dailyRoutine.steps[activeExerciseIndex].displayName}
               </Text>
               <Text style={styles.activeExerciseHint}>
-                Touche un exercice pour voir ses images
+                {formatSeries(dailyRoutine.steps[activeExerciseIndex].seriesCount, dailyRoutine.steps[activeExerciseIndex].durationPerSeries)}
               </Text>
             </View>
           )}
@@ -256,9 +256,11 @@ export default function RoutineDetailScreen() {
                   <Text style={[
                     styles.stepText,
                     activeExerciseIndex === index && styles.stepTextActive,
-                  ]}>{step.variant.name}</Text>
-                  <Text style={styles.stepInstructions}>{step.variant.instructions}</Text>
-                  <Text style={styles.stepDuration}>{step.variant.duration}</Text>
+                  ]}>{step.displayName}</Text>
+                  <Text style={styles.stepInstructions}>{step.instructions}</Text>
+                  <Text style={styles.stepDuration}>
+                    {formatSeries(step.seriesCount, step.durationPerSeries)}
+                  </Text>
                 </View>
                 {activeExerciseIndex === index && (
                   <View style={styles.activeIndicator}>
@@ -302,13 +304,13 @@ export default function RoutineDetailScreen() {
 
               <View style={styles.bonusContent}>
                 <Text style={styles.bonusExerciseName}>
-                  {dailyRoutine.bonus.variant.name}
+                  {dailyRoutine.bonus.displayName}
                 </Text>
                 <Text style={styles.bonusInstructions}>
-                  {dailyRoutine.bonus.variant.instructions}
+                  {dailyRoutine.bonus.instructions}
                 </Text>
                 <Text style={styles.bonusDuration}>
-                  {dailyRoutine.bonus.variant.duration}
+                  {formatSeries(dailyRoutine.bonus.seriesCount, dailyRoutine.bonus.durationPerSeries)}
                 </Text>
               </View>
 

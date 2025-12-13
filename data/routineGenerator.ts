@@ -1,638 +1,432 @@
 // ============================================
-// GÉNÉRATEUR DE ROUTINES QUOTIDIENNES
-// MAX 3 exercices par routine, uniquement exercices validés
+// GÉNÉRATEUR DE ROUTINES - FITNESS FACE
+// Système complet avec espacement et renouvellement
 // ============================================
 
 import { PlanId } from './plans';
 import {
   Exercise,
-  ExerciseLevel,
-  ExerciseVariant,
+  IntensityLevel,
   jawlineExercises,
   doubleChinExercises,
-  createBonusVersion,
+  getIntensifiedName,
+  getSeriesCount,
+  getIntensityLevel,
 } from './exercises';
-
-// ============================================
-// EXERCICES VALIDÉS (ceux avec images)
-// ============================================
-
-// IDs des exercices jawline qui ont des images
-const VALID_JAWLINE_IDS = [
-  'jaw_1',  // Mewing
-  'jaw_2',  // Chin Lifts
-  'jaw_5',  // Fish Face
-  'jaw_7',  // Jaw Forward
-  'jaw_8',  // Tongue Press Palate
-  'jaw_11', // Vowel Articulation
-  'jaw_12', // Jaw Rotation
-  'jaw_13', // Neck Flexion
-  'jaw_14', // Lip Pull
-  'jaw_15', // Platysma Stretch
-];
-
-// IDs des exercices double menton qui ont des images
-const VALID_DOUBLE_CHIN_IDS = [
-  'dc_1',  // Tongue Press
-  'dc_2',  // Neck Stretch
-  'dc_3',  // Jaw Jut
-  'dc_5',  // Platysma Tone
-  'dc_6',  // Lymphatic Drainage
-  'dc_7',  // Head Tilt Back
-  'dc_8',  // Kiss The Ceiling
-  'dc_9',  // Chin Scoop
-  'dc_10', // Tongue Out Stretch
-  'dc_11', // Neck Roll
-  'dc_12', // Collar Bone Backup
-];
-
-// Filtrer les exercices pour ne garder que les validés
-const validJawlineExercises = jawlineExercises.filter(e => VALID_JAWLINE_IDS.includes(e.id));
-const validDoubleChinExercises = doubleChinExercises.filter(e => VALID_DOUBLE_CHIN_IDS.includes(e.id));
-
-// ============================================
-// TYPES
-// ============================================
-
-export interface DailyRoutineStep {
-  exerciseId: string;
-  exerciseName: string;
-  variant: ExerciseVariant;
-  order: number;
-}
-
-export interface BonusExercise {
-  exerciseId: string;
-  exerciseName: string;
-  variant: ExerciseVariant;
-}
-
-export interface DailyRoutine {
-  dayNumber: number;
-  dayName: string;
-  weekTheme: string;
-  routineName: string;
-  steps: DailyRoutineStep[];
-  bonus: BonusExercise;
-  totalDurationMinutes: number;
-  level: ExerciseLevel;
-}
 
 // ============================================
 // CONFIGURATION
 // ============================================
 
 const MAX_EXERCISES_PER_ROUTINE = 3;
+const MIN_SPACING_DAYS = 4; // Espacement minimum entre répétitions d'un exercice
+
+// ============================================
+// TYPES
+// ============================================
+
+export interface ExerciseStep {
+  exerciseId: string;
+  exerciseNumber: number;
+  baseName: string;
+  displayName: string; // Nom avec intensité (ex: "Jaw Push Forward (Hard)")
+  description: string;
+  instructions: string;
+  seriesCount: number;
+  durationPerSeries: number; // en secondes
+  totalDuration: number; // en secondes
+  order: number;
+  intensity: IntensityLevel;
+}
+
+export interface BonusExercise {
+  exerciseId: string;
+  baseName: string;
+  displayName: string;
+  description: string;
+  instructions: string;
+  seriesCount: number;
+  durationPerSeries: number;
+}
+
+export interface DailyRoutine {
+  dayNumber: number;
+  dayName: string;
+  weekNumber: number;
+  weekTheme: string;
+  routineName: string;
+  steps: ExerciseStep[];
+  bonus: BonusExercise;
+  totalDurationMinutes: number;
+  intensity: IntensityLevel;
+  programType: 'jawline' | 'double_chin' | 'all_in_one';
+}
+
+// ============================================
+// ALGORITHME D'ESPACEMENT INTELLIGENT
+// ============================================
+
+/**
+ * Génère la séquence d'exercices pour tout le programme
+ * en respectant l'espacement minimum entre répétitions
+ */
+function generateExerciseSequence(
+  exerciseCount: number,
+  totalDays: number,
+  exercisesPerDay: number = MAX_EXERCISES_PER_ROUTINE
+): number[][] {
+  const sequence: number[][] = [];
+  const lastUsed: Map<number, number> = new Map(); // exercice -> dernier jour utilisé
+
+  for (let day = 1; day <= totalDays; day++) {
+    const dayExercises: number[] = [];
+    const availableExercises: number[] = [];
+
+    // Trouver les exercices disponibles (espacement respecté)
+    for (let exNum = 1; exNum <= exerciseCount; exNum++) {
+      const lastDay = lastUsed.get(exNum) || 0;
+      if (day - lastDay >= MIN_SPACING_DAYS || lastDay === 0) {
+        availableExercises.push(exNum);
+      }
+    }
+
+    // Sélectionner les exercices pour ce jour
+    // Utiliser un offset basé sur le jour pour varier la sélection
+    const offset = (day - 1) % exerciseCount;
+
+    for (let i = 0; i < exercisesPerDay && dayExercises.length < exercisesPerDay; i++) {
+      // Priorité aux exercices non utilisés récemment
+      let selectedIndex = (offset + i) % availableExercises.length;
+
+      if (availableExercises.length > 0) {
+        const selected = availableExercises[selectedIndex];
+        if (!dayExercises.includes(selected)) {
+          dayExercises.push(selected);
+          lastUsed.set(selected, day);
+          // Retirer de la liste disponible
+          availableExercises.splice(selectedIndex, 1);
+        }
+      }
+    }
+
+    // Si on n'a pas assez d'exercices, prendre les moins récemment utilisés
+    while (dayExercises.length < exercisesPerDay) {
+      let oldestExercise = 1;
+      let oldestDay = Infinity;
+
+      for (let exNum = 1; exNum <= exerciseCount; exNum++) {
+        if (!dayExercises.includes(exNum)) {
+          const lastDay = lastUsed.get(exNum) || 0;
+          if (lastDay < oldestDay) {
+            oldestDay = lastDay;
+            oldestExercise = exNum;
+          }
+        }
+      }
+
+      dayExercises.push(oldestExercise);
+      lastUsed.set(oldestExercise, day);
+    }
+
+    sequence.push(dayExercises);
+  }
+
+  return sequence;
+}
 
 // ============================================
 // THÈMES DES SEMAINES
 // ============================================
 
-const weekThemes60Days: string[] = [
-  'Semaine 1 – Éveil & Découverte',
-  'Semaine 2 – Fondations',
-  'Semaine 3 – Activation',
-  'Semaine 4 – Renforcement',
-  'Semaine 5 – Progression',
-  'Semaine 6 – Intensification',
-  'Semaine 7 – Sculpture',
-  'Semaine 8 – Définition',
-  'Semaine 9 – Maîtrise',
-];
+function getWeekTheme(weekNumber: number, totalWeeks: number): string {
+  const progress = weekNumber / totalWeeks;
 
-const weekThemes90Days: string[] = [
-  'Semaine 1 – Éveil & Initiation',
-  'Semaine 2 – Fondamentaux',
-  'Semaine 3 – Activation Musculaire',
-  'Semaine 4 – Construction',
-  'Semaine 5 – Renforcement',
-  'Semaine 6 – Progression Visible',
-  'Semaine 7 – Intensité Croissante',
-  'Semaine 8 – Sculpture Active',
-  'Semaine 9 – Définition',
-  'Semaine 10 – Affinement',
-  'Semaine 11 – Perfection',
-  'Semaine 12 – Maîtrise Totale',
-  'Semaine 13 – Excellence',
-];
-
-const weekThemesSubscription: string[] = [
-  'Semaine A – Fondations',
-  'Semaine B – Activation',
-  'Semaine C – Renforcement',
-  'Semaine D – Intensification',
-];
+  if (progress <= 0.15) return `Semaine ${weekNumber} – Éveil & Initiation`;
+  if (progress <= 0.30) return `Semaine ${weekNumber} – Fondations`;
+  if (progress <= 0.45) return `Semaine ${weekNumber} – Activation`;
+  if (progress <= 0.60) return `Semaine ${weekNumber} – Renforcement`;
+  if (progress <= 0.75) return `Semaine ${weekNumber} – Intensification`;
+  if (progress <= 0.90) return `Semaine ${weekNumber} – Sculpture`;
+  return `Semaine ${weekNumber} – Maîtrise`;
+}
 
 // ============================================
-// NOMS DE ROUTINES PAR PHASE
+// NOMS DE ROUTINES
 // ============================================
 
-const routineNamesDoubleChin: Record<string, string[]> = {
-  discovery: [
-    'Réveil du Cou',
-    'Premier Contact',
-    'Initiation Menton',
-    'Découverte Cervicale',
-    'Base du Drainage',
+const routineNames = {
+  jawline: [
+    'Jawline Sculpt',
+    'Définition Mâchoire',
+    'Power Jaw',
+    'Contour Facial',
+    'Jawline Flow',
   ],
-  foundation: [
-    'Fondations du Cou',
-    'Stabilisation Menton',
-    'Ancrage Cervical',
-    'Construction Base',
-    'Assise Musculaire',
+  double_chin: [
+    'Chin Lift',
+    'Neck Define',
+    'Menton Sculpt',
+    'Cervical Power',
+    'Double Chin Flow',
   ],
-  activation: [
-    'Activation Ciblée',
-    'Éveil Profond',
-    'Stimulation Active',
-    'Mise en Route',
-    'Dynamique du Cou',
-  ],
-  reinforcement: [
-    'Renforcement Menton',
-    'Puissance du Cou',
-    'Consolidation',
-    'Force Cervicale',
-    'Endurance Menton',
-  ],
-  sculpting: [
-    'Sculpture du Menton',
-    'Définition Cervicale',
-    'Affinement Ciblé',
-    'Modelage du Cou',
-    'Contour Précis',
-  ],
-  mastery: [
-    'Maîtrise Complète',
-    'Excellence du Cou',
-    'Perfection Menton',
-    'Virtuosité',
-    'Art du Contour',
+  all_in_one: [
+    'Full Face',
+    'Total Sculpt',
+    'Complete Flow',
+    'Harmonie Faciale',
+    'Power Combo',
   ],
 };
 
-const routineNamesJawline: Record<string, string[]> = {
-  discovery: [
-    'Éveil de la Mâchoire',
-    'Premier Pas Jawline',
-    'Initiation Masseter',
-    'Découverte Faciale',
-    'Base du Sculpt',
-  ],
-  foundation: [
-    'Fondations Jawline',
-    'Stabilité Mâchoire',
-    'Ancrage Facial',
-    'Construction Solide',
-    'Assise Masseter',
-  ],
-  activation: [
-    'Activation Jawline',
-    'Éveil Musculaire',
-    'Stimulation Mâchoire',
-    'Mise en Tension',
-    'Dynamique Faciale',
-  ],
-  reinforcement: [
-    'Puissance Jawline',
-    'Force de la Mâchoire',
-    'Consolidation Faciale',
-    'Endurance Masseter',
-    'Résistance Totale',
-  ],
-  sculpting: [
-    'Sculpture Jawline',
-    'Définition Maximale',
-    'Affinement Mâchoire',
-    'Modelage Précis',
-    'Contour Parfait',
-  ],
-  mastery: [
-    'Maîtrise Jawline',
-    'Excellence Faciale',
-    'Perfection Mâchoire',
-    'Art du Jawline',
-    'Virtuosité Faciale',
-  ],
-};
-
-const routineNamesFullFace: Record<string, string[]> = {
-  discovery: [
-    'Éveil Total',
-    'Harmonie Découverte',
-    'Initiation Complète',
-    'Premier Équilibre',
-    'Base Globale',
-  ],
-  foundation: [
-    'Fondations Visage',
-    'Équilibre Facial',
-    'Construction Globale',
-    'Harmonie Base',
-    'Assise Complète',
-  ],
-  activation: [
-    'Activation Globale',
-    'Éveil Intégral',
-    'Stimulation Totale',
-    'Dynamique Visage',
-    'Synergie Active',
-  ],
-  reinforcement: [
-    'Puissance Totale',
-    'Force Intégrale',
-    'Consolidation Globale',
-    'Endurance Visage',
-    'Résistance Complète',
-  ],
-  sculpting: [
-    'Sculpture Intégrale',
-    'Définition Totale',
-    'Modelage Complet',
-    'Affinement Global',
-    'Harmonie Sculptée',
-  ],
-  mastery: [
-    'Maîtrise Absolue',
-    'Excellence Totale',
-    'Perfection Visage',
-    'Art Complet',
-    'Virtuosité Intégrale',
-  ],
-};
-
-// ============================================
-// LOGIQUE DE PROGRESSION
-// ============================================
-
-function getPhaseForDay(dayNumber: number, totalDays: number): string {
-  const progress = dayNumber / totalDays;
-
-  if (progress <= 0.15) return 'discovery';
-  if (progress <= 0.30) return 'foundation';
-  if (progress <= 0.45) return 'activation';
-  if (progress <= 0.65) return 'reinforcement';
-  if (progress <= 0.85) return 'sculpting';
-  return 'mastery';
-}
-
-function getLevelForDay(dayNumber: number, totalDays: number): ExerciseLevel {
-  const progress = dayNumber / totalDays;
-
-  if (progress <= 0.33) return 'basic';
-  if (progress <= 0.66) return 'intermediate';
-  return 'advanced';
-}
-
-function getWeekTheme(dayNumber: number, themes: string[]): string {
-  const weekIndex = Math.floor((dayNumber - 1) / 7);
-  return themes[weekIndex % themes.length];
-}
-
-function getDayName(dayNumber: number, phase: string): string {
-  const phaseNames: Record<string, string> = {
-    discovery: 'Découverte',
-    foundation: 'Fondation',
-    activation: 'Activation',
-    reinforcement: 'Renforcement',
-    sculpting: 'Sculpture',
-    mastery: 'Maîtrise',
-  };
-
-  return `Jour ${dayNumber} – ${phaseNames[phase]}`;
-}
-
-function getRoutineName(
-  dayNumber: number,
-  phase: string,
-  category: 'double_chin' | 'jawline' | 'full_face'
-): string {
-  const namesMap = category === 'double_chin'
-    ? routineNamesDoubleChin
-    : category === 'jawline'
-    ? routineNamesJawline
-    : routineNamesFullFace;
-
-  const names = namesMap[phase] || namesMap.discovery;
+function getRoutineName(dayNumber: number, programType: 'jawline' | 'double_chin' | 'all_in_one'): string {
+  const names = routineNames[programType];
   return names[dayNumber % names.length];
 }
 
 // ============================================
-// SÉLECTION DES EXERCICES (MAX 3, validés uniquement)
+// CRÉATION D'UN STEP D'EXERCICE
 // ============================================
 
-function selectExercisesForDay(
-  exercises: Exercise[],
+function createExerciseStep(
+  exercise: Exercise,
+  order: number,
+  intensity: IntensityLevel
+): ExerciseStep {
+  const seriesCount = getSeriesCount(intensity);
+  const durationPerSeries = exercise.baseDurationSeconds;
+
+  return {
+    exerciseId: exercise.id,
+    exerciseNumber: exercise.number,
+    baseName: exercise.name,
+    displayName: getIntensifiedName(exercise.name, intensity),
+    description: exercise.description,
+    instructions: exercise.instructions,
+    seriesCount,
+    durationPerSeries,
+    totalDuration: seriesCount * durationPerSeries,
+    order,
+    intensity,
+  };
+}
+
+// ============================================
+// CRÉATION D'UN EXERCICE BONUS
+// ============================================
+
+function createBonusExercise(
+  exercise: Exercise,
   dayNumber: number,
-  count: number = MAX_EXERCISES_PER_ROUTINE
-): Exercise[] {
-  // Assurer qu'on ne dépasse pas MAX_EXERCISES_PER_ROUTINE
-  const actualCount = Math.min(count, MAX_EXERCISES_PER_ROUTINE);
+  totalDays: number
+): BonusExercise {
+  // Les bonus progressent aussi mais restent plus légers
+  const progress = dayNumber / totalDays;
+  let seriesCount = 2;
+  let durationPerSeries = 20;
 
-  // Rotation des exercices basée sur le jour pour varier
-  const startIndex = (dayNumber - 1) % exercises.length;
-  const selected: Exercise[] = [];
-
-  for (let i = 0; i < actualCount; i++) {
-    const index = (startIndex + i) % exercises.length;
-    selected.push(exercises[index]);
+  if (progress > 0.5) {
+    seriesCount = 3;
+    durationPerSeries = 25;
+  }
+  if (progress > 0.75) {
+    seriesCount = 3;
+    durationPerSeries = 30;
   }
 
-  return selected;
-}
-
-function selectBonusExercise(
-  exercises: Exercise[],
-  dayNumber: number,
-  usedExerciseIds: string[]
-): Exercise {
-  // Choisir un exercice différent de ceux de la routine principale
-  const available = exercises.filter(e => !usedExerciseIds.includes(e.id));
-  const index = dayNumber % available.length;
-  return available[index] || exercises[0];
-}
-
-// ============================================
-// GÉNÉRATION DE ROUTINE POUR PROGRAMME 60 JOURS
-// ============================================
-
-export function generateDoubleChin60DayRoutine(dayNumber: number): DailyRoutine {
-  const totalDays = 60;
-  const phase = getPhaseForDay(dayNumber, totalDays);
-  const level = getLevelForDay(dayNumber, totalDays);
-  const weekTheme = getWeekTheme(dayNumber, weekThemes60Days);
-  const dayName = getDayName(dayNumber, phase);
-  const routineName = getRoutineName(dayNumber, phase, 'double_chin');
-
-  // Utiliser uniquement les exercices validés, max 3
-  const selectedExercises = selectExercisesForDay(validDoubleChinExercises, dayNumber);
-
-  const steps: DailyRoutineStep[] = selectedExercises.map((exercise, index) => ({
+  return {
     exerciseId: exercise.id,
-    exerciseName: exercise.baseName,
-    variant: exercise.variants[level],
-    order: index + 1,
-  }));
-
-  const usedIds = selectedExercises.map(e => e.id);
-  const bonusExercise = selectBonusExercise(validDoubleChinExercises, dayNumber, usedIds);
-
-  const bonus: BonusExercise = {
-    exerciseId: bonusExercise.id,
-    exerciseName: bonusExercise.baseName,
-    variant: createBonusVersion(bonusExercise),
+    baseName: exercise.name,
+    displayName: `${exercise.name} (Bonus)`,
+    description: exercise.description,
+    instructions: `Version douce : ${exercise.instructions}`,
+    seriesCount,
+    durationPerSeries,
   };
+}
 
-  const totalSeconds = steps.reduce((sum, step) => sum + step.variant.durationSeconds, 0);
+// ============================================
+// GÉNÉRATEUR JAWLINE (30 jours, 90 jours)
+// ============================================
+
+// Cache pour les séquences générées
+const jawlineSequence90 = generateExerciseSequence(15, 90);
+const jawlineSequence30 = generateExerciseSequence(15, 30);
+
+export function generateJawlineRoutine(dayNumber: number, totalDays: number): DailyRoutine {
+  const sequence = totalDays === 90 ? jawlineSequence90 : jawlineSequence30;
+  const exerciseNumbers = sequence[dayNumber - 1] || [1, 2, 3];
+
+  const weekNumber = Math.ceil(dayNumber / 7);
+  const totalWeeks = Math.ceil(totalDays / 7);
+  const intensity = getIntensityLevel(dayNumber, totalDays);
+
+  const steps: ExerciseStep[] = exerciseNumbers.map((exNum, index) => {
+    const exercise = jawlineExercises[exNum - 1];
+    return createExerciseStep(exercise, index + 1, intensity);
+  });
+
+  // Bonus: exercice différent de ceux du jour
+  const usedNumbers = new Set(exerciseNumbers);
+  let bonusExercise = jawlineExercises[0];
+  for (const ex of jawlineExercises) {
+    if (!usedNumbers.has(ex.number)) {
+      bonusExercise = ex;
+      break;
+    }
+  }
+
+  const totalSeconds = steps.reduce((sum, step) => sum + step.totalDuration, 0);
 
   return {
     dayNumber,
-    dayName,
-    weekTheme,
-    routineName,
+    dayName: `Jour ${dayNumber}`,
+    weekNumber,
+    weekTheme: getWeekTheme(weekNumber, totalWeeks),
+    routineName: getRoutineName(dayNumber, 'jawline'),
     steps,
-    bonus,
+    bonus: createBonusExercise(bonusExercise, dayNumber, totalDays),
     totalDurationMinutes: Math.ceil(totalSeconds / 60),
-    level,
+    intensity,
+    programType: 'jawline',
   };
 }
 
 // ============================================
-// GÉNÉRATION DE ROUTINE POUR PROGRAMME 90 JOURS
+// GÉNÉRATEUR DOUBLE MENTON (30 jours, 60 jours)
 // ============================================
 
-export function generateJawline90DayRoutine(dayNumber: number): DailyRoutine {
-  const totalDays = 90;
-  const phase = getPhaseForDay(dayNumber, totalDays);
-  const level = getLevelForDay(dayNumber, totalDays);
-  const weekTheme = getWeekTheme(dayNumber, weekThemes90Days);
-  const dayName = getDayName(dayNumber, phase);
-  const routineName = getRoutineName(dayNumber, phase, 'jawline');
+const doubleChinSequence60 = generateExerciseSequence(12, 60);
+const doubleChinSequence30 = generateExerciseSequence(12, 30);
 
-  // Utiliser uniquement les exercices validés, max 3
-  const selectedExercises = selectExercisesForDay(validJawlineExercises, dayNumber);
+export function generateDoubleChinRoutine(dayNumber: number, totalDays: number): DailyRoutine {
+  const sequence = totalDays === 60 ? doubleChinSequence60 : doubleChinSequence30;
+  const exerciseNumbers = sequence[dayNumber - 1] || [1, 2, 3];
 
-  const steps: DailyRoutineStep[] = selectedExercises.map((exercise, index) => ({
-    exerciseId: exercise.id,
-    exerciseName: exercise.baseName,
-    variant: exercise.variants[level],
-    order: index + 1,
-  }));
+  const weekNumber = Math.ceil(dayNumber / 7);
+  const totalWeeks = Math.ceil(totalDays / 7);
+  const intensity = getIntensityLevel(dayNumber, totalDays);
 
-  const usedIds = selectedExercises.map(e => e.id);
-  const bonusExercise = selectBonusExercise(validJawlineExercises, dayNumber, usedIds);
+  const steps: ExerciseStep[] = exerciseNumbers.map((exNum, index) => {
+    const exercise = doubleChinExercises[exNum - 1];
+    return createExerciseStep(exercise, index + 1, intensity);
+  });
 
-  const bonus: BonusExercise = {
-    exerciseId: bonusExercise.id,
-    exerciseName: bonusExercise.baseName,
-    variant: createBonusVersion(bonusExercise),
-  };
+  // Bonus
+  const usedNumbers = new Set(exerciseNumbers);
+  let bonusExercise = doubleChinExercises[0];
+  for (const ex of doubleChinExercises) {
+    if (!usedNumbers.has(ex.number)) {
+      bonusExercise = ex;
+      break;
+    }
+  }
 
-  const totalSeconds = steps.reduce((sum, step) => sum + step.variant.durationSeconds, 0);
+  const totalSeconds = steps.reduce((sum, step) => sum + step.totalDuration, 0);
 
   return {
     dayNumber,
-    dayName,
-    weekTheme,
-    routineName,
+    dayName: `Jour ${dayNumber}`,
+    weekNumber,
+    weekTheme: getWeekTheme(weekNumber, totalWeeks),
+    routineName: getRoutineName(dayNumber, 'double_chin'),
     steps,
-    bonus,
+    bonus: createBonusExercise(bonusExercise, dayNumber, totalDays),
     totalDurationMinutes: Math.ceil(totalSeconds / 60),
-    level,
+    intensity,
+    programType: 'double_chin',
   };
 }
 
 // ============================================
-// GÉNÉRATION POUR ABONNEMENTS MENSUELS (CYCLE 28 JOURS)
-// ============================================
-
-const SUBSCRIPTION_CYCLE_DAYS = 28;
-
-export function generateDoubleChinSubscriptionRoutine(dayNumber: number): DailyRoutine {
-  // Le cycle se répète tous les 28 jours
-  const cycleDay = ((dayNumber - 1) % SUBSCRIPTION_CYCLE_DAYS) + 1;
-  const cycleNumber = Math.floor((dayNumber - 1) / SUBSCRIPTION_CYCLE_DAYS) + 1;
-
-  const phase = getPhaseForDay(cycleDay, SUBSCRIPTION_CYCLE_DAYS);
-  const level = getLevelForDay(cycleDay, SUBSCRIPTION_CYCLE_DAYS);
-  const weekTheme = getWeekTheme(cycleDay, weekThemesSubscription);
-
-  const dayName = `Jour ${dayNumber} – Cycle ${cycleNumber}`;
-  const routineName = getRoutineName(cycleDay, phase, 'double_chin');
-
-  // Utiliser uniquement les exercices validés, max 3
-  const selectedExercises = selectExercisesForDay(validDoubleChinExercises, cycleDay);
-
-  const steps: DailyRoutineStep[] = selectedExercises.map((exercise, index) => ({
-    exerciseId: exercise.id,
-    exerciseName: exercise.baseName,
-    variant: exercise.variants[level],
-    order: index + 1,
-  }));
-
-  const usedIds = selectedExercises.map(e => e.id);
-  const bonusExercise = selectBonusExercise(validDoubleChinExercises, cycleDay, usedIds);
-
-  const bonus: BonusExercise = {
-    exerciseId: bonusExercise.id,
-    exerciseName: bonusExercise.baseName,
-    variant: createBonusVersion(bonusExercise),
-  };
-
-  const totalSeconds = steps.reduce((sum, step) => sum + step.variant.durationSeconds, 0);
-
-  return {
-    dayNumber,
-    dayName,
-    weekTheme: `${weekTheme} (Cycle ${cycleNumber})`,
-    routineName,
-    steps,
-    bonus,
-    totalDurationMinutes: Math.ceil(totalSeconds / 60),
-    level,
-  };
-}
-
-export function generateJawlineSubscriptionRoutine(dayNumber: number): DailyRoutine {
-  const cycleDay = ((dayNumber - 1) % SUBSCRIPTION_CYCLE_DAYS) + 1;
-  const cycleNumber = Math.floor((dayNumber - 1) / SUBSCRIPTION_CYCLE_DAYS) + 1;
-
-  const phase = getPhaseForDay(cycleDay, SUBSCRIPTION_CYCLE_DAYS);
-  const level = getLevelForDay(cycleDay, SUBSCRIPTION_CYCLE_DAYS);
-  const weekTheme = getWeekTheme(cycleDay, weekThemesSubscription);
-
-  const dayName = `Jour ${dayNumber} – Cycle ${cycleNumber}`;
-  const routineName = getRoutineName(cycleDay, phase, 'jawline');
-
-  // Utiliser uniquement les exercices validés, max 3
-  const selectedExercises = selectExercisesForDay(validJawlineExercises, cycleDay);
-
-  const steps: DailyRoutineStep[] = selectedExercises.map((exercise, index) => ({
-    exerciseId: exercise.id,
-    exerciseName: exercise.baseName,
-    variant: exercise.variants[level],
-    order: index + 1,
-  }));
-
-  const usedIds = selectedExercises.map(e => e.id);
-  const bonusExercise = selectBonusExercise(validJawlineExercises, cycleDay, usedIds);
-
-  const bonus: BonusExercise = {
-    exerciseId: bonusExercise.id,
-    exerciseName: bonusExercise.baseName,
-    variant: createBonusVersion(bonusExercise),
-  };
-
-  const totalSeconds = steps.reduce((sum, step) => sum + step.variant.durationSeconds, 0);
-
-  return {
-    dayNumber,
-    dayName,
-    weekTheme: `${weekTheme} (Cycle ${cycleNumber})`,
-    routineName,
-    steps,
-    bonus,
-    totalDurationMinutes: Math.ceil(totalSeconds / 60),
-    level,
-  };
-}
-
-// ============================================
-// GÉNÉRATION POUR PROGRAMME TOUT-EN-UN
+// GÉNÉRATEUR TOUT-EN-UN
 // ============================================
 
 export function generateAllInOneRoutine(dayNumber: number): DailyRoutine {
-  // Alternance: Jawline / Double Menton / Mix
-  const dayType = dayNumber % 3; // 0 = mix, 1 = jawline, 2 = double menton
-  const cycleDay = ((dayNumber - 1) % SUBSCRIPTION_CYCLE_DAYS) + 1;
-  const cycleNumber = Math.floor((dayNumber - 1) / SUBSCRIPTION_CYCLE_DAYS) + 1;
+  const totalDays = 90; // Programme premium de 90 jours
+  const cycleDay = ((dayNumber - 1) % 28) + 1; // Cycle de 28 jours
+  const cycleNumber = Math.floor((dayNumber - 1) / 28) + 1;
 
-  const phase = getPhaseForDay(cycleDay, SUBSCRIPTION_CYCLE_DAYS);
-  const level = getLevelForDay(cycleDay, SUBSCRIPTION_CYCLE_DAYS);
-  const weekTheme = getWeekTheme(cycleDay, weekThemesSubscription);
+  // Alternance: Jour 1 = Jawline, Jour 2 = Double Menton, Jour 3 = Mix
+  const dayType = dayNumber % 3;
 
-  let category: 'jawline' | 'double_chin' | 'full_face';
-  let exercises: Exercise[];
+  const weekNumber = Math.ceil(dayNumber / 7);
+  const intensity = getIntensityLevel(cycleDay, 28);
+
+  let steps: ExerciseStep[] = [];
+  let programType: 'jawline' | 'double_chin' | 'all_in_one' = 'all_in_one';
 
   if (dayType === 1) {
-    category = 'jawline';
-    exercises = validJawlineExercises;
+    // Jawline day
+    programType = 'jawline';
+    const jawSequence = generateExerciseSequence(15, 28);
+    const exerciseNumbers = jawSequence[cycleDay - 1] || [1, 5, 9];
+
+    steps = exerciseNumbers.map((exNum, index) => {
+      const exercise = jawlineExercises[exNum - 1];
+      return createExerciseStep(exercise, index + 1, intensity);
+    });
   } else if (dayType === 2) {
-    category = 'double_chin';
-    exercises = validDoubleChinExercises;
+    // Double menton day
+    programType = 'double_chin';
+    const dcSequence = generateExerciseSequence(12, 28);
+    const exerciseNumbers = dcSequence[cycleDay - 1] || [1, 4, 7];
+
+    steps = exerciseNumbers.map((exNum, index) => {
+      const exercise = doubleChinExercises[exNum - 1];
+      return createExerciseStep(exercise, index + 1, intensity);
+    });
   } else {
-    // Mix: alterner entre les deux pools
-    category = 'full_face';
-    // Prendre 2 jawline + 1 double menton (ou inverse selon le jour)
-    const jawOffset = Math.floor(dayNumber / 3) % validJawlineExercises.length;
-    const dcOffset = Math.floor(dayNumber / 3) % validDoubleChinExercises.length;
-    exercises = [
-      validJawlineExercises[jawOffset % validJawlineExercises.length],
-      validDoubleChinExercises[dcOffset % validDoubleChinExercises.length],
-      validJawlineExercises[(jawOffset + 1) % validJawlineExercises.length],
+    // Mix day: 2 jawline + 1 double menton
+    programType = 'all_in_one';
+    const jawIndex1 = (cycleDay % 15);
+    const jawIndex2 = ((cycleDay + 5) % 15);
+    const dcIndex = (cycleDay % 12);
+
+    steps = [
+      createExerciseStep(jawlineExercises[jawIndex1], 1, intensity),
+      createExerciseStep(doubleChinExercises[dcIndex], 2, intensity),
+      createExerciseStep(jawlineExercises[jawIndex2], 3, intensity),
     ];
   }
 
-  const dayName = `Jour ${dayNumber} – ${category === 'jawline' ? 'Jawline' : category === 'double_chin' ? 'Menton' : 'Complet'}`;
-  const routineName = getRoutineName(cycleDay, phase, category);
+  // Bonus: alterner entre les deux types
+  const bonusPool = dayType === 2 ? jawlineExercises : doubleChinExercises;
+  const bonusExercise = bonusPool[cycleDay % bonusPool.length];
 
-  // Max 3 exercices
-  const selectedExercises = category === 'full_face'
-    ? exercises.slice(0, MAX_EXERCISES_PER_ROUTINE)
-    : selectExercisesForDay(exercises, dayNumber);
-
-  const steps: DailyRoutineStep[] = selectedExercises.map((exercise, index) => ({
-    exerciseId: exercise.id,
-    exerciseName: exercise.baseName,
-    variant: exercise.variants[level],
-    order: index + 1,
-  }));
-
-  const usedIds = selectedExercises.map(e => e.id);
-  // Pour le bonus, alterner entre jawline et double menton
-  const bonusPool = dayType === 2 ? validJawlineExercises : validDoubleChinExercises;
-  const bonusExercise = selectBonusExercise(bonusPool, dayNumber, usedIds);
-
-  const bonus: BonusExercise = {
-    exerciseId: bonusExercise.id,
-    exerciseName: bonusExercise.baseName,
-    variant: createBonusVersion(bonusExercise),
-  };
-
-  const totalSeconds = steps.reduce((sum, step) => sum + step.variant.durationSeconds, 0);
+  const totalSeconds = steps.reduce((sum, step) => sum + step.totalDuration, 0);
 
   return {
     dayNumber,
-    dayName,
-    weekTheme: `${weekTheme} – Premium (Cycle ${cycleNumber})`,
-    routineName,
+    dayName: `Jour ${dayNumber} – Cycle ${cycleNumber}`,
+    weekNumber,
+    weekTheme: `${getWeekTheme(Math.ceil(cycleDay / 7), 4)} (Premium)`,
+    routineName: getRoutineName(dayNumber, programType),
     steps,
-    bonus,
+    bonus: createBonusExercise(bonusExercise, cycleDay, 28),
     totalDurationMinutes: Math.ceil(totalSeconds / 60),
-    level,
+    intensity,
+    programType,
   };
 }
 
 // ============================================
-// FONCTION PRINCIPALE - OBTENIR LA ROUTINE DU JOUR
+// FONCTION PRINCIPALE
 // ============================================
 
 export function getDailyRoutine(planId: PlanId, dayNumber: number): DailyRoutine {
   switch (planId) {
-    case 'double_60':
-      return generateDoubleChin60DayRoutine(dayNumber);
     case 'jawline_90':
-      return generateJawline90DayRoutine(dayNumber);
-    case 'double_monthly':
-      return generateDoubleChinSubscriptionRoutine(dayNumber);
+      return generateJawlineRoutine(dayNumber, 90);
     case 'jawline_monthly':
-      return generateJawlineSubscriptionRoutine(dayNumber);
+      return generateJawlineRoutine(dayNumber, 30);
+    case 'double_60':
+      return generateDoubleChinRoutine(dayNumber, 60);
+    case 'double_monthly':
+      return generateDoubleChinRoutine(dayNumber, 30);
     case 'all_in_one':
       return generateAllInOneRoutine(dayNumber);
     default:
-      // Fallback
-      return generateJawline90DayRoutine(dayNumber);
+      return generateJawlineRoutine(dayNumber, 90);
   }
 }
 
@@ -641,19 +435,23 @@ export function getDailyRoutine(planId: PlanId, dayNumber: number): DailyRoutine
 // ============================================
 
 export function formatDuration(minutes: number): string {
-  return `${minutes}-${minutes + 1} min`;
+  if (minutes < 1) return '< 1 min';
+  return `${minutes}-${minutes + 2} min`;
 }
 
-export function getLevelLabel(level: ExerciseLevel): string {
-  switch (level) {
-    case 'basic': return 'Débutant';
-    case 'intermediate': return 'Intermédiaire';
-    case 'advanced': return 'Avancé';
+export function getIntensityLabel(intensity: IntensityLevel): string {
+  switch (intensity) {
+    case 'normal':
+      return 'Normal';
+    case 'hard':
+      return 'Intense';
+    case 'advanced':
+      return 'Avancé';
+    case 'elite':
+      return 'Elite';
   }
 }
 
-// ============================================
-// EXPORT DES LISTES VALIDÉES (pour debug/tests)
-// ============================================
-
-export { VALID_JAWLINE_IDS, VALID_DOUBLE_CHIN_IDS };
+export function formatSeries(seriesCount: number, duration: number): string {
+  return `${seriesCount} séries × ${duration}s`;
+}
