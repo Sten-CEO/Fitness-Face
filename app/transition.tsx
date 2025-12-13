@@ -61,8 +61,8 @@ export default function TransitionScreen() {
       ]).start();
     }, 400);
 
-    // t=1.6 : les deux sortent vers le haut
-    setTimeout(() => {
+    // t=3.6 : les deux sortent vers le haut (+2s)
+    const exitTimer = setTimeout(() => {
       Animated.parallel([
         Animated.timing(exitTranslateY, {
           toValue: -150,
@@ -75,12 +75,18 @@ export default function TransitionScreen() {
           useNativeDriver: true,
         }),
       ]).start();
-    }, 1600);
+    }, 3600);
 
-    // t=2.2 : navigate dashboard
-    setTimeout(() => {
+    // t=4.2 : navigate dashboard (+2s)
+    const navTimer = setTimeout(() => {
       router.replace('/(tabs)/dashboard');
-    }, 2200);
+    }, 4200);
+
+    // Cleanup des timers si l'utilisateur quitte
+    return () => {
+      clearTimeout(exitTimer);
+      clearTimeout(navTimer);
+    };
   }, []);
 
   return (
