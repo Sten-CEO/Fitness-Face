@@ -75,13 +75,13 @@ export default function TabLayout() {
   );
 }
 
-const TAB_BAR_HEIGHT = 60;
-const ICON_CONTAINER_SIZE = 44;
+const TAB_BAR_HEIGHT = 56;
+const ICON_CONTAINER_SIZE = 40;
 
 const styles = StyleSheet.create({
   tabBar: {
     position: 'absolute',
-    bottom: Platform.OS === 'ios' ? 34 : 20,
+    bottom: Platform.OS === 'ios' ? 30 : 16,
     left: 20,
     right: 20,
     height: TAB_BAR_HEIGHT,
@@ -93,6 +93,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.4,
     shadowRadius: 20,
+    // Forcer le centrage vertical en supprimant tous les paddings
     paddingBottom: 0,
     paddingTop: 0,
     paddingHorizontal: 0,
@@ -109,14 +110,13 @@ const styles = StyleSheet.create({
     height: TAB_BAR_HEIGHT,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingTop: 0,
-    paddingBottom: 0,
-    marginTop: 0,
-    marginBottom: 0,
+    // Supprimer tous les espaces qui pourraient décaler les icônes
+    padding: 0,
+    margin: 0,
   },
   iconContainer: {
-    width: '100%',
-    height: TAB_BAR_HEIGHT,
+    width: ICON_CONTAINER_SIZE,
+    height: ICON_CONTAINER_SIZE,
     justifyContent: 'center',
     alignItems: 'center',
   },
