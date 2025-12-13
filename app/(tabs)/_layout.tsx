@@ -24,8 +24,10 @@ export default function TabLayout() {
         options={{
           title: 'Home',
           tabBarIcon: ({ color, focused }) => (
-            <View style={[styles.iconWrapper, focused && styles.iconWrapperActive]}>
-              <Ionicons name="home-outline" size={22} color={color} />
+            <View style={styles.iconContainer}>
+              <View style={[styles.iconWrapper, focused && styles.iconWrapperActive]}>
+                <Ionicons name="home-outline" size={22} color={color} />
+              </View>
             </View>
           ),
         }}
@@ -35,8 +37,10 @@ export default function TabLayout() {
         options={{
           title: 'Routine',
           tabBarIcon: ({ color, focused }) => (
-            <View style={[styles.iconWrapper, focused && styles.iconWrapperActive]}>
-              <Ionicons name="fitness-outline" size={22} color={color} />
+            <View style={styles.iconContainer}>
+              <View style={[styles.iconWrapper, focused && styles.iconWrapperActive]}>
+                <Ionicons name="fitness-outline" size={22} color={color} />
+              </View>
             </View>
           ),
         }}
@@ -46,8 +50,10 @@ export default function TabLayout() {
         options={{
           title: 'Progress',
           tabBarIcon: ({ color, focused }) => (
-            <View style={[styles.iconWrapper, focused && styles.iconWrapperActive]}>
-              <Ionicons name="stats-chart-outline" size={22} color={color} />
+            <View style={styles.iconContainer}>
+              <View style={[styles.iconWrapper, focused && styles.iconWrapperActive]}>
+                <Ionicons name="stats-chart-outline" size={22} color={color} />
+              </View>
             </View>
           ),
         }}
@@ -57,8 +63,10 @@ export default function TabLayout() {
         options={{
           title: 'Profile',
           tabBarIcon: ({ color, focused }) => (
-            <View style={[styles.iconWrapper, focused && styles.iconWrapperActive]}>
-              <Ionicons name="person-outline" size={22} color={color} />
+            <View style={styles.iconContainer}>
+              <View style={[styles.iconWrapper, focused && styles.iconWrapperActive]}>
+                <Ionicons name="person-outline" size={22} color={color} />
+              </View>
             </View>
           ),
         }}
@@ -87,6 +95,7 @@ const styles = StyleSheet.create({
     shadowRadius: 20,
     paddingBottom: 0,
     paddingTop: 0,
+    paddingHorizontal: 0,
   },
   tabBarBackground: {
     ...StyleSheet.absoluteFillObject,
@@ -102,6 +111,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingTop: 0,
     paddingBottom: 0,
+    marginTop: 0,
+    marginBottom: 0,
+  },
+  // Container that fills the full height and centers the icon
+  iconContainer: {
+    flex: 1,
+    height: '100%',
+    width: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   iconWrapper: {
     width: ICON_CONTAINER_SIZE,
