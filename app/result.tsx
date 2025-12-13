@@ -124,13 +124,19 @@ export default function ResultScreen() {
     try {
       // Save to context (mock payment success)
       console.log('STEP 1: Saving purchase...');
-      // La durée est maintenant stockée dans les données du plan
       await completePurchase(selectedPlan.id, selectedPlan.name);
       console.log('STEP 2: Purchase saved OK');
 
-      // Navigate to dashboard
-      console.log('STEP 3: Navigating to /(tabs)/dashboard...');
-      router.push('/(tabs)/dashboard');
+      // Navigate to transition page with params
+      console.log('STEP 3: Navigating to /transition...');
+      router.push({
+        pathname: '/transition',
+        params: {
+          firstName: firstName || '',
+          planId: selectedPlan.id,
+          planName: selectedPlan.name,
+        },
+      });
       console.log('STEP 4: router.push called');
 
     } catch (error) {
