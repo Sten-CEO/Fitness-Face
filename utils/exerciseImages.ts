@@ -3,9 +3,7 @@
 // Images served from public/exercises/
 // ============================================
 
-import { ImageSourcePropType } from 'react-native';
-
-// Supported image extensions (in order of priority)
+// All possible image extensions (lowercase and uppercase)
 const IMAGE_EXTENSIONS = ['png', 'PNG', 'jpeg', 'JPEG', 'jpg', 'JPG'];
 
 // Maximum number of images per exercise
@@ -34,59 +32,41 @@ export function getExerciseImageFolder(exerciseId: string): { category: string; 
   return null;
 }
 
-// Generate image URIs for an exercise from public/exercises/
-// Returns array of possible image URIs (1.png, 2.png, 3.png or .jpeg variants)
-export function getExerciseImageURIs(exerciseId: string): string[] {
+// Get all possible URIs for an exercise (trying all extensions for each image number)
+// Returns array grouped by image number: [[1.png, 1.PNG, 1.jpeg...], [2.png, 2.PNG...], ...]
+export function getAllPossibleImageURIs(exerciseId: string): string[][] {
   const folder = getExerciseImageFolder(exerciseId);
   if (!folder) return [];
 
-  const uris: string[] = [];
+  const uriGroups: string[][] = [];
 
-  // Generate URIs for images 1, 2, 3 with all possible extensions
   for (let i = 1; i <= MAX_IMAGES_PER_EXERCISE; i++) {
-    // For each image number, we'll try different extensions
-    // The actual availability will be checked by the Image component or a validator
+    const variants: string[] = [];
     for (const ext of IMAGE_EXTENSIONS) {
-      uris.push(`/exercises/${folder.category}/${folder.folder}/${i}.${ext}`);
+      variants.push(`/exercises/${folder.category}/${folder.folder}/${i}.${ext}`);
     }
+    uriGroups.push(variants);
   }
 
-  return uris;
+  return uriGroups;
 }
 
-// Get primary image URIs (one per image number, prioritizing common extensions)
+// Get flat list of primary URIs (one per image, first extension that matches)
+// Used for backwards compatibility
 export function getPrimaryImageURIs(exerciseId: string): string[] {
   const folder = getExerciseImageFolder(exerciseId);
   if (!folder) return [];
 
   const uris: string[] = [];
 
-  // Generate URIs for images 1, 2, 3 with primary extension
   for (let i = 1; i <= MAX_IMAGES_PER_EXERCISE; i++) {
-    // Jawline uses .png, double-menton uses .jpeg
-    const ext = folder.category === 'jawline' ? 'png' : 'jpeg';
-    uris.push(`/exercises/${folder.category}/${folder.folder}/${i}.${ext}`);
+    // Try all extensions for each image number
+    for (const ext of IMAGE_EXTENSIONS) {
+      uris.push(`/exercises/${folder.category}/${folder.folder}/${i}.${ext}`);
+    }
   }
 
   return uris;
-}
-
-// Image sources for the slider component
-export interface ExerciseImageSource {
-  uri: string;
-  index: number;
-}
-
-// Get image sources for an exercise (ready for Image component)
-export function getExerciseImages(exerciseId: string): ImageSourcePropType[] {
-  const uris = getPrimaryImageURIs(exerciseId);
-
-  if (uris.length === 0) {
-    return [];
-  }
-
-  // Return image sources with URIs
-  return uris.map(uri => ({ uri }));
 }
 
 // Check if exercise might have images (based on folder mapping)
@@ -100,28 +80,4 @@ export function getExerciseImageBasePath(exerciseId: string): string | null {
   const folder = getExerciseImageFolder(exerciseId);
   if (!folder) return null;
   return `/exercises/${folder.category}/${folder.folder}`;
-}
-
-// Registry to track which images have been validated as existing
-// This gets populated at runtime when images load successfully
-const validatedImages: Record<string, string[]> = {};
-
-// Mark an image as validated (exists and loaded successfully)
-export function markImageAsValid(exerciseId: string, uri: string): void {
-  if (!validatedImages[exerciseId]) {
-    validatedImages[exerciseId] = [];
-  }
-  if (!validatedImages[exerciseId].includes(uri)) {
-    validatedImages[exerciseId].push(uri);
-  }
-}
-
-// Get only validated images for an exercise
-export function getValidatedImages(exerciseId: string): string[] {
-  return validatedImages[exerciseId] || [];
-}
-
-// Check if any images have been validated for an exercise
-export function hasValidatedImages(exerciseId: string): boolean {
-  return (validatedImages[exerciseId]?.length || 0) > 0;
 }
