@@ -12,6 +12,7 @@ import {
 
 import BackgroundScreen from '../components/BackgroundScreen';
 import CleanCard from '../components/CleanCard';
+import ExerciseImageSlider from '../components/ExerciseImageSlider';
 import PrimaryButton from '../components/PrimaryButton';
 import { useProgress } from '../contexts/ProgressContext';
 import { getDailyRoutine, getLevelLabel, formatDuration } from '../data/routineGenerator';
@@ -40,6 +41,9 @@ export default function RoutineDetailScreen() {
   );
   const [isComplete, setIsComplete] = useState(false);
   const [showBonusSection, setShowBonusSection] = useState(false);
+
+  // Active exercise for image slider (defaults to first exercise)
+  const [activeExerciseIndex, setActiveExerciseIndex] = useState(0);
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const timerInterval = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -168,18 +172,21 @@ export default function RoutineDetailScreen() {
             </Text>
           </View>
 
-          {/* Video placeholder */}
-          <CleanCard style={styles.videoCard}>
-            <View style={styles.videoPlaceholder}>
-              <View style={styles.videoIconContainer}>
-                <Ionicons name="videocam-outline" size={48} color="rgba(255, 255, 255, 0.3)" />
-              </View>
-              <Text style={styles.videoPlaceholderText}>Video bientot disponible</Text>
-              <Text style={styles.videoPlaceholderSubtext}>
-                En attendant, suis les instructions ci-dessous
+          {/* Exercise Image Slider */}
+          {dailyRoutine.steps[activeExerciseIndex] && (
+            <View style={styles.imageSliderSection}>
+              <ExerciseImageSlider
+                exerciseId={dailyRoutine.steps[activeExerciseIndex].exerciseId}
+                exerciseName={dailyRoutine.steps[activeExerciseIndex].variant.name}
+              />
+              <Text style={styles.activeExerciseName}>
+                {dailyRoutine.steps[activeExerciseIndex].variant.name}
+              </Text>
+              <Text style={styles.activeExerciseHint}>
+                Touche un exercice pour voir ses images
               </Text>
             </View>
-          </CleanCard>
+          )}
 
           {/* Timer */}
           <CleanCard style={styles.timerCard}>
@@ -227,16 +234,38 @@ export default function RoutineDetailScreen() {
               </Text>
             </View>
             {dailyRoutine.steps.map((step, index) => (
-              <View key={index} style={styles.stepItem}>
-                <View style={styles.stepNumber}>
-                  <Text style={styles.stepNumberText}>{step.order}</Text>
+              <TouchableOpacity
+                key={index}
+                style={[
+                  styles.stepItem,
+                  activeExerciseIndex === index && styles.stepItemActive,
+                ]}
+                onPress={() => setActiveExerciseIndex(index)}
+                activeOpacity={0.7}
+              >
+                <View style={[
+                  styles.stepNumber,
+                  activeExerciseIndex === index && styles.stepNumberActive,
+                ]}>
+                  <Text style={[
+                    styles.stepNumberText,
+                    activeExerciseIndex === index && styles.stepNumberTextActive,
+                  ]}>{step.order}</Text>
                 </View>
                 <View style={styles.stepContent}>
-                  <Text style={styles.stepText}>{step.variant.name}</Text>
+                  <Text style={[
+                    styles.stepText,
+                    activeExerciseIndex === index && styles.stepTextActive,
+                  ]}>{step.variant.name}</Text>
                   <Text style={styles.stepInstructions}>{step.variant.instructions}</Text>
                   <Text style={styles.stepDuration}>{step.variant.duration}</Text>
                 </View>
-              </View>
+                {activeExerciseIndex === index && (
+                  <View style={styles.activeIndicator}>
+                    <Ionicons name="image-outline" size={16} color={textColors.accent} />
+                  </View>
+                )}
+              </TouchableOpacity>
             ))}
           </CleanCard>
 
@@ -394,35 +423,22 @@ const styles = StyleSheet.create({
     ...typography.caption,
     color: textColors.tertiary,
   },
-  videoCard: {
+  imageSliderSection: {
     marginBottom: 16,
-    padding: 0,
-    overflow: 'hidden',
-  },
-  videoPlaceholder: {
-    aspectRatio: 16 / 9,
-    backgroundColor: 'rgba(0, 0, 0, 0.3)',
-    justifyContent: 'center',
     alignItems: 'center',
-    borderRadius: 12,
   },
-  videoIconContainer: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 12,
+  activeExerciseName: {
+    ...typography.bodySmall,
+    color: textColors.primary,
+    fontWeight: '600',
+    marginTop: 8,
+    textAlign: 'center',
   },
-  videoPlaceholderText: {
-    ...typography.body,
-    color: textColors.secondary,
-    marginBottom: 4,
-  },
-  videoPlaceholderSubtext: {
+  activeExerciseHint: {
     ...typography.caption,
     color: textColors.tertiary,
+    marginTop: 4,
+    textAlign: 'center',
   },
   timerCard: {
     marginBottom: 16,
@@ -491,8 +507,18 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     marginBottom: 16,
     paddingBottom: 16,
+    paddingHorizontal: 8,
+    paddingTop: 8,
     borderBottomWidth: 1,
     borderBottomColor: 'rgba(255, 255, 255, 0.06)',
+    borderRadius: 8,
+  },
+  stepItemActive: {
+    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+    borderColor: 'rgba(59, 130, 246, 0.3)',
+    borderWidth: 1,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(59, 130, 246, 0.3)',
   },
   stepNumber: {
     width: 28,
@@ -508,6 +534,12 @@ const styles = StyleSheet.create({
     color: textColors.accent,
     fontWeight: '600',
   },
+  stepNumberActive: {
+    backgroundColor: textColors.accent,
+  },
+  stepNumberTextActive: {
+    color: textColors.primary,
+  },
   stepContent: {
     flex: 1,
   },
@@ -516,6 +548,13 @@ const styles = StyleSheet.create({
     color: textColors.primary,
     fontWeight: '600',
     marginBottom: 4,
+  },
+  stepTextActive: {
+    color: textColors.accent,
+  },
+  activeIndicator: {
+    marginLeft: 8,
+    alignSelf: 'center',
   },
   stepInstructions: {
     ...typography.caption,
