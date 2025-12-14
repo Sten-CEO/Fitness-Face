@@ -51,6 +51,18 @@ export default function CompletedRoutinesScreen() {
     }).start();
   }, []);
 
+  const handleRoutinePress = (routine: CompletedRoutine) => {
+    router.push({
+      pathname: '/completed-routine-detail',
+      params: {
+        dayNumber: routine.dayNumber.toString(),
+        completedAt: routine.completedAt,
+        routineName: routine.routineName,
+        bonusCompleted: routine.bonusCompleted ? 'true' : 'false',
+      },
+    });
+  };
+
   const renderRoutineItem = ({ item, index }: { item: CompletedRoutine; index: number }) => (
     <Animated.View
       style={{
@@ -63,22 +75,27 @@ export default function CompletedRoutinesScreen() {
         }],
       }}
     >
-      <CleanCard style={styles.routineItem}>
-        <View style={styles.routineContent}>
-          <View style={styles.dayBadge}>
-            <Text style={styles.dayBadgeText}>Jour {item.dayNumber}</Text>
+      <TouchableOpacity activeOpacity={0.8} onPress={() => handleRoutinePress(item)}>
+        <CleanCard style={styles.routineItem}>
+          <View style={styles.routineContent}>
+            <View style={styles.dayBadge}>
+              <Text style={styles.dayBadgeText}>Jour {item.dayNumber}</Text>
+            </View>
+            <View style={styles.routineDetails}>
+              <Text style={styles.routineName}>{item.routineName}</Text>
+              <Text style={styles.routineDate}>
+                {formatDate(item.completedAt)} a {formatTime(item.completedAt)}
+              </Text>
+            </View>
+            <View style={styles.routineIcons}>
+              {item.bonusCompleted && (
+                <Ionicons name="star" size={18} color="#F59E0B" style={styles.bonusIcon} />
+              )}
+              <Ionicons name="chevron-forward" size={20} color={textColors.tertiary} />
+            </View>
           </View>
-          <View style={styles.routineDetails}>
-            <Text style={styles.routineName}>{item.routineName}</Text>
-            <Text style={styles.routineDate}>
-              {formatDate(item.completedAt)} à {formatTime(item.completedAt)}
-            </Text>
-          </View>
-          <View style={styles.checkIcon}>
-            <Ionicons name="checkmark-circle" size={24} color="#10B981" />
-          </View>
-        </View>
-      </CleanCard>
+        </CleanCard>
+      </TouchableOpacity>
     </Animated.View>
   );
 
@@ -206,11 +223,13 @@ const styles = StyleSheet.create({
     ...typography.caption,
     color: textColors.tertiary,
   },
-  checkIcon: {
-    width: 32,
-    height: 32,
-    justifyContent: 'center',
+  routineIcons: {
+    flexDirection: 'row',
     alignItems: 'center',
+    gap: 4,
+  },
+  bonusIcon: {
+    marginRight: 4,
   },
   emptyContainer: {
     flex: 1,
