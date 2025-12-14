@@ -94,6 +94,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.4,
     shadowRadius: 20,
+    paddingBottom: 0,
   },
   tabBarBackground: {
     ...StyleSheet.absoluteFillObject,
@@ -104,9 +105,10 @@ const styles = StyleSheet.create({
   },
   tabIconContainer: {
     width: ICON_SIZE,
-    height: TAB_BAR_HEIGHT,
+    height: ICON_SIZE,
     justifyContent: 'center',
     alignItems: 'center',
+    marginTop: 8,
   },
   iconWrapper: {
     width: ICON_SIZE,
