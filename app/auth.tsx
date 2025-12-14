@@ -74,6 +74,7 @@ export default function AuthScreen() {
 
     try {
       if (isLogin) {
+        // Connexion
         const { error } = await signIn(email, password);
         if (error) {
           if (error.message.includes('Invalid login credentials')) {
@@ -81,9 +82,12 @@ export default function AuthScreen() {
           } else {
             Alert.alert('Erreur', error.message);
           }
+        } else {
+          // Connexion réussie - aller vers welcome
+          router.replace('/welcome');
         }
-        // Si succès, AuthContext gère la navigation via le state
       } else {
+        // Inscription
         const { error } = await signUp(email, password);
         if (error) {
           if (error.message.includes('already registered')) {
@@ -92,13 +96,9 @@ export default function AuthScreen() {
             Alert.alert('Erreur', error.message);
           }
         } else {
-          // Sauvegarder le prénom
+          // Inscription réussie - sauvegarder le prénom et aller vers welcome
           setFirstName(firstName.trim());
-          Alert.alert(
-            'Compte créé',
-            'Vérifiez votre email pour confirmer votre compte, puis connectez-vous.',
-            [{ text: 'OK', onPress: () => setMode('login') }]
-          );
+          router.replace('/welcome');
         }
       }
     } catch (error) {
