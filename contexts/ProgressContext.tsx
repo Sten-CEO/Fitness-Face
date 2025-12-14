@@ -1,6 +1,8 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { PlanId, getPlanById, isFixedDurationPlan } from '../data/plans';
+import { supabase } from '../lib/supabase';
+import { useAuth } from './AuthContext';
 
 const STORAGE_KEY = '@fitness_face_progress';
 
@@ -46,9 +48,11 @@ interface ProgressContextType extends ProgressData {
   completeDay: (dayNumber: number, routineName: string) => Promise<void>;
   completeBonusExercise: (dayNumber: number, exerciseName: string) => Promise<void>;
   resetProgress: () => Promise<void>;
+  syncFromCloud: () => Promise<void>;
 
   // Données calculées
   isLoading: boolean;
+  isSyncing: boolean;
   // Jour actuel du programme (basé sur l'heure de Paris)
   currentDay: number;
   // Total de jours du programme (null si abonnement)
@@ -168,15 +172,176 @@ function calculateCurrentDayTestMode(completedRoutines: CompletedRoutine[]): num
 // ============================================
 
 export function ProgressProvider({ children }: { children: ReactNode }) {
+  const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   const [progress, setProgress] = useState<ProgressData>(defaultProgress);
   const [isLoading, setIsLoading] = useState(true);
+  const [isSyncing, setIsSyncing] = useState(false);
 
-  // Load progress from storage on mount
-  useEffect(() => {
-    loadProgress();
+  // ============================================
+  // SUPABASE SYNC FUNCTIONS
+  // ============================================
+
+  /**
+   * Charger les données depuis Supabase
+   */
+  const loadFromSupabase = useCallback(async (userId: string): Promise<ProgressData | null> => {
+    try {
+      // Charger le profil pour program_type et start_date
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('program_type, start_date')
+        .eq('id', userId)
+        .single();
+
+      if (profileError) {
+        console.error('Erreur chargement profil:', profileError);
+        return null;
+      }
+
+      // Charger la progression
+      const { data: userProgress, error: progressError } = await supabase
+        .from('user_progress')
+        .select('*')
+        .eq('user_id', userId)
+        .single();
+
+      if (progressError && progressError.code !== 'PGRST116') {
+        console.error('Erreur chargement progression:', progressError);
+        return null;
+      }
+
+      // Charger l'historique des routines
+      const { data: routineHistory, error: historyError } = await supabase
+        .from('routine_history')
+        .select('*')
+        .eq('user_id', userId)
+        .order('completed_at', { ascending: true });
+
+      if (historyError) {
+        console.error('Erreur chargement historique:', historyError);
+        return null;
+      }
+
+      // Convertir les données Supabase en ProgressData
+      const completedRoutines: CompletedRoutine[] = (routineHistory || []).map(r => ({
+        routineName: r.routine_name,
+        dayNumber: r.day_index,
+        completedAt: r.completed_at,
+        bonusCompleted: r.bonus !== null,
+      }));
+
+      const completedBonuses: CompletedBonus[] = (routineHistory || [])
+        .filter(r => r.bonus !== null)
+        .map(r => ({
+          dayNumber: r.day_index,
+          exerciseName: (r.bonus as { exerciseName?: string })?.exerciseName || 'Bonus',
+          completedAt: r.completed_at,
+        }));
+
+      // Déterminer isPaid et planName
+      const isPaid = !!profile?.program_type;
+      const planId = profile?.program_type as PlanId | null;
+      const plan = planId ? getPlanById(planId) : null;
+
+      return {
+        isPaid,
+        selectedPlanId: planId,
+        selectedPlanName: plan?.name || '',
+        programStartDate: profile?.start_date || null,
+        completedRoutines,
+        completedBonuses,
+        streak: userProgress?.streak || 0,
+        lastCompletedParisDate: userProgress?.last_completed_date || null,
+      };
+    } catch (error) {
+      console.error('Erreur loadFromSupabase:', error);
+      return null;
+    }
   }, []);
 
-  const loadProgress = async () => {
+  /**
+   * Sauvegarder les données vers Supabase
+   */
+  const saveToSupabase = useCallback(async (userId: string, data: ProgressData) => {
+    try {
+      // Mettre à jour le profil
+      await supabase
+        .from('profiles')
+        .update({
+          program_type: data.selectedPlanId,
+          start_date: data.programStartDate,
+        })
+        .eq('id', userId);
+
+      // Mettre à jour la progression
+      await supabase
+        .from('user_progress')
+        .upsert({
+          user_id: userId,
+          current_day: TEST_MODE
+            ? calculateCurrentDayTestMode(data.completedRoutines)
+            : calculateCurrentDay(data.programStartDate),
+          streak: data.streak,
+          last_completed_date: data.lastCompletedParisDate,
+          days_completed: data.completedRoutines.map(r => r.dayNumber),
+          bonus_completed: data.completedBonuses.map(b => b.dayNumber),
+        });
+
+    } catch (error) {
+      console.error('Erreur saveToSupabase:', error);
+    }
+  }, []);
+
+  /**
+   * Sauvegarder une routine terminée dans l'historique Supabase
+   */
+  const saveRoutineToSupabase = useCallback(async (
+    userId: string,
+    routine: CompletedRoutine,
+    programType: string,
+    exercises?: object
+  ) => {
+    try {
+      // Vérifier si cette routine existe déjà
+      const { data: existing } = await supabase
+        .from('routine_history')
+        .select('id')
+        .eq('user_id', userId)
+        .eq('day_index', routine.dayNumber)
+        .single();
+
+      if (existing) {
+        // Mettre à jour si bonus complété
+        if (routine.bonusCompleted) {
+          await supabase
+            .from('routine_history')
+            .update({ bonus: { completed: true } })
+            .eq('id', existing.id);
+        }
+      } else {
+        // Créer nouvelle entrée
+        await supabase
+          .from('routine_history')
+          .insert({
+            user_id: userId,
+            day_index: routine.dayNumber,
+            program_type: programType,
+            routine_name: routine.routineName,
+            completed_at: routine.completedAt,
+            exercises: exercises || {},
+            bonus: routine.bonusCompleted ? { completed: true } : null,
+          });
+      }
+    } catch (error) {
+      console.error('Erreur saveRoutineToSupabase:', error);
+    }
+  }, []);
+
+  // ============================================
+  // LOCAL STORAGE FUNCTIONS
+  // ============================================
+
+  const loadFromLocal = async (): Promise<ProgressData | null> => {
     try {
       const stored = await AsyncStorage.getItem(STORAGE_KEY);
       if (stored) {
@@ -203,23 +368,112 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
         if (!parsed.completedBonuses) {
           parsed.completedBonuses = [];
         }
-        setProgress(parsed);
+        return parsed;
       }
+      return null;
     } catch (error) {
-      console.error('Failed to load progress:', error);
-    } finally {
-      setIsLoading(false);
+      console.error('Failed to load from local:', error);
+      return null;
     }
   };
 
-  const saveProgress = async (newProgress: ProgressData) => {
+  const saveToLocal = async (data: ProgressData) => {
     try {
-      await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(newProgress));
-      setProgress(newProgress);
+      await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(data));
     } catch (error) {
-      console.error('Failed to save progress:', error);
+      console.error('Failed to save to local:', error);
     }
   };
+
+  // ============================================
+  // MAIN LOAD/SAVE FUNCTIONS
+  // ============================================
+
+  const loadProgress = useCallback(async () => {
+    setIsLoading(true);
+
+    try {
+      if (isAuthenticated && user) {
+        // Utilisateur connecté: charger depuis Supabase
+        setIsSyncing(true);
+        const cloudData = await loadFromSupabase(user.id);
+        if (cloudData) {
+          setProgress(cloudData);
+          // Aussi sauvegarder en local pour le mode offline
+          await saveToLocal(cloudData);
+        } else {
+          // Fallback local si erreur Supabase
+          const localData = await loadFromLocal();
+          if (localData) {
+            setProgress(localData);
+          }
+        }
+        setIsSyncing(false);
+      } else {
+        // Utilisateur non connecté: charger depuis local uniquement
+        const localData = await loadFromLocal();
+        if (localData) {
+          setProgress(localData);
+        }
+      }
+    } catch (error) {
+      console.error('Failed to load progress:', error);
+      // Fallback local en cas d'erreur
+      const localData = await loadFromLocal();
+      if (localData) {
+        setProgress(localData);
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  }, [isAuthenticated, user, loadFromSupabase]);
+
+  const saveProgress = useCallback(async (newProgress: ProgressData) => {
+    // Toujours sauvegarder en local
+    await saveToLocal(newProgress);
+    setProgress(newProgress);
+
+    // Si connecté, aussi sauvegarder vers Supabase
+    if (isAuthenticated && user) {
+      await saveToSupabase(user.id, newProgress);
+    }
+  }, [isAuthenticated, user, saveToSupabase]);
+
+  // ============================================
+  // SYNC FROM CLOUD (pour forcer une sync)
+  // ============================================
+
+  const syncFromCloud = useCallback(async () => {
+    if (!isAuthenticated || !user) return;
+
+    setIsSyncing(true);
+    try {
+      const cloudData = await loadFromSupabase(user.id);
+      if (cloudData) {
+        setProgress(cloudData);
+        await saveToLocal(cloudData);
+      }
+    } catch (error) {
+      console.error('Sync from cloud failed:', error);
+    } finally {
+      setIsSyncing(false);
+    }
+  }, [isAuthenticated, user, loadFromSupabase]);
+
+  // ============================================
+  // EFFECTS
+  // ============================================
+
+  // Charger les données au montage et quand l'auth change
+  useEffect(() => {
+    if (!authLoading) {
+      loadProgress();
+    }
+  }, [authLoading, isAuthenticated, user?.id, loadProgress]);
+
+  // ============================================
+  // ACTIONS
+  // ============================================
 
   const completePurchase = async (planId: PlanId, planName: string) => {
     const newProgress: ProgressData = {
@@ -249,29 +503,23 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
 
     if (TEST_MODE) {
       // En mode test: streak basé sur les jours consécutifs complétés
-      // Vérifie si le jour précédent (dayNumber - 1) a été complété
       const previousDayCompleted = progress.completedRoutines.some(
         (r) => r.dayNumber === dayNumber - 1
       );
       if (previousDayCompleted) {
         newStreak = progress.streak + 1;
       } else if (dayNumber === 1) {
-        // Premier jour du programme
         newStreak = 1;
       } else {
-        // Jour sauté, reset streak
         newStreak = 1;
       }
     } else {
       // En mode production: streak basé sur les dates Paris
       if (progress.lastCompletedParisDate === yesterdayParis) {
-        // Continue le streak
         newStreak = progress.streak + 1;
       } else if (progress.lastCompletedParisDate === todayParis) {
-        // Déjà complété aujourd'hui, garde le streak
         newStreak = progress.streak;
       }
-      // Sinon, streak reset à 1
     }
 
     const newRoutine: CompletedRoutine = {
@@ -289,13 +537,13 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
     };
 
     await saveProgress(newProgress);
+
+    // Sauvegarder la routine dans l'historique Supabase
+    if (isAuthenticated && user && progress.selectedPlanId) {
+      await saveRoutineToSupabase(user.id, newRoutine, progress.selectedPlanId);
+    }
   };
 
-  /**
-   * Marquer l'exercice bonus comme terminé pour un jour donné
-   * L'exercice bonus n'affecte PAS le streak ou la progression principale
-   * Il ajoute juste une mention "Exercice bonus effectué"
-   */
   const completeBonusExercise = async (dayNumber: number, exerciseName: string) => {
     // Vérifier si le bonus de ce jour a déjà été complété
     const alreadyCompleted = progress.completedBonuses.some(
@@ -326,6 +574,14 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
     };
 
     await saveProgress(newProgress);
+
+    // Mettre à jour dans Supabase
+    if (isAuthenticated && user && progress.selectedPlanId) {
+      const routine = updatedRoutines.find(r => r.dayNumber === dayNumber);
+      if (routine) {
+        await saveRoutineToSupabase(user.id, routine, progress.selectedPlanId);
+      }
+    }
   };
 
   const resetProgress = async () => {
@@ -340,43 +596,28 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
     ? getPlanById(progress.selectedPlanId)
     : null;
 
-  // Durée totale du programme (null si abonnement)
   const totalDays = selectedPlan?.durationDays ?? null;
 
-  // Est-ce un programme à durée fixe ?
   const isFixedProgram = progress.selectedPlanId
     ? isFixedDurationPlan(progress.selectedPlanId)
     : false;
 
-  // Jour actuel du programme
-  // En mode test: basé sur les jours complétés, sinon basé sur la date Paris
   const currentDay = TEST_MODE
     ? calculateCurrentDayTestMode(progress.completedRoutines)
     : calculateCurrentDay(progress.programStartDate);
 
-  // Nombre de jours complétés
   const completedDaysCount = progress.completedRoutines.length;
-
-  // Nombre de bonus complétés
   const completedBonusesCount = progress.completedBonuses.length;
-
-  // Liste des numéros de jours complétés
   const completedDayNumbers = progress.completedRoutines.map((r) => r.dayNumber);
-
-  // Est-ce que la routine du jour actuel est terminée ?
   const hasCompletedTodayRoutine = completedDayNumbers.includes(currentDay);
-
-  // Est-ce que le bonus du jour actuel est terminé ?
   const hasCompletedTodayBonus = progress.completedBonuses.some(
     (b) => b.dayNumber === currentDay
   );
 
-  // Pourcentage de progression (null si abonnement)
   const progressPercent = isFixedProgram && totalDays
     ? (completedDaysCount / totalDays) * 100
     : null;
 
-  // Jours restants (null si abonnement)
   const daysRemaining = isFixedProgram && totalDays
     ? Math.max(0, totalDays - completedDaysCount)
     : null;
@@ -389,7 +630,9 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
         completeDay,
         completeBonusExercise,
         resetProgress,
+        syncFromCloud,
         isLoading,
+        isSyncing,
         currentDay,
         totalDays,
         completedDaysCount,

@@ -6,6 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import CleanCard from '../../components/CleanCard';
 import TabBackground from '../../components/TabBackground';
+import { useAuth } from '../../contexts/AuthContext';
 import { useProgress } from '../../contexts/ProgressContext';
 import { useUser } from '../../contexts/UserContext';
 import { typography, textColors } from '../../theme/typography';
@@ -13,24 +14,34 @@ import { typography, textColors } from '../../theme/typography';
 export default function ProfileScreen() {
   const router = useRouter();
   const { firstName } = useUser();
-  const { selectedPlanName, completedDaysCount, streak, resetProgress } = useProgress();
+  const { isAuthenticated, user, signOut } = useAuth();
+  const { selectedPlanName, completedDaysCount, streak, resetProgress, isSyncing } = useProgress();
 
   const handleLogout = () => {
     Alert.alert(
       'Deconnexion',
-      'Es-tu sur de vouloir te deconnecter ?',
+      isAuthenticated
+        ? 'Es-tu sûr de vouloir te déconnecter ? Ta progression est sauvegardée dans le cloud.'
+        : 'Es-tu sûr de vouloir te déconnecter ? Ta progression locale sera perdue.',
       [
         { text: 'Annuler', style: 'cancel' },
         {
-          text: 'Deconnecter',
+          text: 'Déconnecter',
           style: 'destructive',
           onPress: async () => {
+            if (isAuthenticated) {
+              await signOut();
+            }
             await resetProgress();
             router.replace('/');
           },
         },
       ]
     );
+  };
+
+  const handleLogin = () => {
+    router.push('/auth');
   };
 
   return (
@@ -51,6 +62,17 @@ export default function ProfileScreen() {
               <Ionicons name="person-outline" size={32} color={textColors.accent} />
             </View>
             <Text style={styles.userName}>{firstName || 'Utilisateur'}</Text>
+            {isAuthenticated && user?.email ? (
+              <View style={styles.emailContainer}>
+                <Ionicons name="checkmark-circle" size={14} color="#22C55E" />
+                <Text style={styles.userEmail}>{user.email}</Text>
+              </View>
+            ) : (
+              <TouchableOpacity style={styles.connectButton} onPress={handleLogin}>
+                <Ionicons name="cloud-outline" size={14} color={textColors.accent} />
+                <Text style={styles.connectText}>Se connecter pour sync cloud</Text>
+              </TouchableOpacity>
+            )}
             <Text style={styles.userPlan}>{selectedPlanName || 'Programme actif'}</Text>
 
             <View style={styles.userStats}>
@@ -64,6 +86,9 @@ export default function ProfileScreen() {
                 <Text style={styles.userStatLabel}>Streak</Text>
               </View>
             </View>
+            {isSyncing && (
+              <Text style={styles.syncingText}>Synchronisation...</Text>
+            )}
           </CleanCard>
 
           {/* Settings */}
@@ -166,6 +191,35 @@ const styles = StyleSheet.create({
     ...typography.h3,
     color: textColors.primary,
     marginBottom: 4,
+  },
+  emailContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 4,
+  },
+  userEmail: {
+    ...typography.caption,
+    color: '#22C55E',
+  },
+  connectButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 16,
+    backgroundColor: 'rgba(59, 130, 246, 0.15)',
+    marginBottom: 4,
+  },
+  connectText: {
+    ...typography.caption,
+    color: textColors.accent,
+  },
+  syncingText: {
+    ...typography.caption,
+    color: textColors.tertiary,
+    marginTop: 8,
   },
   userPlan: {
     ...typography.bodySmall,
