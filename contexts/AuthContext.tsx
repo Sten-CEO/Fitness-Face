@@ -38,7 +38,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
-        fetchProfile(session.user.id);
+        fetchOrCreateProfile(session.user.id, session.user.email || '');
       } else {
         setIsLoading(false);
       }
@@ -51,7 +51,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         setUser(session?.user ?? null);
 
         if (session?.user) {
-          await fetchProfile(session.user.id);
+          await fetchOrCreateProfile(session.user.id, session.user.email || '');
         } else {
           setProfile(null);
           setIsLoading(false);
@@ -64,22 +64,51 @@ export function AuthProvider({ children }: AuthProviderProps) {
     };
   }, []);
 
-  // Récupérer le profil utilisateur
-  const fetchProfile = async (userId: string) => {
+  // Récupérer ou créer le profil utilisateur
+  const fetchOrCreateProfile = async (userId: string, email: string) => {
     try {
+      // Essayer de récupérer le profil
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', userId)
-        .single();
+        .maybeSingle(); // Utilise maybeSingle au lieu de single pour éviter l'erreur si pas de résultat
 
       if (error) {
         console.error('Erreur lors du chargement du profil:', error);
-      } else {
+        setIsLoading(false);
+        return;
+      }
+
+      if (data) {
+        // Profil existe
         setProfile(data);
+      } else {
+        // Profil n'existe pas, le créer
+        console.log('Création du profil pour', userId);
+        const { data: newProfile, error: insertError } = await supabase
+          .from('profiles')
+          .insert({ id: userId, email })
+          .select()
+          .single();
+
+        if (insertError) {
+          console.error('Erreur création profil:', insertError);
+        } else {
+          setProfile(newProfile);
+        }
+
+        // Créer aussi user_progress et settings s'ils n'existent pas
+        await supabase
+          .from('user_progress')
+          .upsert({ user_id: userId }, { onConflict: 'user_id' });
+
+        await supabase
+          .from('settings')
+          .upsert({ user_id: userId }, { onConflict: 'user_id' });
       }
     } catch (error) {
-      console.error('Erreur fetchProfile:', error);
+      console.error('Erreur fetchOrCreateProfile:', error);
     } finally {
       setIsLoading(false);
     }
@@ -95,7 +124,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
     if (error) {
       setIsLoading(false);
     }
-    // Le profil sera créé automatiquement par le trigger Supabase
     return { error };
   };
 
@@ -125,7 +153,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   // Réinitialiser le mot de passe
   const resetPassword = async (email: string) => {
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: 'fitness-face://reset-password', // Deep link pour l'app
+      redirectTo: 'fitness-face://reset-password',
     });
     return { error };
   };
@@ -146,8 +174,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         return { error };
       }
 
-      // Rafraîchir le profil local
-      await fetchProfile(user.id);
+      await fetchOrCreateProfile(user.id, user.email || '');
       return { error: null };
     } catch (error) {
       return { error: error as Error };
@@ -157,7 +184,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   // Rafraîchir le profil
   const refreshProfile = async () => {
     if (user) {
-      await fetchProfile(user.id);
+      await fetchOrCreateProfile(user.id, user.email || '');
     }
   };
 
