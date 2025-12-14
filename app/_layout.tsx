@@ -2,6 +2,7 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { ImageBackground, StyleSheet, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { NotificationsProvider } from '../contexts/NotificationsContext';
 import { ProgressProvider } from '../contexts/ProgressContext';
 import { UserProvider } from '../contexts/UserContext';
 
@@ -11,7 +12,8 @@ export default function RootLayout() {
   return (
     <UserProvider>
       <ProgressProvider>
-        <SafeAreaProvider>
+        <NotificationsProvider>
+          <SafeAreaProvider>
           <ImageBackground source={backgroundImage} style={styles.background} resizeMode="cover">
             <View style={styles.overlay} pointerEvents="none" />
             <StatusBar style="light" />
@@ -24,7 +26,8 @@ export default function RootLayout() {
               }}
             />
           </ImageBackground>
-        </SafeAreaProvider>
+          </SafeAreaProvider>
+        </NotificationsProvider>
       </ProgressProvider>
     </UserProvider>
   );

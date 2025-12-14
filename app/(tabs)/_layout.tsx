@@ -4,6 +4,9 @@ import React from 'react';
 import { Platform, StyleSheet, View } from 'react-native';
 import { textColors } from '../../theme/typography';
 
+const TAB_BAR_HEIGHT = 60;
+const ICON_SIZE = 44;
+
 export default function TabLayout() {
   return (
     <Tabs
@@ -13,8 +16,6 @@ export default function TabLayout() {
         tabBarActiveTintColor: textColors.primary,
         tabBarInactiveTintColor: 'rgba(255, 255, 255, 0.5)',
         tabBarShowLabel: false,
-        tabBarItemStyle: styles.tabBarItem,
-        tabBarIconStyle: styles.tabBarIcon,
         tabBarBackground: () => (
           <View style={styles.tabBarBackground} />
         ),
@@ -25,8 +26,10 @@ export default function TabLayout() {
         options={{
           title: 'Home',
           tabBarIcon: ({ color, focused }) => (
-            <View style={[styles.iconWrapper, focused && styles.iconWrapperActive]}>
-              <Ionicons name="home-outline" size={22} color={color} />
+            <View style={styles.tabIconContainer}>
+              <View style={[styles.iconWrapper, focused && styles.iconWrapperActive]}>
+                <Ionicons name="home-outline" size={22} color={color} />
+              </View>
             </View>
           ),
         }}
@@ -34,10 +37,12 @@ export default function TabLayout() {
       <Tabs.Screen
         name="routine"
         options={{
-          title: 'Routine',
+          title: 'Historique',
           tabBarIcon: ({ color, focused }) => (
-            <View style={[styles.iconWrapper, focused && styles.iconWrapperActive]}>
-              <Ionicons name="fitness-outline" size={22} color={color} />
+            <View style={styles.tabIconContainer}>
+              <View style={[styles.iconWrapper, focused && styles.iconWrapperActive]}>
+                <Ionicons name="time-outline" size={22} color={color} />
+              </View>
             </View>
           ),
         }}
@@ -47,8 +52,10 @@ export default function TabLayout() {
         options={{
           title: 'Progress',
           tabBarIcon: ({ color, focused }) => (
-            <View style={[styles.iconWrapper, focused && styles.iconWrapperActive]}>
-              <Ionicons name="stats-chart-outline" size={22} color={color} />
+            <View style={styles.tabIconContainer}>
+              <View style={[styles.iconWrapper, focused && styles.iconWrapperActive]}>
+                <Ionicons name="stats-chart-outline" size={22} color={color} />
+              </View>
             </View>
           ),
         }}
@@ -58,8 +65,10 @@ export default function TabLayout() {
         options={{
           title: 'Profile',
           tabBarIcon: ({ color, focused }) => (
-            <View style={[styles.iconWrapper, focused && styles.iconWrapperActive]}>
-              <Ionicons name="person-outline" size={22} color={color} />
+            <View style={styles.tabIconContainer}>
+              <View style={[styles.iconWrapper, focused && styles.iconWrapperActive]}>
+                <Ionicons name="person-outline" size={22} color={color} />
+              </View>
             </View>
           ),
         }}
@@ -67,9 +76,6 @@ export default function TabLayout() {
     </Tabs>
   );
 }
-
-const TAB_BAR_HEIGHT = 60;
-const ICON_SIZE = 44;
 
 const styles = StyleSheet.create({
   tabBar: {
@@ -94,15 +100,11 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.1)',
   },
-  tabBarItem: {
+  tabIconContainer: {
+    width: ICON_SIZE,
     height: TAB_BAR_HEIGHT,
-    paddingTop: 0,
-    paddingBottom: 0,
-  },
-  tabBarIcon: {
-    // Centrer verticalement l'icône dans la barre
-    marginTop: (TAB_BAR_HEIGHT - ICON_SIZE) / 2,
-    marginBottom: (TAB_BAR_HEIGHT - ICON_SIZE) / 2,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   iconWrapper: {
     width: ICON_SIZE,

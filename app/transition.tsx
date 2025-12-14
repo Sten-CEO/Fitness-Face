@@ -61,7 +61,7 @@ export default function TransitionScreen() {
       ]).start();
     }, 400);
 
-    // t=3.6 : les deux sortent vers le haut (+2s)
+    // t=5.6 : les deux sortent vers le haut (+2s supplémentaires)
     const exitTimer = setTimeout(() => {
       Animated.parallel([
         Animated.timing(exitTranslateY, {
@@ -75,12 +75,12 @@ export default function TransitionScreen() {
           useNativeDriver: true,
         }),
       ]).start();
-    }, 3600);
+    }, 5600);
 
-    // t=4.2 : navigate dashboard (+2s)
+    // t=6.2 : navigate dashboard (+2s supplémentaires)
     const navTimer = setTimeout(() => {
       router.replace('/(tabs)/dashboard');
-    }, 4200);
+    }, 6200);
 
     // Cleanup des timers si l'utilisateur quitte
     return () => {
