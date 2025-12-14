@@ -191,7 +191,7 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
         .from('profiles')
         .select('program_type, start_date')
         .eq('id', userId)
-        .single();
+        .maybeSingle();
 
       if (profileError) {
         console.error('Erreur chargement profil:', profileError);
@@ -203,9 +203,9 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
         .from('user_progress')
         .select('*')
         .eq('user_id', userId)
-        .single();
+        .maybeSingle();
 
-      if (progressError && progressError.code !== 'PGRST116') {
+      if (progressError) {
         console.error('Erreur chargement progression:', progressError);
         return null;
       }
