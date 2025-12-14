@@ -39,7 +39,6 @@ const jawlineImages: ExerciseImageRegistry = {
   ],
   jaw_8: [
     require('../public/exercises/jawline/jawline-exo-8/1.jpeg'),
-    require('../public/exercises/jawline/jawline-exo-8/2.png'),
     require('../public/exercises/jawline/jawline-exo-8/3.jpeg'),
   ],
   jaw_9: [],
