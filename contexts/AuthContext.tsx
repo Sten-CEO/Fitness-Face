@@ -67,48 +67,72 @@ export function AuthProvider({ children }: AuthProviderProps) {
   // Récupérer ou créer le profil utilisateur
   const fetchOrCreateProfile = async (userId: string, email: string) => {
     try {
-      // Essayer de récupérer le profil
-      const { data, error } = await supabase
+      // Utiliser upsert pour créer ou mettre à jour le profil
+      const { data: upsertedProfile, error: upsertError } = await supabase
         .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .maybeSingle(); // Utilise maybeSingle au lieu de single pour éviter l'erreur si pas de résultat
+        .upsert(
+          { id: userId, email },
+          { onConflict: 'id', ignoreDuplicates: true }
+        )
+        .select()
+        .maybeSingle();
 
-      if (error) {
-        console.error('Erreur lors du chargement du profil:', error);
-        setIsLoading(false);
-        return;
-      }
-
-      if (data) {
-        // Profil existe
-        setProfile(data);
+      if (upsertError) {
+        console.error('Erreur upsert profil:', upsertError);
+        // En cas d'erreur, créer un profil local minimal
+        setProfile({
+          id: userId,
+          email,
+          created_at: new Date().toISOString(),
+          program_type: null,
+          start_date: null,
+          timezone: 'Europe/Paris',
+        });
+      } else if (upsertedProfile) {
+        setProfile(upsertedProfile);
       } else {
-        // Profil n'existe pas, le créer
-        console.log('Création du profil pour', userId);
-        const { data: newProfile, error: insertError } = await supabase
+        // Essayer de récupérer le profil existant
+        const { data: existingProfile } = await supabase
           .from('profiles')
-          .insert({ id: userId, email })
-          .select()
-          .single();
+          .select('*')
+          .eq('id', userId)
+          .maybeSingle();
 
-        if (insertError) {
-          console.error('Erreur création profil:', insertError);
+        if (existingProfile) {
+          setProfile(existingProfile);
         } else {
-          setProfile(newProfile);
+          // Fallback: profil local minimal
+          setProfile({
+            id: userId,
+            email,
+            created_at: new Date().toISOString(),
+            program_type: null,
+            start_date: null,
+            timezone: 'Europe/Paris',
+          });
         }
-
-        // Créer aussi user_progress et settings s'ils n'existent pas
-        await supabase
-          .from('user_progress')
-          .upsert({ user_id: userId }, { onConflict: 'user_id' });
-
-        await supabase
-          .from('settings')
-          .upsert({ user_id: userId }, { onConflict: 'user_id' });
       }
+
+      // S'assurer que user_progress et settings existent
+      await supabase
+        .from('user_progress')
+        .upsert({ user_id: userId }, { onConflict: 'user_id', ignoreDuplicates: true });
+
+      await supabase
+        .from('settings')
+        .upsert({ user_id: userId }, { onConflict: 'user_id', ignoreDuplicates: true });
+
     } catch (error) {
       console.error('Erreur fetchOrCreateProfile:', error);
+      // Fallback en cas d'erreur
+      setProfile({
+        id: userId,
+        email,
+        created_at: new Date().toISOString(),
+        program_type: null,
+        start_date: null,
+        timezone: 'Europe/Paris',
+      });
     } finally {
       setIsLoading(false);
     }
