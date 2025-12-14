@@ -47,7 +47,7 @@ export default function DashboardScreen() {
   ]).current;
 
   const routine = selectedPlanId ? getRoutineForPlan(selectedPlanId) : null;
-  const todayTip = getTodayTip();
+  const todayTip = getTodayTip(currentDay);
 
   // Trophy system
   const userProgress = { completedDaysCount, streak, completedBonusesCount };
