@@ -9,10 +9,11 @@ import {
   IntensityLevel,
   jawlineExercises,
   doubleChinExercises,
-  getIntensifiedName,
   getSeriesCount,
   getIntensityLevel,
 } from './exercises';
+import { getExerciseDisplayName, generateRoutineName } from './exerciseNameVariants';
+import { generateBonusExercise as generateBonusFromPool } from './bonusExercises';
 
 // ============================================
 // CONFIGURATION
@@ -150,38 +151,7 @@ function getWeekTheme(weekNumber: number, totalWeeks: number): string {
   return `Semaine ${weekNumber} – Maîtrise`;
 }
 
-// ============================================
-// NOMS DE ROUTINES
-// ============================================
-
-const routineNames = {
-  jawline: [
-    'Jawline Sculpt',
-    'Définition Mâchoire',
-    'Power Jaw',
-    'Contour Facial',
-    'Jawline Flow',
-  ],
-  double_chin: [
-    'Chin Lift',
-    'Neck Define',
-    'Menton Sculpt',
-    'Cervical Power',
-    'Double Chin Flow',
-  ],
-  all_in_one: [
-    'Full Face',
-    'Total Sculpt',
-    'Complete Flow',
-    'Harmonie Faciale',
-    'Power Combo',
-  ],
-};
-
-function getRoutineName(dayNumber: number, programType: 'jawline' | 'double_chin' | 'all_in_one'): string {
-  const names = routineNames[programType];
-  return names[dayNumber % names.length];
-}
+// Noms de routines: voir exerciseNameVariants.ts pour le pool complet
 
 // ============================================
 // CRÉATION D'UN STEP D'EXERCICE
@@ -190,7 +160,8 @@ function getRoutineName(dayNumber: number, programType: 'jawline' | 'double_chin
 function createExerciseStep(
   exercise: Exercise,
   order: number,
-  intensity: IntensityLevel
+  intensity: IntensityLevel,
+  dayNumber: number
 ): ExerciseStep {
   const seriesCount = getSeriesCount(intensity);
   const durationPerSeries = exercise.baseDurationSeconds;
@@ -199,7 +170,7 @@ function createExerciseStep(
     exerciseId: exercise.id,
     exerciseNumber: exercise.number,
     baseName: exercise.name,
-    displayName: getIntensifiedName(exercise.name, intensity),
+    displayName: getExerciseDisplayName(exercise.id, intensity, dayNumber),
     description: exercise.description,
     instructions: exercise.instructions,
     seriesCount,
@@ -211,36 +182,24 @@ function createExerciseStep(
 }
 
 // ============================================
-// CRÉATION D'UN EXERCICE BONUS
+// CRÉATION D'UN EXERCICE BONUS (Pool de 20 exercices)
 // ============================================
 
 function createBonusExercise(
-  exercise: Exercise,
   dayNumber: number,
   totalDays: number
 ): BonusExercise {
-  // Les bonus progressent aussi mais restent plus légers
-  const progress = dayNumber / totalDays;
-  let seriesCount = 2;
-  let durationPerSeries = 20;
-
-  if (progress > 0.5) {
-    seriesCount = 3;
-    durationPerSeries = 25;
-  }
-  if (progress > 0.75) {
-    seriesCount = 3;
-    durationPerSeries = 30;
-  }
+  // Utilise le pool de 20 exercices bonus avec rotation intelligente
+  const bonus = generateBonusFromPool(dayNumber, totalDays);
 
   return {
-    exerciseId: exercise.id,
-    baseName: exercise.name,
-    displayName: `${exercise.name} (Bonus)`,
-    description: exercise.description,
-    instructions: `Version douce : ${exercise.instructions}`,
-    seriesCount,
-    durationPerSeries,
+    exerciseId: bonus.exerciseId,
+    baseName: bonus.name,
+    displayName: bonus.displayName,
+    description: bonus.category,
+    instructions: bonus.instruction,
+    seriesCount: bonus.seriesCount,
+    durationPerSeries: bonus.durationPerSeries,
   };
 }
 
@@ -262,18 +221,8 @@ export function generateJawlineRoutine(dayNumber: number, totalDays: number): Da
 
   const steps: ExerciseStep[] = exerciseNumbers.map((exNum, index) => {
     const exercise = jawlineExercises[exNum - 1];
-    return createExerciseStep(exercise, index + 1, intensity);
+    return createExerciseStep(exercise, index + 1, intensity, dayNumber);
   });
-
-  // Bonus: exercice différent de ceux du jour
-  const usedNumbers = new Set(exerciseNumbers);
-  let bonusExercise = jawlineExercises[0];
-  for (const ex of jawlineExercises) {
-    if (!usedNumbers.has(ex.number)) {
-      bonusExercise = ex;
-      break;
-    }
-  }
 
   const totalSeconds = steps.reduce((sum, step) => sum + step.totalDuration, 0);
 
@@ -282,9 +231,9 @@ export function generateJawlineRoutine(dayNumber: number, totalDays: number): Da
     dayName: `Jour ${dayNumber}`,
     weekNumber,
     weekTheme: getWeekTheme(weekNumber, totalWeeks),
-    routineName: getRoutineName(dayNumber, 'jawline'),
+    routineName: generateRoutineName(dayNumber, 'jawline'),
     steps,
-    bonus: createBonusExercise(bonusExercise, dayNumber, totalDays),
+    bonus: createBonusExercise(dayNumber, totalDays),
     totalDurationMinutes: Math.ceil(totalSeconds / 60),
     intensity,
     programType: 'jawline',
@@ -308,18 +257,8 @@ export function generateDoubleChinRoutine(dayNumber: number, totalDays: number):
 
   const steps: ExerciseStep[] = exerciseNumbers.map((exNum, index) => {
     const exercise = doubleChinExercises[exNum - 1];
-    return createExerciseStep(exercise, index + 1, intensity);
+    return createExerciseStep(exercise, index + 1, intensity, dayNumber);
   });
-
-  // Bonus
-  const usedNumbers = new Set(exerciseNumbers);
-  let bonusExercise = doubleChinExercises[0];
-  for (const ex of doubleChinExercises) {
-    if (!usedNumbers.has(ex.number)) {
-      bonusExercise = ex;
-      break;
-    }
-  }
 
   const totalSeconds = steps.reduce((sum, step) => sum + step.totalDuration, 0);
 
@@ -328,9 +267,9 @@ export function generateDoubleChinRoutine(dayNumber: number, totalDays: number):
     dayName: `Jour ${dayNumber}`,
     weekNumber,
     weekTheme: getWeekTheme(weekNumber, totalWeeks),
-    routineName: getRoutineName(dayNumber, 'double_chin'),
+    routineName: generateRoutineName(dayNumber, 'double_chin'),
     steps,
-    bonus: createBonusExercise(bonusExercise, dayNumber, totalDays),
+    bonus: createBonusExercise(dayNumber, totalDays),
     totalDurationMinutes: Math.ceil(totalSeconds / 60),
     intensity,
     programType: 'double_chin',
@@ -363,7 +302,7 @@ export function generateAllInOneRoutine(dayNumber: number): DailyRoutine {
 
     steps = exerciseNumbers.map((exNum, index) => {
       const exercise = jawlineExercises[exNum - 1];
-      return createExerciseStep(exercise, index + 1, intensity);
+      return createExerciseStep(exercise, index + 1, intensity, dayNumber);
     });
   } else if (dayType === 2) {
     // Double menton day
@@ -373,7 +312,7 @@ export function generateAllInOneRoutine(dayNumber: number): DailyRoutine {
 
     steps = exerciseNumbers.map((exNum, index) => {
       const exercise = doubleChinExercises[exNum - 1];
-      return createExerciseStep(exercise, index + 1, intensity);
+      return createExerciseStep(exercise, index + 1, intensity, dayNumber);
     });
   } else {
     // Mix day: 2 jawline + 1 double menton
@@ -383,15 +322,11 @@ export function generateAllInOneRoutine(dayNumber: number): DailyRoutine {
     const dcIndex = (cycleDay % 12);
 
     steps = [
-      createExerciseStep(jawlineExercises[jawIndex1], 1, intensity),
-      createExerciseStep(doubleChinExercises[dcIndex], 2, intensity),
-      createExerciseStep(jawlineExercises[jawIndex2], 3, intensity),
+      createExerciseStep(jawlineExercises[jawIndex1], 1, intensity, dayNumber),
+      createExerciseStep(doubleChinExercises[dcIndex], 2, intensity, dayNumber),
+      createExerciseStep(jawlineExercises[jawIndex2], 3, intensity, dayNumber),
     ];
   }
-
-  // Bonus: alterner entre les deux types
-  const bonusPool = dayType === 2 ? jawlineExercises : doubleChinExercises;
-  const bonusExercise = bonusPool[cycleDay % bonusPool.length];
 
   const totalSeconds = steps.reduce((sum, step) => sum + step.totalDuration, 0);
 
@@ -400,9 +335,9 @@ export function generateAllInOneRoutine(dayNumber: number): DailyRoutine {
     dayName: `Jour ${dayNumber} – Cycle ${cycleNumber}`,
     weekNumber,
     weekTheme: `${getWeekTheme(Math.ceil(cycleDay / 7), 4)} (Premium)`,
-    routineName: getRoutineName(dayNumber, programType),
+    routineName: generateRoutineName(dayNumber, programType),
     steps,
-    bonus: createBonusExercise(bonusExercise, cycleDay, 28),
+    bonus: createBonusExercise(dayNumber, totalDays),
     totalDurationMinutes: Math.ceil(totalSeconds / 60),
     intensity,
     programType,

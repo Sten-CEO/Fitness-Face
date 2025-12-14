@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import {
   Animated,
   ScrollView,
@@ -29,10 +29,16 @@ export default function RoutineDetailScreen() {
     hasCompletedTodayBonus,
   } = useProgress();
 
-  // Générer la routine dynamique pour le jour actuel
-  const dailyRoutine = selectedPlanId
-    ? getDailyRoutine(selectedPlanId, currentDay)
-    : null;
+  // IMPORTANT: Capture le jour à l'ouverture de l'écran pour éviter
+  // que la routine change quand currentDay est mis à jour après completion
+  const sessionDayRef = useRef(currentDay);
+
+  // Générer la routine dynamique - fixée au jour de la session
+  // useMemo avec [] pour ne calculer qu'une seule fois au mount
+  const dailyRoutine = useMemo(() => {
+    if (!selectedPlanId) return null;
+    return getDailyRoutine(selectedPlanId, sessionDayRef.current);
+  }, [selectedPlanId]);
 
   // Timer state
   const [isRunning, setIsRunning] = useState(false);
@@ -105,14 +111,16 @@ export default function RoutineDetailScreen() {
 
   const handleCompleteSession = async () => {
     if (dailyRoutine) {
-      await completeDay(currentDay, dailyRoutine.routineName);
+      // Utilise sessionDayRef.current au lieu de currentDay pour éviter le bug de swap
+      await completeDay(sessionDayRef.current, dailyRoutine.routineName);
     }
     setShowBonusSection(true);
   };
 
   const handleCompleteBonus = async () => {
     if (dailyRoutine) {
-      await completeBonusExercise(currentDay, dailyRoutine.bonus.baseName);
+      // Utilise sessionDayRef.current au lieu de currentDay pour éviter le bug de swap
+      await completeBonusExercise(sessionDayRef.current, dailyRoutine.bonus.baseName);
     }
     router.replace('/(tabs)/dashboard');
   };

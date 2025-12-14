@@ -246,14 +246,33 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
 
     // Calculer le nouveau streak
     let newStreak = 1;
-    if (progress.lastCompletedParisDate === yesterdayParis) {
-      // Continue le streak
-      newStreak = progress.streak + 1;
-    } else if (progress.lastCompletedParisDate === todayParis) {
-      // Déjà complété aujourd'hui, garde le streak
-      newStreak = progress.streak;
+
+    if (TEST_MODE) {
+      // En mode test: streak basé sur les jours consécutifs complétés
+      // Vérifie si le jour précédent (dayNumber - 1) a été complété
+      const previousDayCompleted = progress.completedRoutines.some(
+        (r) => r.dayNumber === dayNumber - 1
+      );
+      if (previousDayCompleted) {
+        newStreak = progress.streak + 1;
+      } else if (dayNumber === 1) {
+        // Premier jour du programme
+        newStreak = 1;
+      } else {
+        // Jour sauté, reset streak
+        newStreak = 1;
+      }
+    } else {
+      // En mode production: streak basé sur les dates Paris
+      if (progress.lastCompletedParisDate === yesterdayParis) {
+        // Continue le streak
+        newStreak = progress.streak + 1;
+      } else if (progress.lastCompletedParisDate === todayParis) {
+        // Déjà complété aujourd'hui, garde le streak
+        newStreak = progress.streak;
+      }
+      // Sinon, streak reset à 1
     }
-    // Sinon, streak reset à 1
 
     const newRoutine: CompletedRoutine = {
       routineName,

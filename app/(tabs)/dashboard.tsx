@@ -17,6 +17,7 @@ import { useProgress } from '../../contexts/ProgressContext';
 import { useUser } from '../../contexts/UserContext';
 import { getRoutineForPlan } from '../../data/routines';
 import { getTodayTip } from '../../data/tips';
+import { getActiveTrophy, getTrophyProgress, TROPHIES } from '../../data/trophies';
 import { typography, textColors } from '../../theme/typography';
 
 export default function DashboardScreen() {
@@ -27,6 +28,7 @@ export default function DashboardScreen() {
     currentDay,
     totalDays,
     completedDaysCount,
+    completedBonusesCount,
     streak,
     isFixedProgram,
     progressPercent,
@@ -46,8 +48,12 @@ export default function DashboardScreen() {
 
   const routine = selectedPlanId ? getRoutineForPlan(selectedPlanId) : null;
   const todayTip = getTodayTip();
-  const daysUntilUnlock = Math.max(0, 7 - completedDaysCount);
-  const isProgressUnlocked = completedDaysCount >= 7;
+
+  // Trophy system
+  const userProgress = { completedDaysCount, streak, completedBonusesCount };
+  const activeTrophy = getActiveTrophy(userProgress);
+  const trophyProgress = activeTrophy ? getTrophyProgress(activeTrophy, userProgress) : 100;
+  const allTrophiesUnlocked = activeTrophy === null;
 
   useEffect(() => {
     Animated.timing(fadeAnim, {
@@ -143,43 +149,43 @@ export default function DashboardScreen() {
               </TouchableOpacity>
             </Animated.View>
 
-            {/* Module B: Progress Lock */}
-            <Animated.View
-              style={{
-                opacity: fadeAnim,
-                transform: [{ translateY: slideAnims[1] }],
-              }}
-            >
-              <CleanCard style={styles.lockCard}>
-                <View style={styles.lockHeader}>
-                  <View style={styles.lockIconContainer}>
-                    <Ionicons
-                      name={isProgressUnlocked ? 'lock-open-outline' : 'lock-closed-outline'}
-                      size={22}
-                      color={isProgressUnlocked ? textColors.accent : 'rgba(255, 255, 255, 0.4)'}
+            {/* Module B: Trophy / Prochain Trophée */}
+            {!allTrophiesUnlocked && activeTrophy && (
+              <Animated.View
+                style={{
+                  opacity: fadeAnim,
+                  transform: [{ translateY: slideAnims[1] }],
+                }}
+              >
+                <CleanCard style={styles.trophyCard}>
+                  <View style={styles.trophyHeader}>
+                    <View style={[styles.trophyIconContainer, { backgroundColor: `${activeTrophy.color}20` }]}>
+                      <Ionicons
+                        name={activeTrophy.icon as keyof typeof Ionicons.glyphMap}
+                        size={22}
+                        color={activeTrophy.color}
+                      />
+                    </View>
+                    <View style={styles.trophyInfo}>
+                      <Text style={styles.trophyLabel}>Prochain trophee</Text>
+                      <Text style={styles.trophyTitle}>{activeTrophy.title}</Text>
+                      <Text style={styles.trophyDesc}>{activeTrophy.description}</Text>
+                    </View>
+                  </View>
+                  <View style={styles.trophyProgressBar}>
+                    <View
+                      style={[
+                        styles.trophyProgressFill,
+                        { width: `${trophyProgress}%`, backgroundColor: activeTrophy.color },
+                      ]}
                     />
                   </View>
-                  <View style={styles.lockInfo}>
-                    <Text style={styles.lockTitle}>
-                      {isProgressUnlocked ? 'Photos avant/apres' : 'Contenu verrouille'}
-                    </Text>
-                    <Text style={styles.lockSubtitle}>
-                      {isProgressUnlocked
-                        ? 'Compare ta progression'
-                        : `Debloque apres ${daysUntilUnlock} jours`}
-                    </Text>
-                  </View>
-                </View>
-                <View style={styles.miniProgressBar}>
-                  <View
-                    style={[
-                      styles.miniProgressFill,
-                      { width: `${Math.min((completedDaysCount / 7) * 100, 100)}%` },
-                    ]}
-                  />
-                </View>
-              </CleanCard>
-            </Animated.View>
+                  <Text style={styles.trophyProgressText}>
+                    {Math.round(trophyProgress)}% complete
+                  </Text>
+                </CleanCard>
+              </Animated.View>
+            )}
 
             {/* Module C: Conseil du jour */}
             <Animated.View
@@ -396,46 +402,57 @@ const styles = StyleSheet.create({
     color: textColors.primary,
     fontWeight: '600',
   },
-  lockCard: {
+  trophyCard: {
     marginBottom: 16,
   },
-  lockHeader: {
+  trophyHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
     marginBottom: 12,
   },
-  lockIconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+  trophyIconContainer: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  lockInfo: {
+  trophyInfo: {
     flex: 1,
   },
-  lockTitle: {
+  trophyLabel: {
+    ...typography.caption,
+    color: textColors.tertiary,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: 2,
+  },
+  trophyTitle: {
     ...typography.bodySmall,
     color: textColors.primary,
     fontWeight: '600',
     marginBottom: 2,
   },
-  lockSubtitle: {
+  trophyDesc: {
+    ...typography.caption,
+    color: textColors.secondary,
+  },
+  trophyProgressBar: {
+    height: 6,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 3,
+    overflow: 'hidden',
+    marginBottom: 6,
+  },
+  trophyProgressFill: {
+    height: '100%',
+    borderRadius: 3,
+  },
+  trophyProgressText: {
     ...typography.caption,
     color: textColors.tertiary,
-  },
-  miniProgressBar: {
-    height: 4,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    borderRadius: 2,
-    overflow: 'hidden',
-  },
-  miniProgressFill: {
-    height: '100%',
-    backgroundColor: textColors.accent,
-    borderRadius: 2,
+    textAlign: 'right',
   },
   tipCard: {
     marginBottom: 16,
