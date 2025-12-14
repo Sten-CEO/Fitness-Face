@@ -18,6 +18,7 @@ import {
   getIntensityLabel,
   formatDuration,
   formatSeries,
+  formatInstructions,
 } from '../data/routineGenerator';
 import { typography, textColors } from '../theme/typography';
 
@@ -165,7 +166,7 @@ export default function CompletedRoutineDetailScreen() {
                     </Text>
                   </View>
                 </View>
-                <Text style={styles.exerciseInstructions}>{step.instructions}</Text>
+                <Text style={styles.exerciseInstructions}>{formatInstructions(step.instructions)}</Text>
               </CleanCard>
             ))}
 
@@ -192,7 +193,7 @@ export default function CompletedRoutineDetailScreen() {
                   </View>
                 )}
               </View>
-              <Text style={styles.bonusInstructions}>{dailyRoutine.bonus.instructions}</Text>
+              <Text style={styles.bonusInstructions}>{formatInstructions(dailyRoutine.bonus.instructions)}</Text>
               {!hasBonusCompleted && (
                 <Text style={styles.bonusNotCompleted}>Non effectue</Text>
               )}

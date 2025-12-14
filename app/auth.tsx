@@ -83,8 +83,8 @@ export default function AuthScreen() {
             Alert.alert('Erreur', error.message);
           }
         } else {
-          // Connexion réussie - aller vers welcome
-          router.replace('/welcome');
+          // Connexion réussie - aller directement au dashboard
+          router.replace('/(tabs)/dashboard');
         }
       } else {
         // Inscription

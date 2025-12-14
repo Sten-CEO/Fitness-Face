@@ -390,3 +390,12 @@ export function getIntensityLabel(intensity: IntensityLevel): string {
 export function formatSeries(seriesCount: number, duration: number): string {
   return `${seriesCount} séries × ${duration}s`;
 }
+
+/**
+ * Formate les instructions avec des sauts de ligne après chaque étape numérotée
+ * Ex: "1. xxx 2. xxx" devient "1. xxx\n2. xxx"
+ */
+export function formatInstructions(instructions: string): string {
+  // Ajoute un saut de ligne avant chaque numéro d'étape (sauf le premier)
+  return instructions.replace(/\s+(\d+)\.\s/g, '\n$1. ').trim();
+}
