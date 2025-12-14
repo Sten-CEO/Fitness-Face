@@ -15,7 +15,7 @@ import CleanCard from '../components/CleanCard';
 import ExerciseImageSlider from '../components/ExerciseImageSlider';
 import PrimaryButton from '../components/PrimaryButton';
 import { useProgress } from '../contexts/ProgressContext';
-import { getDailyRoutine, getIntensityLabel, formatDuration, formatSeries } from '../data/routineGenerator';
+import { getDailyRoutine, getIntensityLabel, formatDuration, formatSeries, formatInstructions } from '../data/routineGenerator';
 import { typography, textColors } from '../theme/typography';
 
 export default function RoutineDetailScreen() {
@@ -265,7 +265,7 @@ export default function RoutineDetailScreen() {
                     styles.stepText,
                     activeExerciseIndex === index && styles.stepTextActive,
                   ]}>{step.displayName}</Text>
-                  <Text style={styles.stepInstructions}>{step.instructions}</Text>
+                  <Text style={styles.stepInstructions}>{formatInstructions(step.instructions)}</Text>
                   <Text style={styles.stepDuration}>
                     {formatSeries(step.seriesCount, step.durationPerSeries)}
                   </Text>
@@ -315,7 +315,7 @@ export default function RoutineDetailScreen() {
                   {dailyRoutine.bonus.displayName}
                 </Text>
                 <Text style={styles.bonusInstructions}>
-                  {dailyRoutine.bonus.instructions}
+                  {formatInstructions(dailyRoutine.bonus.instructions)}
                 </Text>
                 <Text style={styles.bonusDuration}>
                   {formatSeries(dailyRoutine.bonus.seriesCount, dailyRoutine.bonus.durationPerSeries)}
