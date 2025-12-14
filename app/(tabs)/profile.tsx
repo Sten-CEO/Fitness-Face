@@ -70,7 +70,7 @@ export default function ProfileScreen() {
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Parametres</Text>
 
-            <TouchableOpacity style={styles.menuItem}>
+            <TouchableOpacity style={styles.menuItem} onPress={() => router.push('/notifications')}>
               <View style={styles.menuIcon}>
                 <Ionicons name="notifications-outline" size={20} color={textColors.accent} />
               </View>
@@ -78,15 +78,7 @@ export default function ProfileScreen() {
               <Ionicons name="chevron-forward" size={20} color={textColors.tertiary} />
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.menuItem}>
-              <View style={styles.menuIcon}>
-                <Ionicons name="time-outline" size={20} color={textColors.accent} />
-              </View>
-              <Text style={styles.menuText}>Rappel quotidien</Text>
-              <Ionicons name="chevron-forward" size={20} color={textColors.tertiary} />
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.menuItem}>
+            <TouchableOpacity style={styles.menuItem} onPress={() => router.push('/subscription')}>
               <View style={styles.menuIcon}>
                 <Ionicons name="card-outline" size={20} color={textColors.accent} />
               </View>
@@ -99,15 +91,15 @@ export default function ProfileScreen() {
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Support</Text>
 
-            <TouchableOpacity style={styles.menuItem}>
+            <TouchableOpacity style={styles.menuItem} onPress={() => router.push('/faq')}>
               <View style={styles.menuIcon}>
                 <Ionicons name="help-circle-outline" size={20} color={textColors.accent} />
               </View>
-              <Text style={styles.menuText}>Aide</Text>
+              <Text style={styles.menuText}>Aide / FAQ</Text>
               <Ionicons name="chevron-forward" size={20} color={textColors.tertiary} />
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.menuItem}>
+            <TouchableOpacity style={styles.menuItem} onPress={() => router.push('/contact')}>
               <View style={styles.menuIcon}>
                 <Ionicons name="chatbubble-outline" size={20} color={textColors.accent} />
               </View>
@@ -115,7 +107,7 @@ export default function ProfileScreen() {
               <Ionicons name="chevron-forward" size={20} color={textColors.tertiary} />
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.menuItem}>
+            <TouchableOpacity style={styles.menuItem} onPress={() => router.push('/terms')}>
               <View style={styles.menuIcon}>
                 <Ionicons name="document-text-outline" size={20} color={textColors.accent} />
               </View>

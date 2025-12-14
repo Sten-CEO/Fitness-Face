@@ -4,6 +4,11 @@ import { PlanId, getPlanById, isFixedDurationPlan } from '../data/plans';
 
 const STORAGE_KEY = '@fitness_face_progress';
 
+// ============================================
+// MODE TEST - Mettre à false pour la production
+// ============================================
+const TEST_MODE = true; // true = progression immédiate, false = attendre 02h Paris
+
 // Structure d'une routine terminée
 export interface CompletedRoutine {
   routineName: string;
@@ -145,6 +150,17 @@ function calculateCurrentDay(programStartDate: string | null): number {
 
   // Jour 1 = premier jour, pas jour 0
   return Math.max(1, diffDays + 1);
+}
+
+/**
+ * En mode test: le jour actuel = dernier jour complété + 1
+ * Permet de tester les routines sans attendre
+ */
+function calculateCurrentDayTestMode(completedRoutines: CompletedRoutine[]): number {
+  if (completedRoutines.length === 0) return 1;
+
+  const maxCompletedDay = Math.max(...completedRoutines.map(r => r.dayNumber));
+  return maxCompletedDay + 1;
 }
 
 // ============================================
@@ -314,7 +330,10 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
     : false;
 
   // Jour actuel du programme
-  const currentDay = calculateCurrentDay(progress.programStartDate);
+  // En mode test: basé sur les jours complétés, sinon basé sur la date Paris
+  const currentDay = TEST_MODE
+    ? calculateCurrentDayTestMode(progress.completedRoutines)
+    : calculateCurrentDay(progress.programStartDate);
 
   // Nombre de jours complétés
   const completedDaysCount = progress.completedRoutines.length;
