@@ -17,6 +17,7 @@ import {
 import BackgroundScreen from '../components/BackgroundScreen';
 import PrimaryButton from '../components/PrimaryButton';
 import { useAuth } from '../contexts/AuthContext';
+import { useUser } from '../contexts/UserContext';
 import { typography, textColors, fontFamily } from '../theme/typography';
 
 type AuthMode = 'login' | 'register';
@@ -24,8 +25,10 @@ type AuthMode = 'login' | 'register';
 export default function AuthScreen() {
   const router = useRouter();
   const { signIn, signUp, isLoading } = useAuth();
+  const { setFirstName } = useUser();
 
-  const [mode, setMode] = useState<AuthMode>('login');
+  const [mode, setMode] = useState<AuthMode>('register');
+  const [firstName, setFirstNameLocal] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -42,6 +45,10 @@ export default function AuthScreen() {
 
   const handleSubmit = async () => {
     // Validation
+    if (!isLogin && !firstName.trim()) {
+      Alert.alert('Erreur', 'Veuillez entrer votre prénom');
+      return;
+    }
     if (!email.trim()) {
       Alert.alert('Erreur', 'Veuillez entrer votre adresse email');
       return;
@@ -85,6 +92,8 @@ export default function AuthScreen() {
             Alert.alert('Erreur', error.message);
           }
         } else {
+          // Sauvegarder le prénom
+          setFirstName(firstName.trim());
           Alert.alert(
             'Compte créé',
             'Vérifiez votre email pour confirmer votre compte, puis connectez-vous.',
@@ -101,10 +110,6 @@ export default function AuthScreen() {
 
   const handleForgotPassword = () => {
     router.push('/forgot-password');
-  };
-
-  const handleSkip = () => {
-    router.push('/welcome');
   };
 
   return (
@@ -155,6 +160,31 @@ export default function AuthScreen() {
 
             {/* Form */}
             <View style={styles.formContainer}>
+              {/* Prénom - uniquement pour l'inscription */}
+              {!isLogin && (
+                <View style={styles.inputGroup}>
+                  <Text style={styles.label}>Prénom</Text>
+                  <View style={styles.inputWrapper}>
+                    <Ionicons
+                      name="person-outline"
+                      size={20}
+                      color={textColors.tertiary}
+                      style={styles.inputIcon}
+                    />
+                    <TextInput
+                      style={styles.input}
+                      placeholder="Ton prénom"
+                      placeholderTextColor="rgba(255, 255, 255, 0.35)"
+                      value={firstName}
+                      onChangeText={setFirstNameLocal}
+                      autoCapitalize="words"
+                      autoComplete="given-name"
+                      editable={!loading}
+                    />
+                  </View>
+                </View>
+              )}
+
               <View style={styles.inputGroup}>
                 <Text style={styles.label}>Adresse e-mail</Text>
                 <View style={styles.inputWrapper}>
@@ -261,15 +291,6 @@ export default function AuthScreen() {
                 />
               )}
             </View>
-
-            {/* Skip */}
-            <TouchableOpacity
-              onPress={handleSkip}
-              style={styles.skipButton}
-              disabled={loading}
-            >
-              <Text style={styles.skipText}>Continuer sans compte</Text>
-            </TouchableOpacity>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -380,7 +401,6 @@ const styles = StyleSheet.create({
   },
   buttonContainer: {
     marginTop: 24,
-    marginBottom: 16,
   },
   loadingButton: {
     flexDirection: 'row',
@@ -395,13 +415,5 @@ const styles = StyleSheet.create({
     ...typography.body,
     color: textColors.primary,
     fontWeight: '600',
-  },
-  skipButton: {
-    alignItems: 'center',
-    paddingVertical: 12,
-  },
-  skipText: {
-    ...typography.bodySmall,
-    color: textColors.tertiary,
   },
 });
