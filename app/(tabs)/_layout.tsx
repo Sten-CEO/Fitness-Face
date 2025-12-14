@@ -14,6 +14,7 @@ export default function TabLayout() {
         tabBarInactiveTintColor: 'rgba(255, 255, 255, 0.5)',
         tabBarShowLabel: false,
         tabBarItemStyle: styles.tabBarItem,
+        tabBarIconStyle: styles.tabBarIcon,
         tabBarBackground: () => (
           <View style={styles.tabBarBackground} />
         ),
@@ -24,10 +25,8 @@ export default function TabLayout() {
         options={{
           title: 'Home',
           tabBarIcon: ({ color, focused }) => (
-            <View style={styles.iconContainer}>
-              <View style={[styles.iconWrapper, focused && styles.iconWrapperActive]}>
-                <Ionicons name="home-outline" size={22} color={color} />
-              </View>
+            <View style={[styles.iconWrapper, focused && styles.iconWrapperActive]}>
+              <Ionicons name="home-outline" size={22} color={color} />
             </View>
           ),
         }}
@@ -37,10 +36,8 @@ export default function TabLayout() {
         options={{
           title: 'Routine',
           tabBarIcon: ({ color, focused }) => (
-            <View style={styles.iconContainer}>
-              <View style={[styles.iconWrapper, focused && styles.iconWrapperActive]}>
-                <Ionicons name="fitness-outline" size={22} color={color} />
-              </View>
+            <View style={[styles.iconWrapper, focused && styles.iconWrapperActive]}>
+              <Ionicons name="fitness-outline" size={22} color={color} />
             </View>
           ),
         }}
@@ -50,10 +47,8 @@ export default function TabLayout() {
         options={{
           title: 'Progress',
           tabBarIcon: ({ color, focused }) => (
-            <View style={styles.iconContainer}>
-              <View style={[styles.iconWrapper, focused && styles.iconWrapperActive]}>
-                <Ionicons name="stats-chart-outline" size={22} color={color} />
-              </View>
+            <View style={[styles.iconWrapper, focused && styles.iconWrapperActive]}>
+              <Ionicons name="stats-chart-outline" size={22} color={color} />
             </View>
           ),
         }}
@@ -63,10 +58,8 @@ export default function TabLayout() {
         options={{
           title: 'Profile',
           tabBarIcon: ({ color, focused }) => (
-            <View style={styles.iconContainer}>
-              <View style={[styles.iconWrapper, focused && styles.iconWrapperActive]}>
-                <Ionicons name="person-outline" size={22} color={color} />
-              </View>
+            <View style={[styles.iconWrapper, focused && styles.iconWrapperActive]}>
+              <Ionicons name="person-outline" size={22} color={color} />
             </View>
           ),
         }}
@@ -75,13 +68,13 @@ export default function TabLayout() {
   );
 }
 
-const TAB_BAR_HEIGHT = 56;
-const ICON_CONTAINER_SIZE = 40;
+const TAB_BAR_HEIGHT = 60;
+const ICON_SIZE = 44;
 
 const styles = StyleSheet.create({
   tabBar: {
     position: 'absolute',
-    bottom: Platform.OS === 'ios' ? 30 : 16,
+    bottom: Platform.OS === 'ios' ? 28 : 16,
     left: 20,
     right: 20,
     height: TAB_BAR_HEIGHT,
@@ -93,10 +86,6 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.4,
     shadowRadius: 20,
-    // Forcer le centrage vertical en supprimant tous les paddings
-    paddingBottom: 0,
-    paddingTop: 0,
-    paddingHorizontal: 0,
   },
   tabBarBackground: {
     ...StyleSheet.absoluteFillObject,
@@ -106,24 +95,19 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255, 255, 255, 0.1)',
   },
   tabBarItem: {
-    flex: 1,
     height: TAB_BAR_HEIGHT,
-    justifyContent: 'center',
-    alignItems: 'center',
-    // Supprimer tous les espaces qui pourraient décaler les icônes
-    padding: 0,
-    margin: 0,
+    paddingTop: 0,
+    paddingBottom: 0,
   },
-  iconContainer: {
-    width: ICON_CONTAINER_SIZE,
-    height: ICON_CONTAINER_SIZE,
-    justifyContent: 'center',
-    alignItems: 'center',
+  tabBarIcon: {
+    // Centrer verticalement l'icône dans la barre
+    marginTop: (TAB_BAR_HEIGHT - ICON_SIZE) / 2,
+    marginBottom: (TAB_BAR_HEIGHT - ICON_SIZE) / 2,
   },
   iconWrapper: {
-    width: ICON_CONTAINER_SIZE,
-    height: ICON_CONTAINER_SIZE,
-    borderRadius: ICON_CONTAINER_SIZE / 2,
+    width: ICON_SIZE,
+    height: ICON_SIZE,
+    borderRadius: ICON_SIZE / 2,
     justifyContent: 'center',
     alignItems: 'center',
   },

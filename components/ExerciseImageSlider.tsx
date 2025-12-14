@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import { Video, ResizeMode } from 'expo-av';
 import React, { useRef, useState } from 'react';
 import {
   Dimensions,
@@ -8,10 +9,15 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  TouchableOpacity,
   View,
 } from 'react-native';
 
-import { getExerciseImagesFromRegistry } from '../data/exerciseImageRegistry';
+import {
+  getExerciseImagesFromRegistry,
+  getExerciseVideoFromRegistry,
+  hasVideoInRegistry,
+} from '../data/exerciseImageRegistry';
 import { textColors, typography } from '../theme/typography';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -28,16 +34,71 @@ export default function ExerciseImageSlider({
   exerciseName,
 }: ExerciseImageSliderProps) {
   const scrollViewRef = useRef<ScrollView>(null);
+  const videoRef = useRef<Video>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [isPlaying, setIsPlaying] = useState(false);
 
-  // Récupérer les images depuis le registre statique
+  // Récupérer les images et vidéo depuis le registre statique
   const images = getExerciseImagesFromRegistry(exerciseId);
+  const videoSource = getExerciseVideoFromRegistry(exerciseId);
+  const hasVideo = hasVideoInRegistry(exerciseId);
 
   const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
     const offsetX = event.nativeEvent.contentOffset.x;
     const index = Math.round(offsetX / SLIDER_WIDTH);
     setCurrentIndex(index);
   };
+
+  const togglePlayPause = async () => {
+    if (videoRef.current) {
+      if (isPlaying) {
+        await videoRef.current.pauseAsync();
+      } else {
+        await videoRef.current.playAsync();
+      }
+      setIsPlaying(!isPlaying);
+    }
+  };
+
+  // Si vidéo disponible → afficher la vidéo
+  if (hasVideo && videoSource) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.videoContainer}>
+          <Video
+            ref={videoRef}
+            source={videoSource}
+            style={styles.video}
+            resizeMode={ResizeMode.CONTAIN}
+            isLooping
+            shouldPlay={false}
+            onPlaybackStatusUpdate={(status) => {
+              if (status.isLoaded) {
+                setIsPlaying(status.isPlaying);
+              }
+            }}
+          />
+          <TouchableOpacity
+            style={styles.playButton}
+            onPress={togglePlayPause}
+            activeOpacity={0.8}
+          >
+            <View style={styles.playButtonInner}>
+              <Ionicons
+                name={isPlaying ? 'pause' : 'play'}
+                size={32}
+                color={textColors.primary}
+              />
+            </View>
+          </TouchableOpacity>
+        </View>
+        <View style={styles.videoBadge}>
+          <Ionicons name="videocam" size={14} color={textColors.accent} />
+          <Text style={styles.videoBadgeText}>Vidéo</Text>
+        </View>
+      </View>
+    );
+  }
 
   // Aucune image → placeholder
   if (images.length === 0) {
@@ -141,6 +202,47 @@ const styles = StyleSheet.create({
   image: {
     width: '100%',
     height: '100%',
+  },
+  videoContainer: {
+    width: SLIDER_WIDTH,
+    height: IMAGE_HEIGHT,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+    borderRadius: 16,
+    overflow: 'hidden',
+  },
+  video: {
+    width: '100%',
+    height: '100%',
+  },
+  playButton: {
+    position: 'absolute',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  playButtonInner: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: 'rgba(59, 130, 246, 0.9)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  videoBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'center',
+    gap: 6,
+    marginTop: 12,
+    backgroundColor: 'rgba(59, 130, 246, 0.15)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+  },
+  videoBadgeText: {
+    ...typography.caption,
+    color: textColors.accent,
   },
   placeholderContainer: {
     width: '100%',
