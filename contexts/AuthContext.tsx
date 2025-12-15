@@ -79,7 +79,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
         .maybeSingle();
 
       if (upsertError) {
-        console.error('Erreur upsert profil:', upsertError);
         // En cas d'erreur, créer un profil local minimal
         setProfile({
           id: userId,
@@ -123,8 +122,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         .from('settings')
         .upsert({ user_id: userId }, { onConflict: 'user_id', ignoreDuplicates: true });
 
-    } catch (error) {
-      console.error('Erreur fetchOrCreateProfile:', error);
+    } catch {
       // Fallback en cas d'erreur
       setProfile({
         id: userId,
@@ -142,14 +140,19 @@ export function AuthProvider({ children }: AuthProviderProps) {
   // Inscription
   const signUp = async (email: string, password: string) => {
     setIsLoading(true);
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-    });
-    if (error) {
+    try {
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+      });
+      if (error) {
+        setIsLoading(false);
+      }
+      return { error };
+    } catch (error) {
       setIsLoading(false);
+      return { error: error as AuthError };
     }
-    return { error };
   };
 
   // Connexion
@@ -259,7 +262,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
       return { error: null };
     } catch (error) {
-      console.error('Erreur suppression compte:', error);
       return { error: error as Error };
     }
   };

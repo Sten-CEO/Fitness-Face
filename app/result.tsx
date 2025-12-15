@@ -97,23 +97,14 @@ export default function ResultScreen() {
   };
 
   const handleSelectPlan = async (selectedPlan: Plan | undefined) => {
-    console.log('=== CLICK_CONTINUER_V3 ===');
-    console.log('Plan:', selectedPlan?.name, selectedPlan?.id);
-
     if (!selectedPlan) {
-      console.log('ERROR: No plan selected');
       Alert.alert('Erreur', 'Aucun plan sélectionné');
       return;
     }
 
     try {
-      // Save to context (mock payment success)
-      console.log('STEP 1: Saving purchase...');
       await completePurchase(selectedPlan.id, selectedPlan.name);
-      console.log('STEP 2: Purchase saved OK');
 
-      // Navigate to transition page with params
-      console.log('STEP 3: Navigating to /transition...');
       router.push({
         pathname: '/transition',
         params: {
@@ -122,11 +113,8 @@ export default function ResultScreen() {
           planName: selectedPlan.name,
         },
       });
-      console.log('STEP 4: router.push called');
-
-    } catch (error) {
-      console.error('=== NAV ERROR ===', error);
-      Alert.alert('Erreur navigation', String(error));
+    } catch {
+      Alert.alert('Erreur', 'Une erreur est survenue. Réessaie.');
     }
   };
 

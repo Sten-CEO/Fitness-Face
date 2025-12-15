@@ -1,13 +1,32 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Tabs } from 'expo-router';
+import { Redirect, Tabs } from 'expo-router';
 import React from 'react';
-import { Platform, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Platform, StyleSheet, View } from 'react-native';
+import { useAuth } from '../../contexts/AuthContext';
+import { useProgress } from '../../contexts/ProgressContext';
 import { textColors } from '../../theme/typography';
 
 const TAB_BAR_HEIGHT = 60;
 const ICON_SIZE = 44;
 
 export default function TabLayout() {
+  const { isLoading: authLoading } = useAuth();
+  const { selectedPlanId, isLoading: progressLoading } = useProgress();
+
+  // Attendre que les états soient chargés
+  if (authLoading || progressLoading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color={textColors.accent} />
+      </View>
+    );
+  }
+
+  // Rediriger vers l'accueil si aucun plan sélectionné
+  if (!selectedPlanId) {
+    return <Redirect href="/" />;
+  }
+
   return (
     <Tabs
       screenOptions={{
@@ -80,6 +99,12 @@ export default function TabLayout() {
 }
 
 const styles = StyleSheet.create({
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'transparent',
+  },
   tabBar: {
     position: 'absolute',
     bottom: Platform.OS === 'ios' ? 28 : 16,
