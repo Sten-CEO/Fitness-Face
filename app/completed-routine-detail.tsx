@@ -110,7 +110,7 @@ export default function CompletedRoutineDetailScreen() {
                 <Ionicons name="arrow-back" size={24} color={textColors.primary} />
               </TouchableOpacity>
               <View style={styles.headerInfo}>
-                <Text style={styles.headerTitle}>Detail de la routine</Text>
+                <Text style={styles.headerTitle}>Détail de la routine</Text>
                 <Text style={styles.headerSubtitle}>Jour {day}</Text>
               </View>
               <View style={styles.completedBadge}>
@@ -152,7 +152,7 @@ export default function CompletedRoutineDetailScreen() {
             </CleanCard>
 
             {/* Exercices */}
-            <Text style={styles.sectionTitle}>Exercices realises</Text>
+            <Text style={styles.sectionTitle}>Exercices réalisés</Text>
             {dailyRoutine.steps.map((step, index) => (
               <CleanCard key={index} style={styles.exerciseCard}>
                 <View style={styles.exerciseHeader}>
@@ -195,7 +195,7 @@ export default function CompletedRoutineDetailScreen() {
               </View>
               <Text style={styles.bonusInstructions}>{formatInstructions(dailyRoutine.bonus.instructions)}</Text>
               {!hasBonusCompleted && (
-                <Text style={styles.bonusNotCompleted}>Non effectue</Text>
+                <Text style={styles.bonusNotCompleted}>Non effectué</Text>
               )}
             </CleanCard>
           </Animated.View>

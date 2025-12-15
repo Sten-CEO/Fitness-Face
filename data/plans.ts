@@ -20,12 +20,15 @@ export interface Plan {
   shortDescription: string;
   features: PlanFeature[];
   badges: string[];
-  priceInfo?: string;
+  priceAmount: string; // Ex: "8,99"
+  priceSuffix: string; // Ex: "/mois"
+  priceDetails?: string; // Ex: "pendant 3 mois (26,97 € au total)"
+  engagementLabel?: string; // Ex: "Abonnement avec engagement"
   alternativeId?: PlanId;
   isMainProgram: boolean;
-  // NOUVEAU: durée en jours (null = abonnement sans durée fixe)
+  // Durée en jours (null = abonnement sans durée fixe)
   durationDays: number | null;
-  // NOUVEAU: type de programme
+  // Type de programme
   programType: ProgramType;
 }
 
@@ -36,16 +39,21 @@ export const plans: Plan[] = [
     durationLabel: 'Programme guidé sur 3 mois',
     tag: 'Recommandé',
     shortDescription:
-      'Sculpte ta mâchoire avec un programme progressif conçu pour des résultats durables.',
+      'Sculpte ta mâchoire avec un programme progressif conçu pour des résultats durables et visibles.',
     features: [
       { text: 'Séances guidées de 5 à 7 min par jour' },
-      { text: 'Exercices ciblés pour définir la jawline' },
+      { text: 'Exercices ciblés pour définir ta jawline' },
       { text: 'Progression planifiée sur 90 jours' },
-      { text: 'Compatible avec un emploi du temps chargé' },
-      { text: 'Routines bonus pour entretenir tes résultats' },
+      { text: 'Explications claires et précises des exercices' },
+      { text: 'Guides visuels pour chaque mouvement' },
+      { text: 'Suivi journalier de tes progrès' },
+      { text: 'Conseils personnalisés chaque jour' },
     ],
     badges: ['Résultat durable', 'Mâchoire sculptée'],
-    priceInfo: '7 € / mois pendant 3 mois (21 € au total)',
+    priceAmount: '8,99',
+    priceSuffix: '/mois',
+    priceDetails: 'pendant 3 mois (26,97 € au total)',
+    engagementLabel: 'Abonnement avec engagement',
     alternativeId: 'jawline_monthly',
     isMainProgram: true,
     durationDays: 90,
@@ -57,14 +65,19 @@ export const plans: Plan[] = [
     durationLabel: 'Sans engagement – Mois par mois',
     tag: 'Flexible',
     shortDescription:
-      'Travaille ta jawline à ton rythme, sans engagement. Idéal pour tester ou maintenir tes acquis.',
+      'Travaille ta jawline à ton rythme, sans engagement. Parfait pour tester ou entretenir tes résultats.',
     features: [
-      { text: 'Accès mensuel renouvelable' },
+      { text: 'Accès mensuel renouvelable automatiquement' },
       { text: 'Exercices ciblés mâchoire et posture' },
-      { text: 'Résiliable à tout moment' },
+      { text: 'Résiliable à tout moment en un clic' },
+      { text: 'Guides visuels pour chaque mouvement' },
+      { text: 'Suivi journalier de tes progrès' },
+      { text: 'Conseils personnalisés chaque jour' },
     ],
     badges: ['Sans engagement', 'Flexible'],
-    priceInfo: '9 € / mois sans engagement',
+    priceAmount: '10,99',
+    priceSuffix: '/mois',
+    priceDetails: 'sans engagement',
     isMainProgram: false,
     durationDays: null,
     programType: 'subscription',
@@ -75,16 +88,21 @@ export const plans: Plan[] = [
     durationLabel: 'Programme guidé sur 2 mois',
     tag: 'Recommandé',
     shortDescription:
-      'Affine ton cou et réduis ton double menton avec un programme ciblé de 60 jours.',
+      'Affine ton cou et réduis ton double menton avec un programme ciblé de 60 jours aux résultats prouvés.',
     features: [
       { text: 'Séances quotidiennes de 5 à 8 min' },
       { text: 'Exercices de drainage et renforcement' },
       { text: 'Résultats visibles dès les premières semaines' },
-      { text: 'Posture tête/cou optimisée' },
-      { text: 'Programme adapté à tous les niveaux' },
+      { text: 'Posture tête et cou optimisée' },
+      { text: 'Guides visuels pour chaque mouvement' },
+      { text: 'Suivi journalier de tes progrès' },
+      { text: 'Conseils personnalisés chaque jour' },
     ],
     badges: ['Résultat durable', 'Cou affiné'],
-    priceInfo: '7 € / mois pendant 2 mois (14 € au total)',
+    priceAmount: '9,99',
+    priceSuffix: '/mois',
+    priceDetails: 'pendant 2 mois (19,98 € au total)',
+    engagementLabel: 'Abonnement avec engagement',
     alternativeId: 'double_monthly',
     isMainProgram: true,
     durationDays: 60,
@@ -96,14 +114,19 @@ export const plans: Plan[] = [
     durationLabel: 'Sans engagement – Mois par mois',
     tag: 'Flexible',
     shortDescription:
-      'Travaille ton cou et ton double menton sans engagement. Parfait pour débuter ou entretenir.',
+      'Travaille ton cou et ton double menton sans engagement. Parfait pour débuter ou entretenir tes acquis.',
     features: [
-      { text: 'Accès mensuel renouvelable' },
+      { text: 'Accès mensuel renouvelable automatiquement' },
       { text: 'Exercices ciblés cou et menton' },
-      { text: 'Résiliable à tout moment' },
+      { text: 'Résiliable à tout moment en un clic' },
+      { text: 'Guides visuels pour chaque mouvement' },
+      { text: 'Suivi journalier de tes progrès' },
+      { text: 'Conseils personnalisés chaque jour' },
     ],
     badges: ['Sans engagement', 'Flexible'],
-    priceInfo: '9 € / mois sans engagement',
+    priceAmount: '10,99',
+    priceSuffix: '/mois',
+    priceDetails: 'sans engagement',
     isMainProgram: false,
     durationDays: null,
     programType: 'subscription',
@@ -114,16 +137,21 @@ export const plans: Plan[] = [
     durationLabel: 'Transformation complète du visage',
     tag: 'Le plus complet',
     shortDescription:
-      'Le programme ultime pour transformer tout ton visage : mâchoire, cou, joues, ovale.',
+      'Le programme ultime pour transformer tout ton visage : mâchoire, cou, joues, ovale. Résultats garantis.',
     features: [
       { text: 'Tous les exercices jawline + double menton' },
       { text: 'Routines complètes visage et ovale' },
-      { text: 'Drainage et raffermissement global' },
+      { text: 'Drainage lymphatique et raffermissement global' },
       { text: 'Accès illimité à tous les contenus' },
       { text: 'Mises à jour et nouveaux exercices inclus' },
+      { text: 'Guides visuels pour chaque mouvement' },
+      { text: 'Suivi journalier de tes progrès' },
+      { text: 'Conseils personnalisés chaque jour' },
     ],
     badges: ['Transformation globale', 'Le plus populaire'],
-    priceInfo: '29 € (accès à vie)',
+    priceAmount: '14,99',
+    priceSuffix: '/mois',
+    priceDetails: 'sans engagement',
     isMainProgram: true,
     durationDays: null,
     programType: 'subscription',

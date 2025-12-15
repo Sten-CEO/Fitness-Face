@@ -133,7 +133,7 @@ export default function TransitionScreen() {
           ]}
         >
           <Text style={styles.text2}>
-            Nous preparons votre programme pour{' '}
+            Nous préparons votre programme pour{' '}
             <Text style={styles.blueText}>vous</Text>
           </Text>
         </Animated.View>
