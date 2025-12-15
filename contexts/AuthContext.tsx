@@ -17,6 +17,7 @@ interface AuthContextType {
   resetPassword: (email: string) => Promise<{ error: AuthError | null }>;
   updateProfile: (updates: Partial<Profile>) => Promise<{ error: Error | null }>;
   refreshProfile: () => Promise<void>;
+  deleteAccount: () => Promise<{ error: Error | null }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -212,6 +213,57 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   };
 
+  // Supprimer le compte et toutes les données
+  const deleteAccount = async (): Promise<{ error: Error | null }> => {
+    if (!user) {
+      return { error: new Error('Non authentifié') };
+    }
+
+    try {
+      const userId = user.id;
+
+      // 1. Supprimer l'historique des routines
+      await supabase
+        .from('routine_history')
+        .delete()
+        .eq('user_id', userId);
+
+      // 2. Supprimer les paramètres
+      await supabase
+        .from('settings')
+        .delete()
+        .eq('user_id', userId);
+
+      // 3. Supprimer la progression
+      await supabase
+        .from('user_progress')
+        .delete()
+        .eq('user_id', userId);
+
+      // 4. Supprimer le profil
+      await supabase
+        .from('profiles')
+        .delete()
+        .eq('id', userId);
+
+      // 5. Déconnecter l'utilisateur
+      await supabase.auth.signOut();
+
+      // Note: La suppression complète du compte auth nécessite une fonction Edge
+      // ou l'API admin Supabase. Les données utilisateur sont supprimées,
+      // le compte auth sera nettoyé automatiquement ou via le dashboard.
+
+      setUser(null);
+      setSession(null);
+      setProfile(null);
+
+      return { error: null };
+    } catch (error) {
+      console.error('Erreur suppression compte:', error);
+      return { error: error as Error };
+    }
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -226,6 +278,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         resetPassword,
         updateProfile,
         refreshProfile,
+        deleteAccount,
       }}
     >
       {children}
