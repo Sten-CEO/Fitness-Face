@@ -9,7 +9,7 @@ const STORAGE_KEY = '@fitness_face_progress';
 // ============================================
 // MODE TEST - Mettre à false pour la production
 // ============================================
-const TEST_MODE = true; // true = progression immédiate, false = attendre 02h Paris
+const TEST_MODE = false; // true = progression immédiate, false = attendre 02h Paris
 
 // Structure d'une routine terminée
 export interface CompletedRoutine {

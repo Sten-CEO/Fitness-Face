@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import React from 'react';
-import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import React, { useState } from 'react';
+import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import CleanCard from '../../components/CleanCard';
@@ -14,8 +14,9 @@ import { typography, textColors } from '../../theme/typography';
 export default function ProfileScreen() {
   const router = useRouter();
   const { firstName } = useUser();
-  const { isAuthenticated, user, signOut } = useAuth();
+  const { isAuthenticated, user, signOut, deleteAccount } = useAuth();
   const { selectedPlanName, completedDaysCount, streak, resetProgress, isSyncing } = useProgress();
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const handleLogout = () => {
     Alert.alert(
@@ -42,6 +43,60 @@ export default function ProfileScreen() {
 
   const handleLogin = () => {
     router.push('/auth');
+  };
+
+  const handleDeleteAccount = () => {
+    if (!isAuthenticated) {
+      Alert.alert(
+        'Compte non connecté',
+        'Connecte-toi d\'abord pour supprimer ton compte.',
+        [{ text: 'OK' }]
+      );
+      return;
+    }
+
+    Alert.alert(
+      'Supprimer mon compte',
+      'Es-tu sûr de vouloir supprimer ton compte ?\n\nCette action est irréversible. Toutes tes données seront définitivement supprimées :\n• Progression\n• Historique des routines\n• Trophées\n• Paramètres',
+      [
+        { text: 'Annuler', style: 'cancel' },
+        {
+          text: 'Supprimer',
+          style: 'destructive',
+          onPress: () => confirmDeleteAccount(),
+        },
+      ]
+    );
+  };
+
+  const confirmDeleteAccount = () => {
+    Alert.alert(
+      'Confirmation finale',
+      'Tape "SUPPRIMER" pour confirmer la suppression définitive de ton compte.',
+      [
+        { text: 'Annuler', style: 'cancel' },
+        {
+          text: 'Je confirme',
+          style: 'destructive',
+          onPress: async () => {
+            setIsDeleting(true);
+            const { error } = await deleteAccount();
+            setIsDeleting(false);
+
+            if (error) {
+              Alert.alert('Erreur', 'Impossible de supprimer le compte. Réessaie plus tard.');
+            } else {
+              await resetProgress();
+              Alert.alert(
+                'Compte supprimé',
+                'Ton compte et toutes tes données ont été supprimés.',
+                [{ text: 'OK', onPress: () => router.replace('/') }]
+              );
+            }
+          },
+        },
+      ]
+    );
   };
 
   return (
@@ -137,6 +192,37 @@ export default function ProfileScreen() {
                 <Ionicons name="document-text-outline" size={20} color={textColors.accent} />
               </View>
               <Text style={styles.menuText}>Conditions d'utilisation</Text>
+              <Ionicons name="chevron-forward" size={20} color={textColors.tertiary} />
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.menuItem} onPress={() => router.push('/privacy')}>
+              <View style={styles.menuIcon}>
+                <Ionicons name="shield-checkmark-outline" size={20} color={textColors.accent} />
+              </View>
+              <Text style={styles.menuText}>Politique de confidentialité</Text>
+              <Ionicons name="chevron-forward" size={20} color={textColors.tertiary} />
+            </TouchableOpacity>
+          </View>
+
+          {/* Danger Zone */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Zone de danger</Text>
+
+            <TouchableOpacity
+              style={[styles.menuItem, styles.dangerItem]}
+              onPress={handleDeleteAccount}
+              disabled={isDeleting}
+            >
+              <View style={[styles.menuIcon, styles.dangerIcon]}>
+                {isDeleting ? (
+                  <ActivityIndicator size="small" color="#EF4444" />
+                ) : (
+                  <Ionicons name="trash-outline" size={20} color="#EF4444" />
+                )}
+              </View>
+              <Text style={[styles.menuText, styles.dangerText]}>
+                {isDeleting ? 'Suppression...' : 'Supprimer mon compte'}
+              </Text>
               <Ionicons name="chevron-forward" size={20} color={textColors.tertiary} />
             </TouchableOpacity>
           </View>
@@ -279,6 +365,15 @@ const styles = StyleSheet.create({
     ...typography.body,
     color: textColors.primary,
     flex: 1,
+  },
+  dangerItem: {
+    borderColor: 'rgba(239, 68, 68, 0.2)',
+  },
+  dangerIcon: {
+    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+  },
+  dangerText: {
+    color: '#EF4444',
   },
   logoutButton: {
     flexDirection: 'row',
