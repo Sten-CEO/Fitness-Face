@@ -84,7 +84,7 @@ export default function CompletedRoutinesScreen() {
             <View style={styles.routineDetails}>
               <Text style={styles.routineName}>{item.routineName}</Text>
               <Text style={styles.routineDate}>
-                {formatDate(item.completedAt)} a {formatTime(item.completedAt)}
+                {formatDate(item.completedAt)} à {formatTime(item.completedAt)}
               </Text>
             </View>
             <View style={styles.routineIcons}>

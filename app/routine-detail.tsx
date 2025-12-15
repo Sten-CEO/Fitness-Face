@@ -288,7 +288,7 @@ export default function RoutineDetailScreen() {
               />
               {isComplete && (
                 <Text style={styles.completeMessage}>
-                  Bravo ! Tu as termine ta seance du jour.
+                  Bravo ! Tu as terminé ta séance du jour.
                 </Text>
               )}
             </View>
@@ -341,7 +341,7 @@ export default function RoutineDetailScreen() {
               ) : (
                 <View style={styles.bonusCompletedMessage}>
                   <Ionicons name="checkmark-circle" size={20} color="#10B981" />
-                  <Text style={styles.bonusCompletedText}>Exercice bonus effectue !</Text>
+                  <Text style={styles.bonusCompletedText}>Exercice bonus effectué !</Text>
                 </View>
               )}
             </CleanCard>

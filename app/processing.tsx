@@ -90,9 +90,9 @@ export default function ProcessingScreen() {
   return (
     <TransitionBackground>
       <Animated.View style={[styles.container, { opacity: fadeAnim }]}>
-        <Text style={styles.title}>Analyse de tes reponses en cours</Text>
+        <Text style={styles.title}>Analyse de tes réponses en cours</Text>
         <Text style={styles.subtitle}>
-          On reflechit au meilleur programme pour toi...
+          On réfléchit au meilleur programme pour toi...
         </Text>
 
         <View style={styles.dotsContainer}>

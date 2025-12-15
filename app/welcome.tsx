@@ -192,7 +192,7 @@ export default function WelcomeScreen() {
             <Text style={styles.blueText}>parfait</Text> pour ton visage.
           </Text>
           <Text style={styles.secondSubtitle}>
-            Reponds a quelques <Text style={styles.blueText}>questions</Text> pour commencer.
+            Réponds à quelques <Text style={styles.blueText}>questions</Text> pour commencer.
           </Text>
         </Animated.View>
       </View>

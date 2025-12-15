@@ -264,7 +264,7 @@ export default function DashboardScreen() {
                 {/* Message pour abonnements */}
                 {!isFixedProgram && (
                   <Text style={styles.subscriptionNote}>
-                    Abonnement sans limite - Continue a ton rythme !
+                    Abonnement sans limite - Continue à ton rythme !
                   </Text>
                 )}
               </CleanCard>
@@ -287,7 +287,7 @@ export default function DashboardScreen() {
                       <Ionicons name="list-outline" size={22} color={textColors.accent} />
                     </View>
                     <View style={styles.completedInfo}>
-                      <Text style={styles.completedTitle}>Routines terminees</Text>
+                      <Text style={styles.completedTitle}>Routines terminées</Text>
                       <Text style={styles.completedSubtitle}>
                         {completedRoutines.length} routine{completedRoutines.length > 1 ? 's' : ''} au total
                       </Text>

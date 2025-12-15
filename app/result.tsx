@@ -28,36 +28,22 @@ import { typography, textColors } from '../theme/typography';
 
 const { width } = Dimensions.get('window');
 
-// Additional benefits to show on all plans
-const additionalBenefits = [
-  'Guide vidéo',
-  'Suivi journalier des progrès',
-  'Conseils journaliers',
-];
+// Render price with proper formatting: bold for amount and /mois, normal for decimals
+function renderPriceInfo(plan: Plan) {
+  const [intPart, decPart] = plan.priceAmount.split(',');
 
-// Get icon based on plan type
-function getPlanIconName(planId: string): keyof typeof Ionicons.glyphMap {
-  if (planId.includes('jawline')) {
-    return 'fitness-outline'; // Jawline/mâchoire
-  } else if (planId.includes('double')) {
-    return 'body-outline'; // Double menton
-  } else {
-    return 'star-outline'; // All in one
-  }
-}
-
-// Parse price info to highlight amount only
-function renderPriceInfo(priceInfo: string) {
-  const match = priceInfo.match(/^(\d+\s*€(?:\s*\/\s*mois)?)(.*)/);
-  if (match) {
-    return (
-      <Text style={styles.priceValue}>
-        <Text style={styles.priceAmount}>{match[1]}</Text>
-        <Text style={styles.priceRest}>{match[2]}</Text>
-      </Text>
-    );
-  }
-  return <Text style={styles.priceValue}>{priceInfo}</Text>;
+  return (
+    <View style={styles.priceContainer}>
+      <View style={styles.priceMainRow}>
+        <Text style={styles.priceIntPart}>{intPart}</Text>
+        <Text style={styles.priceDecPart}>,{decPart} €</Text>
+        <Text style={styles.priceSuffix}>{plan.priceSuffix}</Text>
+      </View>
+      {plan.priceDetails && (
+        <Text style={styles.priceDetails}>{plan.priceDetails}</Text>
+      )}
+    </View>
+  );
 }
 
 export default function ResultScreen() {
@@ -76,7 +62,6 @@ export default function ResultScreen() {
 
   const [activeTab, setActiveTab] = useState(isMonthlyPlan ? 'monthly' : 'main');
   const [currentPlan, setCurrentPlan] = useState(mainPlan);
-  const [isProcessing, setIsProcessing] = useState(false);
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(0)).current;
@@ -117,7 +102,7 @@ export default function ResultScreen() {
 
     if (!selectedPlan) {
       console.log('ERROR: No plan selected');
-      Alert.alert('Erreur', 'Aucun plan selectionne');
+      Alert.alert('Erreur', 'Aucun plan sélectionné');
       return;
     }
 
@@ -149,7 +134,7 @@ export default function ResultScreen() {
     return (
       <BackgroundScreen>
         <View style={styles.errorContainer}>
-          <Text style={styles.errorText}>Erreur: Programme non trouve</Text>
+          <Text style={styles.errorText}>Erreur : Programme non trouvé</Text>
         </View>
       </BackgroundScreen>
     );
@@ -157,11 +142,9 @@ export default function ResultScreen() {
 
   const is60DayProgram = selectedPlanId.includes('double');
   const tabs = [
-    { key: 'main', label: is60DayProgram ? '60 jours' : '90 jours', badge: 'Conseille' },
+    { key: 'main', label: is60DayProgram ? '60 jours' : '90 jours', badge: 'Conseillé' },
     { key: 'monthly', label: 'Mensuel' },
   ];
-
-  const currentPlanIconName = currentPlan ? getPlanIconName(currentPlan.id) : 'star-outline';
 
   return (
     <BackgroundScreen centered={false}>
@@ -174,7 +157,7 @@ export default function ResultScreen() {
           <View style={styles.header}>
             <Text style={styles.title}>
               Ton programme{'\n'}
-              <Text style={styles.titleBlue}>personnalise</Text>
+              <Text style={styles.titleBlue}>personnalisé</Text>
             </Text>
             <Text style={styles.subtitle}>
               {firstName ? `${firstName}, voici` : 'Voici'} ce qu'on te recommande
@@ -195,34 +178,29 @@ export default function ResultScreen() {
               <View style={styles.cardHeader}>
                 <View style={styles.badge}>
                   <Text style={styles.badgeText}>
-                    {activeTab === 'main' ? 'Recommande' : 'Flexible'}
+                    {activeTab === 'main' ? 'Recommandé' : 'Flexible'}
                   </Text>
                 </View>
-                <Ionicons name={currentPlanIconName} size={32} color={textColors.accent} />
+                <Ionicons name="diamond-outline" size={32} color={textColors.accent} />
               </View>
 
               <Text style={styles.planName}>{currentPlan?.name}</Text>
               <Text style={styles.planDuration}>{currentPlan?.durationLabel}</Text>
 
+              {currentPlan?.shortDescription && (
+                <Text style={styles.planDescription}>{currentPlan.shortDescription}</Text>
+              )}
+
               <View style={styles.separator} />
 
               {/* Features list */}
               <View style={styles.featuresList}>
-                {currentPlan?.features.slice(0, 4).map((feature, index) => (
+                {currentPlan?.features.slice(0, 7).map((feature, index) => (
                   <View key={index} style={styles.featureItem}>
                     <View style={styles.featureIcon}>
-                      <Text style={styles.featureCheck}>✓</Text>
+                      <Ionicons name="diamond" size={10} color={textColors.accent} />
                     </View>
                     <Text style={styles.featureText}>{feature.text}</Text>
-                  </View>
-                ))}
-                {/* Additional benefits */}
-                {additionalBenefits.map((benefit, index) => (
-                  <View key={`extra-${index}`} style={styles.featureItem}>
-                    <View style={styles.featureIcon}>
-                      <Text style={styles.featureCheck}>✓</Text>
-                    </View>
-                    <Text style={styles.featureText}>{benefit}</Text>
                   </View>
                 ))}
               </View>
@@ -230,13 +208,14 @@ export default function ResultScreen() {
               <View style={styles.separator} />
 
               {/* Price section */}
-              {currentPlan?.priceInfo && (
+              {currentPlan && (
                 <View style={styles.priceSection}>
-                  <View style={styles.priceRow}>
-                    <Text style={styles.priceLabel}>Tarif</Text>
-                    {renderPriceInfo(currentPlan.priceInfo)}
-                  </View>
+                  <Text style={styles.priceLabel}>Tarif</Text>
+                  {renderPriceInfo(currentPlan)}
                   <Text style={styles.tryFreeText}>essayer gratuitement</Text>
+                  {currentPlan.engagementLabel && (
+                    <Text style={styles.engagementText}>{currentPlan.engagementLabel}</Text>
+                  )}
                 </View>
               )}
             </CleanCard>
@@ -318,7 +297,11 @@ const styles = StyleSheet.create({
   planDuration: {
     ...typography.bodySmall,
     color: textColors.tertiary,
-    marginBottom: 16,
+    marginBottom: 8,
+  },
+  planDescription: {
+    ...typography.bodySmall,
+    color: 'rgba(255, 255, 255, 0.7)',
   },
   separator: {
     height: 1,
@@ -341,46 +324,58 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  featureCheck: {
-    color: textColors.accent,
-    fontSize: 10,
-    fontWeight: '600',
-  },
   featureText: {
     ...typography.bodySmall,
     flex: 1,
-    color: 'rgba(255, 255, 255, 0.7)',
+    color: 'rgba(255, 255, 255, 0.85)',
+    fontWeight: '500',
   },
   priceSection: {
-    gap: 8,
-  },
-  priceRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    gap: 6,
   },
   priceLabel: {
     ...typography.bodySmall,
     color: textColors.tertiary,
+    marginBottom: 4,
   },
-  priceValue: {
-    ...typography.bodySmall,
-    color: textColors.tertiary,
+  priceContainer: {
+    alignItems: 'flex-end',
   },
-  priceAmount: {
-    ...typography.bodySmall,
-    color: textColors.tertiary,
-    fontWeight: '600',
+  priceMainRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
   },
-  priceRest: {
-    ...typography.bodySmall,
-    color: textColors.tertiary,
+  priceIntPart: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: textColors.accent,
+  },
+  priceDecPart: {
+    fontSize: 16,
     fontWeight: '400',
+    color: textColors.accent,
+  },
+  priceSuffix: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: textColors.accent,
+    marginLeft: 2,
+  },
+  priceDetails: {
+    ...typography.caption,
+    color: textColors.tertiary,
+    marginTop: 2,
   },
   tryFreeText: {
     ...typography.caption,
     color: textColors.tertiary,
     textAlign: 'right',
+  },
+  engagementText: {
+    ...typography.caption,
+    color: '#F59E0B',
+    textAlign: 'right',
+    fontWeight: '500',
   },
   ctaContainer: {
     marginBottom: 16,
