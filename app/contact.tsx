@@ -7,9 +7,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import TabBackground from '../components/TabBackground';
 import { textColors, typography } from '../theme/typography';
 
-const SUPPORT_EMAIL = 'support@fitness-face.app';
-const INSTAGRAM_URL = 'https://instagram.com/fitnessface';
-const WEBSITE_URL = 'https://fitness-face.app';
+const SUPPORT_EMAIL = 'support@jaw-app.com';
 
 export default function ContactScreen() {
   const router = useRouter();
@@ -38,22 +36,6 @@ export default function ContactScreen() {
         `Impossible d'ouvrir l'application mail. Écrivez-nous à ${SUPPORT_EMAIL}`,
         [{ text: 'OK' }]
       );
-    }
-  };
-
-  const handleInstagramPress = async () => {
-    try {
-      await Linking.openURL(INSTAGRAM_URL);
-    } catch {
-      Alert.alert('Erreur', 'Impossible d\'ouvrir Instagram');
-    }
-  };
-
-  const handleWebsitePress = async () => {
-    try {
-      await Linking.openURL(WEBSITE_URL);
-    } catch {
-      Alert.alert('Erreur', 'Impossible d\'ouvrir le site web');
     }
   };
 
@@ -104,36 +86,6 @@ export default function ContactScreen() {
               </View>
               <Ionicons name="chevron-forward" size={20} color={textColors.tertiary} />
             </TouchableOpacity>
-
-            {/* Instagram */}
-            <TouchableOpacity style={styles.contactCard} onPress={handleInstagramPress}>
-              <View style={[styles.contactIconContainer, { backgroundColor: 'rgba(225, 48, 108, 0.15)' }]}>
-                <Ionicons name="logo-instagram" size={24} color="#E1306C" />
-              </View>
-              <View style={styles.contactContent}>
-                <Text style={styles.contactTitle}>Instagram</Text>
-                <Text style={styles.contactValue}>@fitnessface</Text>
-                <Text style={styles.contactDescription}>
-                  Suivez-nous pour des conseils quotidiens
-                </Text>
-              </View>
-              <Ionicons name="chevron-forward" size={20} color={textColors.tertiary} />
-            </TouchableOpacity>
-
-            {/* Website */}
-            <TouchableOpacity style={styles.contactCard} onPress={handleWebsitePress}>
-              <View style={[styles.contactIconContainer, { backgroundColor: 'rgba(34, 197, 94, 0.15)' }]}>
-                <Ionicons name="globe-outline" size={24} color="#22C55E" />
-              </View>
-              <View style={styles.contactContent}>
-                <Text style={styles.contactTitle}>Site web</Text>
-                <Text style={styles.contactValue}>fitness-face.app</Text>
-                <Text style={styles.contactDescription}>
-                  Découvrez nos articles et ressources
-                </Text>
-              </View>
-              <Ionicons name="chevron-forward" size={20} color={textColors.tertiary} />
-            </TouchableOpacity>
           </View>
 
           {/* Response Time */}
@@ -142,8 +94,7 @@ export default function ContactScreen() {
             <View style={styles.infoContent}>
               <Text style={styles.infoTitle}>Temps de réponse</Text>
               <Text style={styles.infoText}>
-                Notre équipe répond généralement dans les 24 à 48 heures ouvrées. Pour les
-                questions urgentes, contactez-nous via Instagram pour une réponse plus rapide.
+                Notre équipe répond généralement dans les 24 à 48 heures ouvrées.
               </Text>
             </View>
           </View>
