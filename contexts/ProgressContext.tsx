@@ -394,32 +394,59 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
 
     try {
       if (isAuthenticated && user) {
-        // Utilisateur connecté: charger depuis Supabase
+        // Utilisateur connecté: charger depuis Supabase ET local
         setIsSyncing(true);
         const cloudData = await loadFromSupabase(user.id);
         const localData = await loadFromLocal();
 
-        // Si cloud a un programme, l'utiliser
-        if (cloudData && cloudData.selectedPlanId) {
-          setProgress(cloudData);
-          await saveToLocal(cloudData);
-        }
-        // Si cloud n'a pas de programme mais local oui, uploader local vers cloud
-        else if (localData && localData.selectedPlanId) {
-          setProgress(localData);
-          // Sync local vers cloud
+        // Fusionner intelligemment les données
+        // Prendre le programme du cloud ou local (priorité cloud si égal)
+        // Mais prendre la progression la plus avancée
+
+        const cloudHasProgram = cloudData && cloudData.selectedPlanId;
+        const localHasProgram = localData && localData.selectedPlanId;
+        const cloudRoutines = cloudData?.completedRoutines?.length || 0;
+        const localRoutines = localData?.completedRoutines?.length || 0;
+
+        let finalData: ProgressData;
+
+        if (cloudHasProgram && localHasProgram) {
+          // Les deux ont un programme - prendre celui avec le plus de progression
+          if (localRoutines > cloudRoutines) {
+            // Local a plus de progression - utiliser local et sync vers cloud
+            finalData = localData;
+            await saveToSupabase(user.id, localData);
+            // Aussi sync les routines manquantes vers Supabase
+            for (const routine of localData.completedRoutines) {
+              await saveRoutineToSupabase(user.id, routine, localData.selectedPlanId!);
+            }
+          } else {
+            // Cloud a autant ou plus - utiliser cloud
+            finalData = cloudData;
+          }
+        } else if (cloudHasProgram) {
+          // Seulement cloud a un programme
+          finalData = cloudData;
+        } else if (localHasProgram) {
+          // Seulement local a un programme - sync vers cloud
+          finalData = localData;
           await saveToSupabase(user.id, localData);
-        }
-        // Si cloud existe mais sans programme (nouvel utilisateur après login)
-        else if (cloudData) {
-          setProgress(cloudData);
-          await saveToLocal(cloudData);
-        }
-        // Fallback local
-        else if (localData) {
-          setProgress(localData);
+          for (const routine of localData.completedRoutines) {
+            await saveRoutineToSupabase(user.id, routine, localData.selectedPlanId!);
+          }
+        } else if (cloudData) {
+          // Cloud existe mais sans programme
+          finalData = cloudData;
+        } else if (localData) {
+          // Seulement local existe
+          finalData = localData;
+        } else {
+          // Aucune donnée
+          finalData = defaultProgress;
         }
 
+        setProgress(finalData);
+        await saveToLocal(finalData);
         setIsSyncing(false);
       } else {
         // Utilisateur non connecté: charger depuis local uniquement
@@ -428,8 +455,7 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
           setProgress(localData);
         }
       }
-    } catch (error) {
-      console.error('Failed to load progress:', error);
+    } catch {
       // Fallback local en cas d'erreur
       const localData = await loadFromLocal();
       if (localData) {
@@ -438,7 +464,7 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
     } finally {
       setIsLoading(false);
     }
-  }, [isAuthenticated, user, loadFromSupabase, saveToSupabase]);
+  }, [isAuthenticated, user, loadFromSupabase, saveToSupabase, saveRoutineToSupabase]);
 
   const saveProgress = useCallback(async (newProgress: ProgressData) => {
     // Toujours sauvegarder en local
