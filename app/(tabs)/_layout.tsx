@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Redirect, Tabs } from 'expo-router';
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Platform, StyleSheet, View } from 'react-native';
 import { useAuth } from '../../contexts/AuthContext';
 import { useProgress } from '../../contexts/ProgressContext';
@@ -10,11 +10,34 @@ const TAB_BAR_HEIGHT = 60;
 const ICON_SIZE = 44;
 
 export default function TabLayout() {
-  const { isLoading: authLoading } = useAuth();
-  const { selectedPlanId, isLoading: progressLoading } = useProgress();
+  const { isAuthenticated, isLoading: authLoading } = useAuth();
+  const { selectedPlanId, isLoading: progressLoading, isSyncing, syncFromCloud } = useProgress();
+  const [hasSynced, setHasSynced] = useState(false);
 
-  // Attendre que les états soient chargés
-  if (authLoading || progressLoading) {
+  // Si authentifié mais pas de plan chargé, forcer une sync
+  useEffect(() => {
+    if (isAuthenticated && !progressLoading && !selectedPlanId && !hasSynced) {
+      setHasSynced(true);
+      syncFromCloud();
+    }
+  }, [isAuthenticated, progressLoading, selectedPlanId, hasSynced, syncFromCloud]);
+
+  // Reset hasSynced si l'utilisateur change
+  useEffect(() => {
+    setHasSynced(false);
+  }, [isAuthenticated]);
+
+  // Attendre que les états soient chargés ou sync en cours
+  if (authLoading || progressLoading || isSyncing) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color={textColors.accent} />
+      </View>
+    );
+  }
+
+  // Si authentifié et pas encore synchronisé, attendre
+  if (isAuthenticated && !selectedPlanId && !hasSynced) {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color={textColors.accent} />

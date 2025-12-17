@@ -85,7 +85,9 @@ export default function AuthScreen() {
             Alert.alert('Erreur', error.message);
           }
         } else {
-          // Connexion réussie - aller directement au dashboard
+          // Connexion réussie - attendre que l'état auth se propage
+          // avant de naviguer au dashboard
+          await new Promise(resolve => setTimeout(resolve, 500));
           router.replace('/(tabs)/dashboard');
         }
       } else {
