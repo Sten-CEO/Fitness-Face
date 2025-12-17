@@ -151,7 +151,7 @@ export default function NotificationsScreen() {
               <View style={styles.notificationInfo}>
                 <Text style={styles.notificationTitle}>Conseil du jour</Text>
                 <Text style={styles.notificationDescription}>
-                  Un conseil quotidien à 10h pour de meilleurs résultats
+                  Un conseil quotidien à 10h pour t'accompagner
                 </Text>
               </View>
               <Switch

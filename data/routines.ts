@@ -39,7 +39,7 @@ export const routines: Routine[] = [
     name: 'Routine Double Menton',
     duration: '5-8 min',
     durationMinutes: 7,
-    description: 'Cette routine cible le cou et le menton pour réduire le double menton et affiner cette zone. Concentre-toi sur la qualité des mouvements.',
+    description: 'Cette routine cible la zone du cou et du menton avec des exercices de renforcement et de drainage. Concentre-toi sur la qualité des mouvements.',
     steps: [
       { title: 'Échauffement : cercles du cou', duration: '30s' },
       { title: 'Tongue press : langue contre le palais', duration: '45s' },
@@ -57,7 +57,7 @@ export const routines: Routine[] = [
     name: 'Routine Visage Complet',
     duration: '8-10 min',
     durationMinutes: 9,
-    description: 'Une routine complète qui travaille tous les muscles du visage pour une transformation globale. Prends ton temps et ressens chaque exercice.',
+    description: 'Une routine complète qui travaille tous les muscles du visage. Prends ton temps et ressens chaque exercice.',
     steps: [
       { title: 'Échauffement : massage facial', duration: '45s' },
       { title: 'Mewing avancé', duration: '60s' },

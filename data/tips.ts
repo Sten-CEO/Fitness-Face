@@ -49,7 +49,7 @@ export const dailyTips = [
   },
   {
     icon: 'sparkles-outline',
-    text: "Sois patient : les résultats apparaissent progressivement, généralement après 2-3 semaines.",
+    text: "Sois patient : la constance est la clé. Continue ta routine jour après jour.",
   },
   {
     icon: 'cafe-outline',
@@ -105,7 +105,7 @@ export const dailyTips = [
   },
   {
     icon: 'walk-outline',
-    text: "La marche quotidienne améliore la circulation sanguine du visage.",
+    text: "La marche quotidienne est excellente pour ton bien-être général.",
   },
   {
     icon: 'glasses-outline',
@@ -139,7 +139,7 @@ export const dailyTips = [
   },
   {
     icon: 'water-outline',
-    text: "Le jade roller améliore la circulation et réduit les poches.",
+    text: "Le jade roller est un outil agréable pour compléter ta routine bien-être.",
   },
   {
     icon: 'medkit-outline',
@@ -157,11 +157,11 @@ export const dailyTips = [
   },
   {
     icon: 'trophy-outline',
-    text: "Chaque jour compte ! Tu construis une habitude qui transformera ton visage.",
+    text: "Chaque jour compte ! Tu construis une habitude durable pour ton bien-être.",
   },
   {
     icon: 'calendar-outline',
-    text: "Fixe-toi des objectifs réalistes : 4 semaines pour voir les premiers résultats.",
+    text: "Fixe-toi des objectifs réalistes et célèbre chaque semaine de régularité.",
   },
   {
     icon: 'people-outline',
@@ -173,7 +173,7 @@ export const dailyTips = [
   },
   {
     icon: 'rocket-outline',
-    text: "Tu es à mi-chemin de ton programme ! Continue, les résultats arrivent.",
+    text: "Tu es à mi-chemin de ton programme ! Continue, tu as déjà fait un super travail.",
   },
   {
     icon: 'heart-outline',
@@ -327,7 +327,7 @@ export const dailyTips = [
   },
   {
     icon: 'ribbon-outline',
-    text: "Tu approches de la fin du programme - tes résultats sont là !",
+    text: "Tu approches de la fin du programme - félicitations pour ta persévérance !",
   },
 
   // Semaine 12 (Jours 78-84) - Maintenance
@@ -353,11 +353,11 @@ export const dailyTips = [
   },
   {
     icon: 'chatbubbles-outline',
-    text: "Partage tes résultats - tu inspireras d'autres personnes.",
+    text: "Partage ton parcours - tu inspireras d'autres personnes à prendre soin d'elles.",
   },
   {
     icon: 'telescope-outline',
-    text: "Regarde le chemin parcouru depuis le jour 1 - tu as transformé ton visage.",
+    text: "Regarde le chemin parcouru depuis le jour 1 - tu as créé une vraie routine bien-être.",
   },
 
   // Semaine 13 (Jours 85-90) - Célébration
@@ -375,7 +375,7 @@ export const dailyTips = [
   },
   {
     icon: 'diamond-outline',
-    text: "Tu as prouvé que la discipline crée des résultats durables.",
+    text: "Tu as prouvé que la discipline crée des habitudes durables.",
   },
   {
     icon: 'crown-outline',
@@ -383,7 +383,7 @@ export const dailyTips = [
   },
   {
     icon: 'sparkles-outline',
-    text: "Programme terminé ! Ton visage est transformé. Continue d'entretenir tes acquis.",
+    text: "Programme terminé ! Bravo pour ton engagement. Continue d'entretenir tes bonnes habitudes.",
   },
 ];
 

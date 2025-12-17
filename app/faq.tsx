@@ -33,14 +33,14 @@ const faqData: FAQItem[] = [
     category: 'Programme',
     question: 'À quelle fréquence dois-je faire les exercices ?',
     answer:
-      'Nous recommandons de faire votre routine tous les jours pour des résultats optimaux. Les exercices sont conçus pour être courts et efficaces, prenant environ 5-10 minutes par jour.',
+      'Nous recommandons de faire votre routine tous les jours pour une meilleure régularité. Les exercices sont conçus pour être courts, prenant environ 5-10 minutes par jour.',
   },
   {
     id: '3',
     category: 'Programme',
-    question: 'Quand vais-je voir des résultats ?',
+    question: 'Combien de temps faut-il pour créer une habitude ?',
     answer:
-      'Les premiers résultats sont généralement visibles après 2-3 semaines de pratique régulière. Pour des résultats durables, nous recommandons de compléter l\'intégralité du programme.',
+      'La régularité est la clé. Nous recommandons de suivre le programme complet pour intégrer cette routine dans votre quotidien. Chaque personne progresse à son propre rythme.',
   },
   // Exercices
   {
