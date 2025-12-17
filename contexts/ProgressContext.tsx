@@ -264,14 +264,14 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
    */
   const saveToSupabase = useCallback(async (userId: string, data: ProgressData) => {
     try {
-      // Mettre à jour le profil
+      // Mettre à jour le profil avec upsert pour éviter les problèmes de timing
       await supabase
         .from('profiles')
-        .update({
+        .upsert({
+          id: userId,
           program_type: data.selectedPlanId,
           start_date: data.programStartDate,
-        })
-        .eq('id', userId);
+        }, { onConflict: 'id' });
 
       // Mettre à jour la progression
       await supabase
@@ -287,8 +287,8 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
           bonus_completed: data.completedBonuses.map(b => b.dayNumber),
         });
 
-    } catch (error) {
-      console.error('Erreur saveToSupabase:', error);
+    } catch {
+      // Erreur silencieuse - les données sont sauvegardées localement
     }
   }, []);
 
@@ -495,7 +495,21 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
       selectedPlanName: planName,
       programStartDate: getParisDate(),
     };
-    await saveProgress(newProgress);
+
+    // Toujours sauvegarder en local
+    await saveToLocal(newProgress);
+    setProgress(newProgress);
+
+    // Forcer la sauvegarde Supabase même si le contexte auth n'est pas à jour
+    // Récupérer la session directement depuis Supabase
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        await saveToSupabase(session.user.id, newProgress);
+      }
+    } catch {
+      // Erreur silencieuse - les données sont sauvegardées localement
+    }
   };
 
   const completeDay = async (dayNumber: number, routineName: string) => {
