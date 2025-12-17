@@ -397,17 +397,29 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
         // Utilisateur connecté: charger depuis Supabase
         setIsSyncing(true);
         const cloudData = await loadFromSupabase(user.id);
-        if (cloudData) {
+        const localData = await loadFromLocal();
+
+        // Si cloud a un programme, l'utiliser
+        if (cloudData && cloudData.selectedPlanId) {
           setProgress(cloudData);
-          // Aussi sauvegarder en local pour le mode offline
           await saveToLocal(cloudData);
-        } else {
-          // Fallback local si erreur Supabase
-          const localData = await loadFromLocal();
-          if (localData) {
-            setProgress(localData);
-          }
         }
+        // Si cloud n'a pas de programme mais local oui, uploader local vers cloud
+        else if (localData && localData.selectedPlanId) {
+          setProgress(localData);
+          // Sync local vers cloud
+          await saveToSupabase(user.id, localData);
+        }
+        // Si cloud existe mais sans programme (nouvel utilisateur après login)
+        else if (cloudData) {
+          setProgress(cloudData);
+          await saveToLocal(cloudData);
+        }
+        // Fallback local
+        else if (localData) {
+          setProgress(localData);
+        }
+
         setIsSyncing(false);
       } else {
         // Utilisateur non connecté: charger depuis local uniquement
@@ -426,7 +438,7 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
     } finally {
       setIsLoading(false);
     }
-  }, [isAuthenticated, user, loadFromSupabase]);
+  }, [isAuthenticated, user, loadFromSupabase, saveToSupabase]);
 
   const saveProgress = useCallback(async (newProgress: ProgressData) => {
     // Toujours sauvegarder en local
