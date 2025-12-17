@@ -226,7 +226,7 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
       identifier: 'daily-tip',
       content: {
         title: 'Conseil du jour 💡',
-        body: 'Pour de meilleurs résultats, pratique ta routine devant un miroir.',
+        body: 'Astuce : pratique ta routine devant un miroir pour mieux suivre les mouvements.',
         sound: true,
       },
       trigger: {

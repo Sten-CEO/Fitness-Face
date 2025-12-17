@@ -78,15 +78,15 @@ export const questions: Question[] = [
   },
   {
     id: 5,
-    title: 'Quel type de résultat tu recherches ?',
+    title: 'Quel est ton objectif principal ?',
     icon: 'sparkles-outline',
     options: [
       {
-        text: 'Un changement visible rapidement sur une zone précise',
+        text: 'Travailler une zone précise de mon visage',
         scores: { jawline: 1, doubleChin: 1 },
       },
       {
-        text: 'Une transformation globale de mon visage',
+        text: 'Intégrer une routine complète pour tout le visage',
         scores: { fullFace: 2 },
       },
     ],
@@ -139,7 +139,7 @@ export const questions: Question[] = [
         scores: { jawline: 1, doubleChin: 1 },
       },
       {
-        text: 'Un programme plus complet pour tout améliorer',
+        text: 'Un programme plus complet pour tout le visage',
         scores: { fullFace: 2 },
       },
     ],

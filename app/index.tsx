@@ -12,9 +12,6 @@ const firstPageBg = require('../assets/images/first-page.png');
 export default function HomeScreen() {
   const router = useRouter();
 
-  // DEBUG: Confirm first-page.png is loaded
-  console.log('BG source: first-page.png loaded', firstPageBg);
-
   return (
     <ImageBackground source={firstPageBg} style={styles.background} resizeMode="cover">
       <SafeAreaView style={styles.safeArea}>
@@ -29,13 +26,13 @@ export default function HomeScreen() {
             </View>
 
             <Text style={styles.title}>
-              Transforme ton{'\n'}
+              Ta routine{'\n'}
               <Text style={styles.titleBlue}>visage</Text> en 5 min{'\n'}
               par jour.
             </Text>
 
             <Text style={styles.subtitle}>
-              Programmes guides pour jawline, double menton et un visage plus sculpte.
+              Programmes guidés pour la mâchoire, le cou et tout le visage.
             </Text>
 
             <PrimaryButton
