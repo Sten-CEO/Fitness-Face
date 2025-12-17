@@ -24,7 +24,7 @@ type AuthMode = 'login' | 'register';
 
 export default function AuthScreen() {
   const router = useRouter();
-  const { signIn, signUp, isLoading } = useAuth();
+  const { signIn, signUp } = useAuth();
   const { setFirstName } = useUser();
 
   const [mode, setMode] = useState<AuthMode>('register');
@@ -36,7 +36,9 @@ export default function AuthScreen() {
   const [localLoading, setLocalLoading] = useState(false);
 
   const isLogin = mode === 'login';
-  const loading = isLoading || localLoading;
+  // N'utiliser que localLoading pour ne pas bloquer l'écran auth
+  // isLoading du contexte ne doit pas empêcher la saisie des identifiants
+  const loading = localLoading;
 
   const validateEmail = (email: string) => {
     const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
