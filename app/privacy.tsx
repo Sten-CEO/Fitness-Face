@@ -14,74 +14,49 @@ interface PrivacySection {
 
 const privacyData: PrivacySection[] = [
   {
-    title: '1. Introduction',
+    title: '1. Données collectées',
     content:
-      'Fitness Face (ci-après "nous", "notre" ou "l\'Application") s\'engage à protéger votre vie privée. Cette politique de confidentialité explique comment nous collectons, utilisons, stockons et protégeons vos données personnelles conformément au Règlement Général sur la Protection des Données (RGPD) et aux lois applicables.',
+      'Jaw collecte les données suivantes :\n\n• Adresse email (pour l\'authentification)\n• Données de progression (jours complétés, exercices effectués)\n• Préférences utilisateur (rappels, langue)\n\n⚠️ Aucune donnée biométrique, photo ou vidéo n\'est collectée par l\'application.',
   },
   {
-    title: '2. Responsable du traitement',
+    title: '2. Utilisation des données',
     content:
-      'Le responsable du traitement de vos données personnelles est Fitness Face. Pour toute question concernant vos données, contactez-nous à : privacy@fitness-face.app',
+      'Les données collectées sont utilisées pour :\n\n• Permettre l\'accès à l\'application et la synchronisation entre appareils\n• Suivre votre progression dans le programme\n• Personnaliser votre expérience utilisateur\n• Envoyer des rappels (si activés)',
   },
   {
-    title: '3. Données collectées',
+    title: '3. Stockage des données',
     content:
-      'Nous collectons les données suivantes :\n\n• Données d\'identification : adresse email, prénom (optionnel)\n• Données de progression : jours complétés, exercices effectués, streak, trophées obtenus\n• Données techniques : type d\'appareil, système d\'exploitation, identifiants anonymes\n• Données d\'abonnement : statut d\'abonnement, date de souscription (les paiements sont gérés par Apple/Google)',
+      'Les données sont stockées de manière sécurisée via Supabase, avec chiffrement en transit et au repos.\n\nLes serveurs sont situés dans l\'Union Européenne.',
   },
   {
-    title: '4. Finalités du traitement',
+    title: '4. Partage des données',
     content:
-      'Vos données sont utilisées pour :\n\n• Fournir le service : suivi de votre progression, synchronisation entre appareils\n• Améliorer l\'application : analyses statistiques anonymisées\n• Communication : notifications de rappel (avec votre consentement)\n• Support client : répondre à vos demandes',
+      'Jaw ne vend ni ne partage vos données personnelles à des tiers à des fins commerciales.\n\nLes seuls partenaires techniques sont :\n• Supabase (hébergement sécurisé)\n• Apple/Google (gestion des abonnements)',
   },
   {
-    title: '5. Base légale',
+    title: '5. Notifications',
     content:
-      'Le traitement de vos données repose sur :\n\n• L\'exécution du contrat : pour fournir nos services\n• Votre consentement : pour les notifications et communications marketing\n• Nos intérêts légitimes : pour améliorer notre service et assurer sa sécurité',
+      'Si vous activez les rappels, nous utilisons uniquement les notifications locales de votre appareil.\n\nVous pouvez désactiver les rappels à tout moment depuis l\'application.',
   },
   {
-    title: '6. Partage des données',
+    title: '6. Vos droits (RGPD)',
     content:
-      'Nous ne vendons jamais vos données personnelles. Vos données peuvent être partagées avec :\n\n• Supabase : hébergement sécurisé de vos données (serveurs UE)\n• Apple/Google : pour la gestion des abonnements\n\nCes partenaires sont soumis à des obligations de confidentialité strictes.',
+      'Conformément au RGPD, vous disposez des droits suivants :\n\n• Accès à vos données\n• Rectification de vos données\n• Suppression de votre compte\n• Portabilité de vos données\n• Opposition au traitement\n\nPour exercer vos droits, contactez-nous à support@jaw-app.com',
   },
   {
-    title: '7. Durée de conservation',
+    title: '7. Âge minimum',
     content:
-      'Vos données sont conservées :\n\n• Compte actif : tant que votre compte est actif\n• Après suppression : vos données sont effacées sous 30 jours\n• Données de facturation : conservées selon les obligations légales (généralement 10 ans)',
+      'L\'application est destinée aux personnes âgées de 12 ans et plus.\n\nEn utilisant Jaw, vous confirmez avoir l\'âge minimum requis ou avoir obtenu l\'accord d\'un parent/tuteur.',
   },
   {
-    title: '8. Vos droits (RGPD)',
+    title: '8. Contact',
     content:
-      'Vous disposez des droits suivants :\n\n• Droit d\'accès : obtenir une copie de vos données\n• Droit de rectification : corriger vos données inexactes\n• Droit à l\'effacement : supprimer votre compte et vos données\n• Droit à la portabilité : recevoir vos données dans un format lisible\n• Droit d\'opposition : vous opposer à certains traitements\n• Droit de retrait du consentement : retirer votre consentement à tout moment\n\nPour exercer ces droits, rendez-vous dans Profil > Gérer mes données ou contactez-nous à privacy@fitness-face.app',
+      'Pour toute question relative à vos données personnelles :\n\n📧 support@jaw-app.com',
   },
   {
-    title: '9. Sécurité des données',
+    title: '9. Modifications',
     content:
-      'Nous mettons en œuvre des mesures de sécurité appropriées :\n\n• Chiffrement des données en transit (TLS/SSL)\n• Chiffrement des données au repos\n• Authentification sécurisée\n• Accès restreint aux données personnelles\n• Audits de sécurité réguliers',
-  },
-  {
-    title: '10. Transferts internationaux',
-    content:
-      'Vos données sont hébergées sur des serveurs situés dans l\'Union Européenne. En cas de transfert hors UE, nous nous assurons que des garanties appropriées sont en place (clauses contractuelles types, décision d\'adéquation).',
-  },
-  {
-    title: '11. Cookies et traceurs',
-    content:
-      'L\'application n\'utilise pas de cookies. Nous utilisons uniquement le stockage local de votre appareil pour sauvegarder vos préférences et permettre une utilisation hors ligne.',
-  },
-  {
-    title: '12. Mineurs',
-    content:
-      'L\'application n\'est pas destinée aux personnes de moins de 16 ans. Nous ne collectons pas sciemment de données concernant les mineurs. Si vous êtes parent et pensez que votre enfant nous a fourni des données, contactez-nous.',
-  },
-  {
-    title: '13. Modifications',
-    content:
-      'Cette politique peut être mise à jour. En cas de modification substantielle, nous vous en informerons via l\'application. La date de dernière mise à jour est indiquée en haut de cette page.',
-  },
-  {
-    title: '14. Contact et réclamations',
-    content:
-      'Pour toute question ou réclamation :\n\n• Email : privacy@fitness-face.app\n• Délégué à la protection des données : dpo@fitness-face.app\n\nVous pouvez également introduire une réclamation auprès de la CNIL (Commission Nationale de l\'Informatique et des Libertés) : www.cnil.fr',
+      'Cette politique peut être mise à jour.\n\nEn cas de modification majeure, vous serez informé via l\'application.',
   },
 ];
 
@@ -108,7 +83,7 @@ export default function PrivacyScreen() {
           {/* Last Update */}
           <View style={styles.updateBadge}>
             <Ionicons name="calendar-outline" size={14} color={textColors.tertiary} />
-            <Text style={styles.updateText}>Dernière mise à jour : 15 décembre 2024</Text>
+            <Text style={styles.updateText}>Dernière mise à jour : Décembre 2024</Text>
           </View>
 
           {/* Intro */}
@@ -116,8 +91,7 @@ export default function PrivacyScreen() {
             <Ionicons name="shield-checkmark-outline" size={32} color={textColors.accent} />
             <Text style={styles.introTitle}>Politique de confidentialité</Text>
             <Text style={styles.introText}>
-              Votre vie privée est importante pour nous. Cette politique explique comment nous
-              protégeons vos données personnelles conformément au RGPD.
+              Jaw s'engage à protéger vos données personnelles conformément au RGPD.
             </Text>
           </View>
 

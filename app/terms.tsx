@@ -14,64 +14,49 @@ interface TermsSection {
 
 const termsData: TermsSection[] = [
   {
-    title: '1. Acceptation des conditions',
+    title: '1. Présentation',
     content:
-      'En téléchargeant et en utilisant l\'application Fitness Face, vous acceptez d\'être lié par les présentes conditions d\'utilisation. Si vous n\'acceptez pas ces conditions, veuillez ne pas utiliser l\'application.',
+      'L\'application Jaw est une application mobile dédiée au bien-être et à l\'amélioration de la routine faciale (jawline, cou, menton), à travers des exercices guidés et des conseils quotidiens.\n\nL\'application est accessible aux utilisateurs âgés de 12 ans minimum.',
   },
   {
-    title: '2. Description du service',
+    title: '2. Accès à l\'application',
     content:
-      'Fitness Face est une application de fitness facial proposant des programmes d\'exercices pour tonifier et sculpter les muscles du visage. Les programmes incluent des routines quotidiennes avec des instructions visuelles et des suivis de progression.',
+      'L\'accès à certaines fonctionnalités de Jaw est gratuit.\n\nL\'accès complet aux programmes nécessite la souscription à un abonnement payant via les systèmes de paiement intégrés d\'Apple (App Store) ou Google (Google Play).',
   },
   {
-    title: '3. Utilisation du service',
+    title: '3. Comptes utilisateurs',
     content:
-      'Vous vous engagez à utiliser l\'application de manière responsable et conformément à sa destination. Les exercices proposés sont à titre informatif et ne remplacent pas un avis médical professionnel. Consultez un médecin avant de commencer tout programme d\'exercices.',
+      'Pour utiliser l\'application, l\'utilisateur doit créer un compte personnel.\n\nL\'utilisateur est responsable de la confidentialité de ses identifiants et de toute activité effectuée depuis son compte.',
   },
   {
-    title: '4. Compte utilisateur',
+    title: '4. Abonnements et paiements',
     content:
-      'Vous êtes responsable de la confidentialité de vos informations de connexion et de toutes les activités effectuées sur votre compte. Vous devez nous informer immédiatement de toute utilisation non autorisée de votre compte.',
+      '4.1 Types d\'abonnements\nJaw propose plusieurs abonnements, avec ou sans engagement, selon le programme choisi.\n\n4.2 Paiement\nLes paiements sont effectués exclusivement via Apple App Store ou Google Play. Jaw n\'a aucun accès aux données bancaires de l\'utilisateur.\n\n4.3 Résiliation\n• Les abonnements sans engagement peuvent être résiliés à tout moment depuis les réglages de votre appareil (App Store ou Google Play)\n• Les abonnements avec engagement restent dus jusqu\'à la fin de la période engagée\n\nAucune résiliation ne peut être effectuée depuis l\'application elle-même.',
   },
   {
-    title: '5. Abonnements et paiements',
+    title: '5. Absence de conseil médical',
     content:
-      'Les abonnements sont gérés par l\'App Store (Apple) ou Google Play. Les prix sont affichés dans l\'application et peuvent varier selon votre pays. Les abonnements se renouvellent automatiquement sauf annulation au moins 24h avant la fin de la période en cours.',
+      'Jaw est une application de bien-être.\n\n⚠️ Elle ne remplace en aucun cas un avis médical.\n⚠️ Les contenus proposés ne constituent ni un diagnostic, ni un traitement médical.\n⚠️ En cas de douleur, problème de santé ou doute, l\'utilisateur doit consulter un professionnel de santé.',
   },
   {
-    title: '6. Politique de remboursement',
+    title: '6. Responsabilité',
     content:
-      'Les remboursements sont gérés par Apple ou Google selon leurs politiques respectives. Pour toute demande de remboursement, veuillez contacter directement l\'App Store ou Google Play.',
+      'L\'utilisateur reconnaît utiliser l\'application sous sa seule responsabilité.\n\nJaw ne saurait être tenue responsable de tout dommage résultant d\'une mauvaise utilisation de l\'application ou du non-respect des consignes.',
   },
   {
     title: '7. Propriété intellectuelle',
     content:
-      'Tous les contenus de l\'application (textes, images, vidéos, logos, exercices) sont la propriété de Fitness Face et protégés par les lois sur la propriété intellectuelle. Toute reproduction sans autorisation est interdite.',
+      'L\'ensemble des contenus (textes, exercices, images, structure, design) est la propriété exclusive de Jaw.\n\nToute reproduction ou utilisation non autorisée est interdite.',
   },
   {
-    title: '8. Limitation de responsabilité',
+    title: '8. Support',
     content:
-      'Fitness Face ne peut être tenu responsable des résultats obtenus suite à l\'utilisation de l\'application. Les résultats peuvent varier selon les individus. En cas de douleur ou d\'inconfort, arrêtez immédiatement les exercices et consultez un professionnel de santé.',
+      'Pour toute question ou demande d\'assistance :\n\n📧 support@jaw-app.com',
   },
   {
-    title: '9. Protection des données',
+    title: '9. Modification des conditions',
     content:
-      'Vos données personnelles sont traitées conformément à notre politique de confidentialité et au RGPD. Nous ne vendons ni ne partageons vos données avec des tiers sans votre consentement explicite.',
-  },
-  {
-    title: '10. Modifications',
-    content:
-      'Nous nous réservons le droit de modifier ces conditions à tout moment. Les modifications prennent effet dès leur publication dans l\'application. Votre utilisation continue de l\'application après modification vaut acceptation des nouvelles conditions.',
-  },
-  {
-    title: '11. Résiliation',
-    content:
-      'Nous pouvons suspendre ou résilier votre accès à l\'application en cas de violation des présentes conditions. Vous pouvez résilier votre compte à tout moment en nous contactant.',
-  },
-  {
-    title: '12. Contact',
-    content:
-      'Pour toute question concernant ces conditions d\'utilisation, contactez-nous à support@fitness-face.app.',
+      'Jaw se réserve le droit de modifier les présentes conditions à tout moment.\n\nL\'utilisateur sera informé en cas de modification majeure.',
   },
 ];
 
