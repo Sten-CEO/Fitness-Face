@@ -1,6 +1,8 @@
 import { Session, User, AuthError } from '@supabase/supabase-js';
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { supabase, Profile } from '../lib/supabase';
+import { secureStorage, SECURE_KEYS, STORAGE_KEYS } from '../lib/secureStorage';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface AuthContextType {
   // État
@@ -198,9 +200,22 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   };
 
-  // Déconnexion
+  // Déconnexion - nettoie toutes les données utilisateur
   const signOut = async () => {
     setIsLoading(true);
+
+    // Nettoyer les données locales de l'utilisateur
+    try {
+      await Promise.all([
+        secureStorage.deleteItem(SECURE_KEYS.SUBSCRIPTION_INFO),
+        secureStorage.deleteItem(SECURE_KEYS.TRANSACTION_RECEIPT),
+        AsyncStorage.removeItem(STORAGE_KEYS.PROGRESS),
+      ]);
+      console.log('[Auth] User data cleared on sign out');
+    } catch (error) {
+      console.warn('[Auth] Error clearing user data:', error);
+    }
+
     await supabase.auth.signOut();
     setUser(null);
     setSession(null);
