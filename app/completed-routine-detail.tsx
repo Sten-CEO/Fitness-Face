@@ -172,7 +172,7 @@ export default function CompletedRoutineDetailScreen() {
 
             {/* Bonus Section */}
             <Text style={styles.sectionTitle}>Exercice bonus</Text>
-            <CleanCard style={[styles.bonusCard, hasBonusCompleted && styles.bonusCardCompleted]}>
+            <CleanCard style={[styles.bonusCard, hasBonusCompleted ? styles.bonusCardCompleted : undefined]}>
               <View style={styles.bonusHeader}>
                 <View style={styles.bonusIconContainer}>
                   <Ionicons
