@@ -126,8 +126,8 @@ export default function ResultScreen() {
         // Enregistrer l'achat dans le contexte de progression
         await completePurchase(selectedPlan.id, selectedPlan.name);
 
-        // Naviguer vers l'écran de transition
-        router.push({
+        // Naviguer vers l'écran de transition (replace pour vider la stack)
+        router.replace({
           pathname: '/transition',
           params: {
             firstName: firstName || '',
