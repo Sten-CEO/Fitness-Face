@@ -1,7 +1,11 @@
 import { useCallback, useEffect, useState } from 'react';
+import { Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSubscription } from '../contexts/SubscriptionContext';
 import { PlanId } from '../data/plans';
+
+// DEBUG MODE - Affiche des Alert pour tracer le routing
+const DEBUG_ALERTS = true;
 
 /**
  * Hook pour gérer le routing après l'onboarding (questionnaire)
@@ -47,10 +51,16 @@ export function useOnboardingRouter() {
       if (hasActiveAccess) {
         // Utilisateur déjà abonné → Dashboard
         console.log('🎯 [ONBOARDING_ROUTER] Decision: hasActiveAccess=true → DASHBOARD');
+        if (DEBUG_ALERTS) {
+          Alert.alert('🎯 ROUTING DEBUG', `hasActiveAccess = TRUE\n→ Going to DASHBOARD`);
+        }
         router.replace('/(tabs)/dashboard');
       } else {
         // Utilisateur non abonné → Paywall (choix programme)
         console.log('🎯 [ONBOARDING_ROUTER] Decision: hasActiveAccess=false → RESULT (paywall)');
+        if (DEBUG_ALERTS) {
+          Alert.alert('🎯 ROUTING DEBUG', `hasActiveAccess = FALSE\n→ Going to RESULT (paywall)\nplanId: ${planId || 'jawline_guided'}`);
+        }
         router.replace({
           pathname: '/result',
           params: { planId: planId || 'jawline_guided' },
