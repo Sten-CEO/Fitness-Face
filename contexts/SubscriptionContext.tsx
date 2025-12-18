@@ -182,24 +182,41 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
 
   // Track previous user ID to detect user changes
   const prevUserIdRef = useRef<string | null>(null);
+  const hasInitializedRef = useRef(false);
 
   useEffect(() => {
     userIdRef.current = user?.id || null;
   }, [user?.id]);
 
-  // Clear subscription data when user changes (logout/login with different account)
+  // Clear subscription data when user changes OR when new user detected
   useEffect(() => {
     const currentUserId = user?.id || null;
     const previousUserId = prevUserIdRef.current;
 
-    // If user changed (not just initial load), reset subscription state
-    if (previousUserId !== null && currentUserId !== previousUserId) {
+    // User changed to a different user - clear data
+    if (previousUserId !== null && currentUserId !== null && currentUserId !== previousUserId) {
       console.log('[IAP] User changed - clearing cached subscription data');
       setSubscriptionInfo(defaultSubscriptionInfo);
       setIsLoading(true);
-
-      // Clear local storage subscription data
       secureStorage.deleteItem(SECURE_KEYS.SUBSCRIPTION_INFO).catch(console.warn);
+    }
+
+    // New user detected for first time after app init - ensure clean state
+    // This handles: app starts with stale data, then new user signs up
+    if (previousUserId === null && currentUserId !== null && !hasInitializedRef.current) {
+      console.log('[IAP] New user detected - ensuring clean subscription state');
+      // Note: Don't clear local storage here as signUp already does it
+      // Just reset state in case it was loaded with stale data before auth
+      setSubscriptionInfo(defaultSubscriptionInfo);
+      setIsLoading(true);
+      hasInitializedRef.current = true;
+    }
+
+    // User logged out
+    if (currentUserId === null && previousUserId !== null) {
+      console.log('[IAP] User logged out - resetting subscription state');
+      setSubscriptionInfo(defaultSubscriptionInfo);
+      hasInitializedRef.current = false;
     }
 
     prevUserIdRef.current = currentUserId;
