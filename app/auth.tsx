@@ -85,8 +85,9 @@ export default function AuthScreen() {
             Alert.alert('Erreur', error.message);
           }
         } else {
-          // Connexion réussie - aller au dashboard
-          router.replace('/(tabs)/dashboard');
+          // Connexion réussie - aller vers result pour vérifier l'abonnement
+          // Si l'utilisateur a un abonnement actif, result.tsx le redirigera vers le dashboard
+          router.replace('/result');
         }
       } else {
         // Inscription

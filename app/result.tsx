@@ -54,7 +54,7 @@ export default function ResultScreen() {
   const router = useRouter();
   const { firstName } = useUser();
   const { completePurchase } = useProgress();
-  const { purchaseSubscription, isPurchasing, hasActiveAccess, subscriptionInfo, restorePurchases } =
+  const { purchaseSubscription, isPurchasing, hasActiveAccess, subscriptionInfo, restorePurchases, isLoading: subscriptionLoading } =
     useSubscription();
   const { planId } = useLocalSearchParams<{ planId: string }>();
 
@@ -84,8 +84,13 @@ export default function ResultScreen() {
     }).start();
   }, []);
 
-  // NOTE: Pas de redirection automatique vers le dashboard ici
-  // C'est l'écran d'onboarding - l'utilisateur doit choisir son abonnement
+  // Rediriger vers le dashboard SI l'utilisateur a déjà un abonnement actif
+  // Cela permet aux utilisateurs qui se reconnectent d'aller directement au dashboard
+  useEffect(() => {
+    if (!subscriptionLoading && hasActiveAccess) {
+      router.replace('/(tabs)/dashboard');
+    }
+  }, [subscriptionLoading, hasActiveAccess, router]);
 
   const handleTabChange = (key: string) => {
     if (key === activeTab) return;
@@ -145,6 +150,18 @@ export default function ResultScreen() {
       router.replace('/(tabs)/dashboard');
     }
   };
+
+  // Afficher un loader pendant le chargement de l'abonnement
+  // Évite le "flash" de l'écran de choix avant redirection
+  if (subscriptionLoading) {
+    return (
+      <BackgroundScreen>
+        <View style={styles.errorContainer}>
+          <ActivityIndicator size="large" color={textColors.accent} />
+        </View>
+      </BackgroundScreen>
+    );
+  }
 
   if (!mainPlan) {
     return (
