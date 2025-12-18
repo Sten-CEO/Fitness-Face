@@ -1,8 +1,9 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback, useRef } from 'react';
 import { PlanId, getPlanById, isFixedDurationPlan } from '../data/plans';
 import { supabase } from '../lib/supabase';
 import { useAuth } from './AuthContext';
+import { ProgressDataSchema, validatePlanId } from '../lib/secureStorage';
 
 const STORAGE_KEY = '@fitness_face_progress';
 
@@ -345,7 +346,14 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
     try {
       const stored = await AsyncStorage.getItem(STORAGE_KEY);
       if (stored) {
-        const parsed = JSON.parse(stored);
+        let parsed;
+        try {
+          parsed = JSON.parse(stored);
+        } catch (parseError) {
+          console.error('Failed to parse stored progress:', parseError);
+          return null;
+        }
+
         // Migration: convertir l'ancien format si nécessaire
         if (parsed.completedDays && !parsed.completedRoutines) {
           parsed.completedRoutines = parsed.completedDays.map((day: number) => ({
@@ -368,6 +376,22 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
         if (!parsed.completedBonuses) {
           parsed.completedBonuses = [];
         }
+
+        // Validate with Zod schema
+        const validation = ProgressDataSchema.safeParse(parsed);
+        if (!validation.success) {
+          console.warn('Progress data validation failed, using migrated data:', validation.error);
+          // Return migrated data even if validation fails (for backwards compatibility)
+          // but log for monitoring
+        }
+
+        // Validate planId if present
+        if (parsed.selectedPlanId && !validatePlanId(parsed.selectedPlanId)) {
+          console.error('Invalid planId in stored progress:', parsed.selectedPlanId);
+          parsed.selectedPlanId = null;
+          parsed.isPaid = false;
+        }
+
         return parsed;
       }
       return null;
@@ -502,9 +526,18 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
   // EFFECTS
   // ============================================
 
+  // Track mounted state to prevent state updates after unmount
+  const isMountedRef = useRef(true);
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
+
   // Charger les données au montage et quand l'auth change
   useEffect(() => {
-    if (!authLoading) {
+    if (!authLoading && isMountedRef.current) {
       loadProgress();
     }
   }, [authLoading, isAuthenticated, user?.id, loadProgress]);

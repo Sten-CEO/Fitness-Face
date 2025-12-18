@@ -25,7 +25,9 @@ import {
   getPlanById,
   Plan,
   PlanId,
+  plans,
 } from '../data/plans';
+import { validatePlanId } from '../lib/secureStorage';
 import { typography, textColors } from '../theme/typography';
 
 const { width } = Dimensions.get('window');
@@ -54,9 +56,13 @@ export default function ResultScreen() {
   const { completePurchase } = useProgress();
   const { purchaseSubscription, isPurchasing, hasActiveAccess, subscriptionInfo, restorePurchases } =
     useSubscription();
-  const { planId } = useLocalSearchParams<{ planId: PlanId }>();
+  const { planId } = useLocalSearchParams<{ planId: string }>();
 
-  const selectedPlanId = planId || 'jawline_90';
+  // Validate planId from URL params to prevent injection
+  const validPlanIds = Object.keys(plans) as PlanId[];
+  const selectedPlanId: PlanId = (planId && validatePlanId(planId) && validPlanIds.includes(planId as PlanId))
+    ? (planId as PlanId)
+    : 'jawline_90';
   const mainPlan = getPlanById(selectedPlanId);
   const alternativePlan = getAlternativePlan(selectedPlanId);
 
