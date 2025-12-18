@@ -152,6 +152,19 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const signUp = async (email: string, password: string) => {
     setIsLoading(true);
 
+    // IMPORTANT: Nettoyer TOUTES les données locales AVANT l'inscription
+    // pour éviter qu'un nouvel utilisateur hérite des données d'un ancien
+    try {
+      await Promise.all([
+        secureStorage.deleteItem(SECURE_KEYS.SUBSCRIPTION_INFO),
+        secureStorage.deleteItem(SECURE_KEYS.TRANSACTION_RECEIPT),
+        AsyncStorage.removeItem(STORAGE_KEYS.PROGRESS),
+      ]);
+      console.log('[Auth] Cleared local data before signup');
+    } catch (clearError) {
+      console.warn('[Auth] Error clearing data before signup:', clearError);
+    }
+
     // Timeout de 15 secondes
     const timeout = new Promise<{ error: AuthError }>((resolve) =>
       setTimeout(() => resolve({
