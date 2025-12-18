@@ -8,8 +8,31 @@ export type PlanId =
 // Type de programme: fixed = durée définie, subscription = abonnement sans fin
 export type ProgramType = 'fixed' | 'subscription';
 
+// Type d'engagement: none = sans engagement, committed = avec engagement
+export type CommitmentType = 'none' | 'committed';
+
 export interface PlanFeature {
   text: string;
+}
+
+// Configuration de l'essai gratuit
+export interface TrialConfig {
+  durationDays: number; // Durée de l'essai (1 jour par défaut)
+  canCancelDuringTrial: boolean; // Peut résilier pendant l'essai (toujours true)
+}
+
+// Configuration In-App Purchase
+export interface IAPConfig {
+  // Product IDs pour les stores (identiques sur iOS et Android pour simplifier)
+  productId: string;
+  // Période de facturation en mois (1 = mensuel, 3 = trimestriel, etc.)
+  billingPeriodMonths: number;
+  // Configuration de l'essai gratuit
+  trial: TrialConfig;
+  // Type d'engagement après paiement
+  commitmentType: CommitmentType;
+  // Nombre de mois d'engagement (null si sans engagement)
+  commitmentMonths: number | null;
 }
 
 export interface Plan {
@@ -30,6 +53,8 @@ export interface Plan {
   durationDays: number | null;
   // Type de programme
   programType: ProgramType;
+  // Configuration In-App Purchase
+  iap: IAPConfig;
 }
 
 export const plans: Plan[] = [
@@ -58,6 +83,16 @@ export const plans: Plan[] = [
     isMainProgram: true,
     durationDays: 90,
     programType: 'fixed',
+    iap: {
+      productId: 'com.jaw.jawline_90',
+      billingPeriodMonths: 1,
+      trial: {
+        durationDays: 1,
+        canCancelDuringTrial: true,
+      },
+      commitmentType: 'committed',
+      commitmentMonths: 3,
+    },
   },
   {
     id: 'jawline_monthly',
@@ -81,6 +116,16 @@ export const plans: Plan[] = [
     isMainProgram: false,
     durationDays: null,
     programType: 'subscription',
+    iap: {
+      productId: 'com.jaw.jawline_monthly',
+      billingPeriodMonths: 1,
+      trial: {
+        durationDays: 1,
+        canCancelDuringTrial: true,
+      },
+      commitmentType: 'none',
+      commitmentMonths: null,
+    },
   },
   {
     id: 'double_60',
@@ -107,6 +152,16 @@ export const plans: Plan[] = [
     isMainProgram: true,
     durationDays: 60,
     programType: 'fixed',
+    iap: {
+      productId: 'com.jaw.double_60',
+      billingPeriodMonths: 1,
+      trial: {
+        durationDays: 1,
+        canCancelDuringTrial: true,
+      },
+      commitmentType: 'committed',
+      commitmentMonths: 2,
+    },
   },
   {
     id: 'double_monthly',
@@ -130,6 +185,16 @@ export const plans: Plan[] = [
     isMainProgram: false,
     durationDays: null,
     programType: 'subscription',
+    iap: {
+      productId: 'com.jaw.double_monthly',
+      billingPeriodMonths: 1,
+      trial: {
+        durationDays: 1,
+        canCancelDuringTrial: true,
+      },
+      commitmentType: 'none',
+      commitmentMonths: null,
+    },
   },
   {
     id: 'all_in_one',
@@ -155,8 +220,21 @@ export const plans: Plan[] = [
     isMainProgram: true,
     durationDays: null,
     programType: 'subscription',
+    iap: {
+      productId: 'com.jaw.all_in_one',
+      billingPeriodMonths: 1,
+      trial: {
+        durationDays: 1,
+        canCancelDuringTrial: true,
+      },
+      commitmentType: 'none',
+      commitmentMonths: null,
+    },
   },
 ];
+
+// Liste de tous les product IDs pour l'initialisation IAP
+export const allProductIds = plans.map((p) => p.iap.productId);
 
 export const mainPrograms = plans.filter((p) => p.isMainProgram);
 
@@ -182,4 +260,27 @@ export function getPlanDuration(planId: PlanId): number | null {
 export function isFixedDurationPlan(planId: PlanId): boolean {
   const plan = getPlanById(planId);
   return plan?.programType === 'fixed';
+}
+
+// Helper: récupère le plan par product ID
+export function getPlanByProductId(productId: string): Plan | undefined {
+  return plans.find((p) => p.iap.productId === productId);
+}
+
+// Helper: vérifie si c'est un plan avec engagement
+export function isCommittedPlan(planId: PlanId): boolean {
+  const plan = getPlanById(planId);
+  return plan?.iap.commitmentType === 'committed';
+}
+
+// Helper: récupère la durée de l'engagement en mois
+export function getCommitmentMonths(planId: PlanId): number | null {
+  const plan = getPlanById(planId);
+  return plan?.iap.commitmentMonths ?? null;
+}
+
+// Helper: récupère la durée de l'essai gratuit en jours
+export function getTrialDays(planId: PlanId): number {
+  const plan = getPlanById(planId);
+  return plan?.iap.trial.durationDays ?? 1;
 }

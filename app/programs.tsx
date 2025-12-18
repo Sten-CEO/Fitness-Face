@@ -149,7 +149,9 @@ export default function ProgramsScreen() {
                         title="Choisir"
                         onPress={() => handleSelectPlan(plan)}
                       />
-                      <Text style={styles.trialDisclaimer}>essai gratuit sans engagement</Text>
+                      <Text style={styles.trialDisclaimer}>
+                        Essai gratuit 1 jour. Annulation possible avant le premier paiement.
+                      </Text>
                     </View>
                   </CleanCard>
                 </Animated.View>

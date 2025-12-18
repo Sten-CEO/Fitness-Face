@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useRef, useState } from 'react';
 import {
+  ActivityIndicator,
   Alert,
   Animated,
   Dimensions,
@@ -17,6 +18,7 @@ import CleanCard from '../components/CleanCard';
 import PrimaryButton from '../components/PrimaryButton';
 import TabSlider from '../components/TabSlider';
 import { useProgress } from '../contexts/ProgressContext';
+import { useSubscription } from '../contexts/SubscriptionContext';
 import { useUser } from '../contexts/UserContext';
 import {
   getAlternativePlan,
@@ -50,6 +52,8 @@ export default function ResultScreen() {
   const router = useRouter();
   const { firstName } = useUser();
   const { completePurchase } = useProgress();
+  const { purchaseSubscription, isPurchasing, hasActiveAccess, subscriptionInfo, restorePurchases } =
+    useSubscription();
   const { planId } = useLocalSearchParams<{ planId: PlanId }>();
 
   const selectedPlanId = planId || 'jawline_90';
@@ -73,6 +77,13 @@ export default function ResultScreen() {
       useNativeDriver: true,
     }).start();
   }, []);
+
+  // Rediriger si l'utilisateur a déjà un abonnement actif
+  useEffect(() => {
+    if (hasActiveAccess && subscriptionInfo.planId) {
+      router.replace('/(tabs)/dashboard');
+    }
+  }, [hasActiveAccess, subscriptionInfo.planId, router]);
 
   const handleTabChange = (key: string) => {
     if (key === activeTab) return;
@@ -103,18 +114,33 @@ export default function ResultScreen() {
     }
 
     try {
-      await completePurchase(selectedPlan.id, selectedPlan.name);
+      // Lancer l'achat natif (popup Apple Pay / Google Pay)
+      const success = await purchaseSubscription(selectedPlan.id);
 
-      router.push({
-        pathname: '/transition',
-        params: {
-          firstName: firstName || '',
-          planId: selectedPlan.id,
-          planName: selectedPlan.name,
-        },
-      });
+      if (success) {
+        // Enregistrer l'achat dans le contexte de progression
+        await completePurchase(selectedPlan.id, selectedPlan.name);
+
+        // Naviguer vers l'écran de transition
+        router.push({
+          pathname: '/transition',
+          params: {
+            firstName: firstName || '',
+            planId: selectedPlan.id,
+            planName: selectedPlan.name,
+          },
+        });
+      }
     } catch {
       Alert.alert('Erreur', 'Une erreur est survenue. Réessaie.');
+    }
+  };
+
+  const handleRestorePurchases = async () => {
+    const restored = await restorePurchases();
+    if (restored && subscriptionInfo.planId) {
+      await completePurchase(subscriptionInfo.planId, subscriptionInfo.planId);
+      router.replace('/(tabs)/dashboard');
     }
   };
 
@@ -211,11 +237,28 @@ export default function ResultScreen() {
 
           <View style={styles.ctaContainer}>
             <PrimaryButton
-              title="Continuer"
+              title={isPurchasing ? '' : 'Commencer'}
               onPress={() => handleSelectPlan(currentPlan)}
-            />
-            <Text style={styles.trialDisclaimer}>essai gratuit sans engagement</Text>
+              disabled={isPurchasing}
+            >
+              {isPurchasing && (
+                <ActivityIndicator color="#FFFFFF" size="small" />
+              )}
+            </PrimaryButton>
+            <Text style={styles.trialDisclaimer}>
+              Essai gratuit 1 jour. Annulation possible avant le premier paiement.
+            </Text>
           </View>
+
+          {/* Restore purchases */}
+          <TouchableOpacity
+            onPress={handleRestorePurchases}
+            style={styles.restoreButton}
+          >
+            <Text style={styles.restoreButtonText}>
+              Restaurer mes achats
+            </Text>
+          </TouchableOpacity>
 
           <TouchableOpacity
             onPress={() => router.push('/programs')}
@@ -373,6 +416,16 @@ const styles = StyleSheet.create({
     ...typography.caption,
     color: textColors.tertiary,
     marginTop: 10,
+  },
+  restoreButton: {
+    alignItems: 'center',
+    paddingVertical: 8,
+    marginBottom: 8,
+  },
+  restoreButtonText: {
+    ...typography.caption,
+    color: textColors.accent,
+    textDecorationLine: 'underline',
   },
   secondaryLink: {
     alignItems: 'center',

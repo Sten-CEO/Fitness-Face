@@ -1,69 +1,109 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React from 'react';
-import { Linking, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Alert,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import TabBackground from '../components/TabBackground';
 import { useProgress } from '../contexts/ProgressContext';
+import { useSubscription } from '../contexts/SubscriptionContext';
+import { getPlanById } from '../data/plans';
 import { textColors, typography } from '../theme/typography';
 
 export default function SubscriptionScreen() {
   const router = useRouter();
-  const { selectedPlanName, selectedPlanId, completedDaysCount, totalDays, isFixedProgram } =
-    useProgress();
+  const { completedDaysCount, totalDays, isFixedProgram } = useProgress();
+  const {
+    subscriptionInfo,
+    isLoading,
+    openSubscriptionManagement,
+    restorePurchases,
+    hasActiveAccess,
+  } = useSubscription();
+
+  const plan = subscriptionInfo.planId
+    ? getPlanById(subscriptionInfo.planId)
+    : null;
 
   const handleManageSubscription = async () => {
-    // Ouvrir les réglages d'abonnement iOS/Android
-    // Sur iOS: Réglages > Apple ID > Abonnements
-    // Sur Android: Play Store > Abonnements
-    try {
-      await Linking.openURL('https://apps.apple.com/account/subscriptions');
-    } catch {
-      // Fallback si le lien ne fonctionne pas
+    await openSubscriptionManagement();
+  };
+
+  const handleRestorePurchases = async () => {
+    const success = await restorePurchases();
+    if (success) {
+      Alert.alert('Succès', 'Vos achats ont été restaurés.');
     }
   };
 
-  const handleRestorePurchases = () => {
-    // TODO: Implémenter la restauration des achats avec RevenueCat ou similaire
-  };
-
-  const getPlanInfo = () => {
-    if (selectedPlanId === 'jawline_90') {
-      return {
-        name: 'Jawline Définition 90 jours',
-        duration: '90 jours',
-        type: 'Programme fixe',
-        icon: 'fitness-outline' as const,
-        color: '#3B82F6',
-      };
-    } else if (selectedPlanId === 'double_chin_60') {
-      return {
-        name: 'Double Menton 60 jours',
-        duration: '60 jours',
-        type: 'Programme fixe',
-        icon: 'body-outline' as const,
-        color: '#8B5CF6',
-      };
-    } else if (selectedPlanId === 'subscription') {
-      return {
-        name: 'Abonnement Complet',
-        duration: 'Illimité',
-        type: 'Abonnement mensuel',
-        icon: 'infinite-outline' as const,
-        color: '#22C55E',
-      };
+  const getStatusInfo = () => {
+    switch (subscriptionInfo.status) {
+      case 'trial':
+        return {
+          label: 'Essai gratuit',
+          color: '#F59E0B',
+          icon: 'time-outline' as const,
+          description: subscriptionInfo.trialEndDate
+            ? `Expire le ${new Date(subscriptionInfo.trialEndDate).toLocaleDateString('fr-FR')}`
+            : 'En cours',
+        };
+      case 'active':
+        return {
+          label: 'Actif',
+          color: '#22C55E',
+          icon: 'checkmark-circle' as const,
+          description: subscriptionInfo.expirationDate
+            ? `Renouvellement le ${new Date(subscriptionInfo.expirationDate).toLocaleDateString('fr-FR')}`
+            : 'Abonnement actif',
+        };
+      case 'cancelled':
+        return {
+          label: 'Annulé',
+          color: '#EF4444',
+          icon: 'close-circle' as const,
+          description: subscriptionInfo.expirationDate
+            ? `Accès jusqu'au ${new Date(subscriptionInfo.expirationDate).toLocaleDateString('fr-FR')}`
+            : 'Abonnement annulé',
+        };
+      case 'expired':
+        return {
+          label: 'Expiré',
+          color: '#6B7280',
+          icon: 'alert-circle' as const,
+          description: 'Votre abonnement a expiré',
+        };
+      default:
+        return {
+          label: 'Aucun abonnement',
+          color: '#6B7280',
+          icon: 'help-circle' as const,
+          description: 'Vous n\'avez pas d\'abonnement actif',
+        };
     }
-    return {
-      name: selectedPlanName || 'Aucun programme',
-      duration: '-',
-      type: '-',
-      icon: 'help-outline' as const,
-      color: textColors.tertiary,
-    };
   };
 
-  const planInfo = getPlanInfo();
+  const statusInfo = getStatusInfo();
+
+  if (isLoading) {
+    return (
+      <TabBackground>
+        <SafeAreaView style={styles.safeArea} edges={['top']}>
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color={textColors.accent} />
+            <Text style={styles.loadingText}>Chargement...</Text>
+          </View>
+        </SafeAreaView>
+      </TabBackground>
+    );
+  }
 
   return (
     <TabBackground>
@@ -84,21 +124,32 @@ export default function SubscriptionScreen() {
         >
           {/* Current Plan Card */}
           <View style={styles.planCard}>
-            <View style={[styles.planIconContainer, { backgroundColor: `${planInfo.color}20` }]}>
-              <Ionicons name={planInfo.icon} size={32} color={planInfo.color} />
+            <View
+              style={[
+                styles.planIconContainer,
+                { backgroundColor: `${statusInfo.color}20` },
+              ]}
+            >
+              <Ionicons name={statusInfo.icon} size={32} color={statusInfo.color} />
             </View>
 
-            <Text style={styles.planName}>{planInfo.name}</Text>
-            <Text style={styles.planType}>{planInfo.type}</Text>
+            <Text style={styles.planName}>
+              {plan?.name || 'Aucun programme'}
+            </Text>
+            <Text style={styles.planType}>
+              {plan?.durationLabel || '-'}
+            </Text>
 
             {/* Progress info for fixed programs */}
-            {isFixedProgram && totalDays && (
+            {hasActiveAccess && isFixedProgram && totalDays && (
               <View style={styles.progressContainer}>
                 <View style={styles.progressBar}>
                   <View
                     style={[
                       styles.progressFill,
-                      { width: `${Math.min(100, (completedDaysCount / totalDays) * 100)}%` },
+                      {
+                        width: `${Math.min(100, (completedDaysCount / totalDays) * 100)}%`,
+                      },
                     ]}
                   />
                 </View>
@@ -109,57 +160,125 @@ export default function SubscriptionScreen() {
             )}
 
             {/* Status badge */}
-            <View style={styles.statusBadge}>
-              <Ionicons name="checkmark-circle" size={16} color="#22C55E" />
-              <Text style={styles.statusText}>Actif</Text>
+            <View
+              style={[
+                styles.statusBadge,
+                { backgroundColor: `${statusInfo.color}15` },
+              ]}
+            >
+              <Ionicons name={statusInfo.icon} size={16} color={statusInfo.color} />
+              <Text style={[styles.statusText, { color: statusInfo.color }]}>
+                {statusInfo.label}
+              </Text>
             </View>
+
+            {/* Status description */}
+            <Text style={styles.statusDescription}>{statusInfo.description}</Text>
           </View>
 
-          {/* Plan Details */}
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Détails du programme</Text>
+          {/* Subscription Details */}
+          {hasActiveAccess && (
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Détails de l'abonnement</Text>
 
-            <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Programme</Text>
-              <Text style={styles.detailValue}>{planInfo.name}</Text>
-            </View>
-
-            <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Durée</Text>
-              <Text style={styles.detailValue}>{planInfo.duration}</Text>
-            </View>
-
-            <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Jours complétés</Text>
-              <Text style={styles.detailValue}>{completedDaysCount}</Text>
-            </View>
-
-            {isFixedProgram && totalDays && (
               <View style={styles.detailRow}>
-                <Text style={styles.detailLabel}>Jours restants</Text>
-                <Text style={styles.detailValue}>{Math.max(0, totalDays - completedDaysCount)}</Text>
+                <Text style={styles.detailLabel}>Programme</Text>
+                <Text style={styles.detailValue}>{plan?.name || '-'}</Text>
               </View>
-            )}
-          </View>
+
+              <View style={styles.detailRow}>
+                <Text style={styles.detailLabel}>Type</Text>
+                <Text style={styles.detailValue}>
+                  {subscriptionInfo.isCommitted
+                    ? 'Avec engagement'
+                    : 'Sans engagement'}
+                </Text>
+              </View>
+
+              {subscriptionInfo.startDate && (
+                <View style={styles.detailRow}>
+                  <Text style={styles.detailLabel}>Date de début</Text>
+                  <Text style={styles.detailValue}>
+                    {new Date(subscriptionInfo.startDate).toLocaleDateString('fr-FR')}
+                  </Text>
+                </View>
+              )}
+
+              {subscriptionInfo.status === 'trial' && subscriptionInfo.trialEndDate && (
+                <View style={styles.detailRow}>
+                  <Text style={styles.detailLabel}>Fin de l'essai</Text>
+                  <Text style={styles.detailValue}>
+                    {new Date(subscriptionInfo.trialEndDate).toLocaleDateString('fr-FR')}
+                  </Text>
+                </View>
+              )}
+
+              {isFixedProgram && totalDays && (
+                <View style={styles.detailRow}>
+                  <Text style={styles.detailLabel}>Jours restants</Text>
+                  <Text style={styles.detailValue}>
+                    {Math.max(0, totalDays - completedDaysCount)}
+                  </Text>
+                </View>
+              )}
+
+              <View style={styles.detailRow}>
+                <Text style={styles.detailLabel}>Renouvellement auto</Text>
+                <Text style={styles.detailValue}>
+                  {subscriptionInfo.willRenew ? 'Oui' : 'Non'}
+                </Text>
+              </View>
+            </View>
+          )}
+
+          {/* Trial warning */}
+          {subscriptionInfo.status === 'trial' && (
+            <View style={styles.trialWarning}>
+              <Ionicons name="information-circle" size={20} color="#F59E0B" />
+              <Text style={styles.trialWarningText}>
+                Vous êtes en période d'essai gratuit.{' '}
+                {subscriptionInfo.isCommitted
+                  ? 'Annulez avant la fin de l\'essai pour éviter tout paiement.'
+                  : 'Vous pouvez annuler à tout moment.'}
+              </Text>
+            </View>
+          )}
+
+          {/* Commitment warning */}
+          {subscriptionInfo.status === 'active' && subscriptionInfo.isCommitted && (
+            <View style={styles.commitmentWarning}>
+              <Ionicons name="lock-closed" size={20} color="#EF4444" />
+              <Text style={styles.commitmentWarningText}>
+                Votre abonnement est avec engagement. L'annulation prendra effet
+                à la fin de la période d'engagement.
+              </Text>
+            </View>
+          )}
 
           {/* Actions */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Actions</Text>
 
-            <TouchableOpacity style={styles.actionButton} onPress={handleManageSubscription}>
+            <TouchableOpacity
+              style={styles.actionButton}
+              onPress={handleManageSubscription}
+            >
               <View style={styles.actionIconContainer}>
                 <Ionicons name="settings-outline" size={20} color={textColors.accent} />
               </View>
               <View style={styles.actionContent}>
                 <Text style={styles.actionTitle}>Gérer l'abonnement</Text>
                 <Text style={styles.actionDescription}>
-                  Modifier ou annuler dans les réglages
+                  Modifier ou annuler dans les réglages de l'App Store/Play Store
                 </Text>
               </View>
               <Ionicons name="chevron-forward" size={20} color={textColors.tertiary} />
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.actionButton} onPress={handleRestorePurchases}>
+            <TouchableOpacity
+              style={styles.actionButton}
+              onPress={handleRestorePurchases}
+            >
               <View style={styles.actionIconContainer}>
                 <Ionicons name="refresh-outline" size={20} color={textColors.accent} />
               </View>
@@ -173,12 +292,19 @@ export default function SubscriptionScreen() {
             </TouchableOpacity>
           </View>
 
-          {/* Info */}
+          {/* Legal info */}
           <View style={styles.infoBox}>
-            <Ionicons name="information-circle-outline" size={20} color={textColors.tertiary} />
+            <Ionicons
+              name="information-circle-outline"
+              size={20}
+              color={textColors.tertiary}
+            />
             <Text style={styles.infoText}>
-              Votre abonnement est géré par l'App Store ou Google Play. Pour modifier ou annuler,
-              rendez-vous dans les paramètres de votre compte.
+              Votre abonnement est géré par l'App Store (iOS) ou Google Play (Android).
+              Pour modifier ou annuler, rendez-vous dans les paramètres de votre compte.
+              {'\n\n'}
+              L'essai gratuit dure 1 jour. Le paiement sera prélevé automatiquement
+              après la période d'essai, sauf si vous annulez avant.
             </Text>
           </View>
 
@@ -192,6 +318,16 @@ export default function SubscriptionScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 16,
+  },
+  loadingText: {
+    ...typography.body,
+    color: textColors.secondary,
   },
   header: {
     flexDirection: 'row',
@@ -275,15 +411,19 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: 'rgba(34, 197, 94, 0.1)',
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 20,
+    marginBottom: 8,
   },
   statusText: {
     ...typography.bodySmall,
-    color: '#22C55E',
     fontWeight: '600',
+  },
+  statusDescription: {
+    ...typography.caption,
+    color: textColors.tertiary,
+    textAlign: 'center',
   },
   section: {
     marginBottom: 24,
@@ -310,6 +450,36 @@ const styles = StyleSheet.create({
     ...typography.body,
     color: textColors.primary,
     fontWeight: '600',
+  },
+  trialWarning: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    backgroundColor: 'rgba(245, 158, 11, 0.1)',
+    borderRadius: 12,
+    padding: 16,
+    gap: 12,
+    marginBottom: 24,
+  },
+  trialWarningText: {
+    ...typography.bodySmall,
+    color: '#F59E0B',
+    flex: 1,
+    lineHeight: 20,
+  },
+  commitmentWarning: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+    borderRadius: 12,
+    padding: 16,
+    gap: 12,
+    marginBottom: 24,
+  },
+  commitmentWarningText: {
+    ...typography.bodySmall,
+    color: '#EF4444',
+    flex: 1,
+    lineHeight: 20,
   },
   actionButton: {
     flexDirection: 'row',
