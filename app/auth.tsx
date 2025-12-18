@@ -18,6 +18,7 @@ import BackgroundScreen from '../components/BackgroundScreen';
 import PrimaryButton from '../components/PrimaryButton';
 import { useAuth } from '../contexts/AuthContext';
 import { useUser } from '../contexts/UserContext';
+import { supabase } from '../lib/supabase';
 import { typography, textColors, fontFamily } from '../theme/typography';
 
 type AuthMode = 'login' | 'register';
@@ -85,10 +86,37 @@ export default function AuthScreen() {
             Alert.alert('Erreur', error.message);
           }
         } else {
-          // Connexion réussie - aller vers result pour vérifier l'abonnement
-          // Si l'utilisateur a un abonnement actif, result.tsx le redirigera vers le dashboard
-          console.log('🔵 [AUTH] LOGIN SUCCESS → navigating to /result');
-          router.replace('/result');
+          // Connexion réussie - vérifier le statut d'abonnement
+          console.log('🔵 [AUTH] LOGIN SUCCESS → checking subscription status...');
+
+          // Récupérer la session pour avoir l'user ID
+          const { data: { session } } = await supabase.auth.getSession();
+          if (session?.user) {
+            // Vérifier le statut d'abonnement dans Supabase
+            const { data: profile } = await supabase
+              .from('profiles')
+              .select('subscription_status')
+              .eq('id', session.user.id)
+              .maybeSingle();
+
+            const status = profile?.subscription_status;
+            const hasActiveAccess = status === 'trial' || status === 'active' || status === 'cancelled';
+
+            console.log('🔵 [AUTH] Subscription status:', status, '→ hasActiveAccess:', hasActiveAccess);
+
+            if (hasActiveAccess) {
+              // Utilisateur abonné → dashboard
+              console.log('🔵 [AUTH] → navigating to DASHBOARD');
+              router.replace('/(tabs)/dashboard');
+            } else {
+              // Utilisateur non abonné → page de sélection de programme
+              console.log('🔵 [AUTH] → navigating to RESULT (paywall)');
+              router.replace('/result');
+            }
+          } else {
+            // Fallback si pas de session (ne devrait pas arriver)
+            router.replace('/result');
+          }
         }
       } else {
         // Inscription
