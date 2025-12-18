@@ -5,7 +5,7 @@ import { useSubscription } from '../contexts/SubscriptionContext';
 import { PlanId } from '../data/plans';
 
 // DEBUG MODE - Affiche des Alert pour tracer le routing
-const DEBUG_ALERTS = true;
+const DEBUG_ALERTS = false;
 
 /**
  * Hook pour gérer le routing après l'onboarding (questionnaire)
