@@ -10,12 +10,16 @@ export default function ProcessingScreen() {
   const router = useRouter();
   const { planId } = useLocalSearchParams<{ planId: PlanId }>();
 
+  console.log('[NAVIGATION] ProcessingScreen mounted, planId:', planId);
+
   const dot1 = useRef(new Animated.Value(0)).current;
   const dot2 = useRef(new Animated.Value(0)).current;
   const dot3 = useRef(new Animated.Value(0)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
+    console.log('[NAVIGATION] ProcessingScreen useEffect running');
+
     Animated.timing(fadeAnim, {
       toValue: 1,
       duration: 400,
@@ -51,6 +55,7 @@ export default function ProcessingScreen() {
     anim3.start();
 
     const timeout = setTimeout(() => {
+      console.log('[NAVIGATION] ProcessingScreen -> navigating to /result with planId:', planId || 'all_in_one');
       router.replace({
         pathname: '/result',
         params: { planId: planId || 'all_in_one' },
@@ -58,6 +63,7 @@ export default function ProcessingScreen() {
     }, 2500);
 
     return () => {
+      console.log('[NAVIGATION] ProcessingScreen cleanup');
       anim1.stop();
       anim2.stop();
       anim3.stop();

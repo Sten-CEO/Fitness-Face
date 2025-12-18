@@ -60,6 +60,11 @@ export default function ResultScreen() {
     useSubscription();
   const { planId } = useLocalSearchParams<{ planId: string }>();
 
+  console.log('[NAVIGATION] ResultScreen mounted');
+  console.log('[NAVIGATION] ResultScreen - hasActiveAccess:', hasActiveAccess);
+  console.log('[NAVIGATION] ResultScreen - subscriptionInfo:', JSON.stringify(subscriptionInfo));
+  console.log('[NAVIGATION] ResultScreen - planId param:', planId);
+
   // Validate planId from URL params to prevent injection
   const validPlanIds = plans.map(p => p.id) as PlanId[];
   const selectedPlanId: PlanId = (planId && validatePlanId(planId) && validPlanIds.includes(planId as PlanId))
