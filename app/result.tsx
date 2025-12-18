@@ -77,6 +77,8 @@ export default function ResultScreen() {
   const slideAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
+    console.log('🟣 [RESULT] Screen mounted - planId:', planId, 'selectedPlanId:', selectedPlanId);
+    console.log('🟣 [RESULT] subscriptionLoading:', subscriptionLoading, 'hasActiveAccess:', hasActiveAccess);
     Animated.timing(fadeAnim, {
       toValue: 1,
       duration: 400,

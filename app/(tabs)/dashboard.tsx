@@ -53,10 +53,19 @@ export default function DashboardScreen() {
   const routine = selectedPlanId ? getRoutineForPlan(selectedPlanId) : null;
   const todayTip = getTodayTip(currentDay);
 
+  // Log au mount
+  useEffect(() => {
+    console.log('🔴 [DASHBOARD] Screen mounted');
+    console.log('🔴 [DASHBOARD] subscriptionLoading:', subscriptionLoading, 'progressLoading:', progressLoading);
+    console.log('🔴 [DASHBOARD] hasActiveAccess:', hasActiveAccess, 'selectedPlanId:', selectedPlanId);
+  }, []);
+
   // Rediriger vers la page d'achat si pas d'accès actif
   // hasActiveAccess est la source de vérité (pas selectedPlanId qui peut être en cache)
   useEffect(() => {
+    console.log('🔴 [DASHBOARD] Redirect check - subscriptionLoading:', subscriptionLoading, 'progressLoading:', progressLoading, 'hasActiveAccess:', hasActiveAccess);
     if (!subscriptionLoading && !progressLoading && !hasActiveAccess) {
+      console.log('🔴 [DASHBOARD] No active access → redirecting to /result');
       router.replace('/result');
     }
   }, [hasActiveAccess, subscriptionLoading, progressLoading, router]);
