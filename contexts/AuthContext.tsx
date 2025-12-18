@@ -65,107 +65,137 @@ export function AuthProvider({ children }: AuthProviderProps) {
     };
   }, []);
 
-  // Récupérer ou créer le profil utilisateur
-  const fetchOrCreateProfile = async (userId: string, email: string) => {
-    try {
-      // Utiliser upsert pour créer ou mettre à jour le profil
-      const { data: upsertedProfile, error: upsertError } = await supabase
-        .from('profiles')
-        .upsert(
-          { id: userId, email },
-          { onConflict: 'id', ignoreDuplicates: true }
-        )
-        .select()
-        .maybeSingle();
+  // Créer un profil local minimal (fallback)
+  const createLocalProfile = (userId: string, email: string): Profile => ({
+    id: userId,
+    email,
+    created_at: new Date().toISOString(),
+    program_type: null,
+    start_date: null,
+    timezone: 'Europe/Paris',
+  });
 
-      if (upsertError) {
-        // En cas d'erreur, créer un profil local minimal
-        setProfile({
-          id: userId,
-          email,
-          created_at: new Date().toISOString(),
-          program_type: null,
-          start_date: null,
-          timezone: 'Europe/Paris',
-        });
-      } else if (upsertedProfile) {
-        setProfile(upsertedProfile);
-      } else {
+  // Récupérer ou créer le profil utilisateur avec timeout
+  const fetchOrCreateProfile = async (userId: string, email: string) => {
+    // Timeout de 10 secondes pour éviter les blocages
+    const timeout = new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error('Profile fetch timeout')), 10000)
+    );
+
+    try {
+      const fetchProfile = async () => {
+        // Essayer de récupérer ou créer le profil
+        const { data: upsertedProfile, error: upsertError } = await supabase
+          .from('profiles')
+          .upsert(
+            { id: userId, email },
+            { onConflict: 'id', ignoreDuplicates: true }
+          )
+          .select()
+          .maybeSingle();
+
+        if (upsertError) {
+          console.warn('[Auth] Profile upsert error:', upsertError.message);
+          return createLocalProfile(userId, email);
+        }
+
+        if (upsertedProfile) {
+          return upsertedProfile;
+        }
+
         // Essayer de récupérer le profil existant
-        const { data: existingProfile } = await supabase
+        const { data: existingProfile, error: fetchError } = await supabase
           .from('profiles')
           .select('*')
           .eq('id', userId)
           .maybeSingle();
 
-        if (existingProfile) {
-          setProfile(existingProfile);
-        } else {
-          // Fallback: profil local minimal
-          setProfile({
-            id: userId,
-            email,
-            created_at: new Date().toISOString(),
-            program_type: null,
-            start_date: null,
-            timezone: 'Europe/Paris',
-          });
+        if (fetchError) {
+          console.warn('[Auth] Profile fetch error:', fetchError.message);
         }
-      }
 
-      // S'assurer que user_progress et settings existent
-      await supabase
-        .from('user_progress')
-        .upsert({ user_id: userId }, { onConflict: 'user_id', ignoreDuplicates: true });
+        return existingProfile || createLocalProfile(userId, email);
+      };
 
-      await supabase
-        .from('settings')
-        .upsert({ user_id: userId }, { onConflict: 'user_id', ignoreDuplicates: true });
+      // Race entre le fetch et le timeout
+      const profileData = await Promise.race([fetchProfile(), timeout]);
+      setProfile(profileData);
 
-    } catch {
-      // Fallback en cas d'erreur
-      setProfile({
-        id: userId,
-        email,
-        created_at: new Date().toISOString(),
-        program_type: null,
-        start_date: null,
-        timezone: 'Europe/Paris',
-      });
+      // Créer user_progress et settings en arrière-plan (non bloquant)
+      Promise.all([
+        supabase
+          .from('user_progress')
+          .upsert({ user_id: userId }, { onConflict: 'user_id', ignoreDuplicates: true })
+          .then(({ error }) => {
+            if (error) console.warn('[Auth] user_progress upsert error:', error.message);
+          }),
+        supabase
+          .from('settings')
+          .upsert({ user_id: userId }, { onConflict: 'user_id', ignoreDuplicates: true })
+          .then(({ error }) => {
+            if (error) console.warn('[Auth] settings upsert error:', error.message);
+          }),
+      ]).catch(console.warn);
+
+    } catch (error) {
+      console.warn('[Auth] fetchOrCreateProfile error:', error);
+      // Fallback en cas d'erreur ou timeout
+      setProfile(createLocalProfile(userId, email));
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Inscription
+  // Inscription avec timeout
   const signUp = async (email: string, password: string) => {
     setIsLoading(true);
+
+    // Timeout de 15 secondes
+    const timeout = new Promise<{ error: AuthError }>((resolve) =>
+      setTimeout(() => resolve({
+        error: { message: 'Délai dépassé. Vérifie ta connexion internet.', status: 408 } as AuthError
+      }), 15000)
+    );
+
     try {
-      const { error } = await supabase.auth.signUp({
-        email,
-        password,
-      });
-      if (error) {
+      const signUpPromise = supabase.auth.signUp({ email, password });
+      const result = await Promise.race([signUpPromise, timeout]);
+
+      if (result.error) {
         setIsLoading(false);
       }
-      return { error };
+      // Note: Si pas d'erreur, isLoading sera mis à false par onAuthStateChange → fetchOrCreateProfile
+      return { error: result.error };
     } catch (error) {
       setIsLoading(false);
       return { error: error as AuthError };
     }
   };
 
-  // Connexion
+  // Connexion avec timeout
   const signIn = async (email: string, password: string) => {
     setIsLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-    if (error) {
+
+    // Timeout de 15 secondes
+    const timeout = new Promise<{ data: null; error: AuthError }>((resolve) =>
+      setTimeout(() => resolve({
+        data: null,
+        error: { message: 'Délai dépassé. Vérifie ta connexion internet.', status: 408 } as AuthError
+      }), 15000)
+    );
+
+    try {
+      const signInPromise = supabase.auth.signInWithPassword({ email, password });
+      const result = await Promise.race([signInPromise, timeout]);
+
+      if (result.error) {
+        setIsLoading(false);
+      }
+      return { error: result.error };
+    } catch (error) {
       setIsLoading(false);
+      return { error: error as AuthError };
     }
-    return { error };
   };
 
   // Déconnexion
