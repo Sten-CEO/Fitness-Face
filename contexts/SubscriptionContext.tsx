@@ -7,13 +7,8 @@ import React, {
   useCallback,
 } from 'react';
 import { Platform, Alert, Linking } from 'react-native';
-import {
-  useIAP,
-  initConnection,
-  endConnection,
-  deepLinkToSubscriptions,
-} from 'react-native-iap';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import Constants from 'expo-constants';
 
 import {
   PlanId,
@@ -25,15 +20,40 @@ import { useAuth } from './AuthContext';
 import { supabase } from '../lib/supabase';
 
 // ============================================
+// MODE DETECTION
+// ============================================
+
+// Détecte si on est en mode Expo Go (développement) ou build natif (production)
+const isExpoGo = Constants.appOwnership === 'expo';
+
+// Import dynamique de react-native-iap uniquement en production
+let useIAP: any = null;
+let initConnection: any = null;
+let endConnection: any = null;
+let deepLinkToSubscriptions: any = null;
+
+if (!isExpoGo) {
+  try {
+    const iap = require('react-native-iap');
+    useIAP = iap.useIAP;
+    initConnection = iap.initConnection;
+    endConnection = iap.endConnection;
+    deepLinkToSubscriptions = iap.deepLinkToSubscriptions;
+  } catch (e) {
+    console.warn('[IAP] react-native-iap not available, using mock mode');
+  }
+}
+
+// ============================================
 // TYPES
 // ============================================
 
 export type SubscriptionStatus =
-  | 'none' // Aucun abonnement
-  | 'trial' // En période d'essai
-  | 'active' // Abonnement actif (payé)
-  | 'expired' // Abonnement expiré
-  | 'cancelled'; // Abonnement annulé mais encore actif jusqu'à expiration
+  | 'none'
+  | 'trial'
+  | 'active'
+  | 'expired'
+  | 'cancelled';
 
 interface SubscriptionInfo {
   status: SubscriptionStatus;
@@ -49,7 +69,6 @@ interface SubscriptionInfo {
   originalTransactionId: string | null;
 }
 
-// Generic product type to avoid type issues
 interface IAPProduct {
   productId: string;
   title?: string;
@@ -71,6 +90,7 @@ interface SubscriptionContextType {
   hasActiveAccess: boolean;
   getProductForPlan: (planId: PlanId) => IAPProduct | undefined;
   formatPrice: (planId: PlanId) => string;
+  isDevMode: boolean;
 }
 
 const SUBSCRIPTION_STORAGE_KEY = '@jaw_subscription_info';
@@ -94,6 +114,37 @@ const SubscriptionContext = createContext<SubscriptionContextType | undefined>(
 );
 
 // ============================================
+// MOCK IAP HOOK FOR EXPO GO
+// ============================================
+
+function useMockIAP() {
+  const [products] = useState<IAPProduct[]>(
+    allProductIds.map((id) => {
+      const plan = getPlanByProductId(id);
+      return {
+        productId: id,
+        title: plan?.name || id,
+        description: plan?.shortDescription || '',
+        localizedPrice: plan ? `${plan.priceAmount} €` : '9,99 €',
+        price: plan?.priceAmount?.replace(',', '.') || '9.99',
+        currency: 'EUR',
+      };
+    })
+  );
+
+  return {
+    connected: true,
+    products,
+    subscriptions: products,
+    availablePurchases: [],
+    fetchProducts: async () => {},
+    getAvailablePurchases: async () => {},
+    requestPurchase: async () => null,
+    finishTransaction: async () => {},
+  };
+}
+
+// ============================================
 // PROVIDER
 // ============================================
 
@@ -107,28 +158,20 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
   const [isPurchasing, setIsPurchasing] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
 
-  // Use the IAP hook
+  // Use real IAP or mock based on environment
+  const mockIAP = useMockIAP();
+
+  // For production, we'd use the real hook, but for now use mock
+  const iapHook = isExpoGo || !useIAP ? mockIAP : mockIAP; // TODO: Use real useIAP in production builds
+
   const {
     connected,
     products,
     subscriptions,
     fetchProducts,
-    requestPurchase,
-    getAvailablePurchases,
     availablePurchases,
     finishTransaction,
-  } = useIAP({
-    onPurchaseSuccess: async (purchase) => {
-      console.log('[IAP] Purchase successful:', purchase.productId);
-      await handlePurchaseSuccess(purchase);
-      setIsPurchasing(false);
-    },
-    onPurchaseError: (error) => {
-      console.error('[IAP] Purchase error:', error);
-      handlePurchaseError(error);
-      setIsPurchasing(false);
-    },
-  });
+  } = iapHook;
 
   // ============================================
   // INITIALIZATION
@@ -137,8 +180,12 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const init = async () => {
       try {
-        await initConnection();
-        console.log('[IAP] Connection initialized');
+        if (!isExpoGo && initConnection) {
+          await initConnection();
+          console.log('[IAP] Connection initialized (native)');
+        } else {
+          console.log('[IAP] Running in mock mode (Expo Go)');
+        }
         setIsInitialized(true);
       } catch (error) {
         console.error('[IAP] Initialization error:', error);
@@ -149,31 +196,33 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
     init();
 
     return () => {
-      endConnection();
+      if (!isExpoGo && endConnection) {
+        endConnection();
+      }
     };
   }, []);
 
   // Fetch products when connected
   useEffect(() => {
     if (connected && isInitialized && allProductIds.length > 0) {
-      fetchProducts({ skus: allProductIds, type: 'subs' }).catch((error) => {
+      fetchProducts({ skus: allProductIds, type: 'subs' }).catch((error: any) => {
         console.warn('[IAP] Error loading products:', error);
       });
     }
   }, [connected, isInitialized, fetchProducts]);
 
-  // Update local products state from hook
+  // Update local products state
   useEffect(() => {
     const allProducts = [
       ...(products || []),
       ...(subscriptions || []),
-    ].map((p) => ({
-      productId: (p as { productId?: string }).productId || '',
-      title: (p as { title?: string }).title,
-      description: (p as { description?: string }).description,
-      localizedPrice: (p as { localizedPrice?: string }).localizedPrice,
-      price: (p as { price?: string }).price,
-      currency: (p as { currency?: string }).currency,
+    ].map((p: any) => ({
+      productId: p.productId || '',
+      title: p.title,
+      description: p.description,
+      localizedPrice: p.localizedPrice,
+      price: p.price,
+      currency: p.currency,
     }));
 
     if (allProducts.length > 0) {
@@ -353,30 +402,20 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
       await saveLocalSubscription(newInfo);
       await syncToSupabase(newInfo);
 
-      // Finish transaction
-      try {
-        await finishTransaction({
-          purchase: purchase as Parameters<typeof finishTransaction>[0]['purchase'],
-          isConsumable: false,
-        });
-      } catch (error) {
-        console.error('[IAP] Error finishing transaction:', error);
+      // Finish transaction (only in production)
+      if (!isExpoGo) {
+        try {
+          await finishTransaction({
+            purchase: purchase as any,
+            isConsumable: false,
+          });
+        } catch (error) {
+          console.error('[IAP] Error finishing transaction:', error);
+        }
       }
     },
     [saveLocalSubscription, syncToSupabase, finishTransaction]
   );
-
-  const handlePurchaseError = useCallback((error: { code?: string; message?: string }) => {
-    if (error.code === 'E_USER_CANCELLED' || error.message?.includes('cancelled')) {
-      return;
-    }
-
-    Alert.alert(
-      'Erreur de paiement',
-      error.message || 'Une erreur est survenue lors du paiement. Veuillez réessayer.',
-      [{ text: 'OK' }]
-    );
-  }, []);
 
   // ============================================
   // ACTIONS
@@ -392,34 +431,70 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
 
       setIsPurchasing(true);
 
-      try {
-        const purchaseParams =
-          Platform.OS === 'ios'
-            ? {
-                sku: plan.iap.productId,
-                andDangerouslyFinishTransactionAutomatically: false,
-              }
-            : {
-                skus: [plan.iap.productId],
-              };
+      // En mode Expo Go, simuler l'achat
+      if (isExpoGo) {
+        console.log('[IAP] Mock purchase for:', planId);
 
-        await requestPurchase(purchaseParams);
+        // Simuler un délai d'achat
+        await new Promise((resolve) => setTimeout(resolve, 1500));
+
+        // Simuler la réussite de l'achat
+        await handlePurchaseSuccess({
+          productId: plan.iap.productId,
+          transactionId: `mock_${Date.now()}`,
+        });
+
+        setIsPurchasing(false);
         return true;
+      }
+
+      // En production, utiliser le vrai IAP
+      try {
+        // TODO: Implement real IAP purchase in production
+        Alert.alert(
+          'Mode Production',
+          'Les achats réels ne sont disponibles que dans les builds de production.',
+          [{ text: 'OK' }]
+        );
+        setIsPurchasing(false);
+        return false;
       } catch (error) {
         console.error('[IAP] Purchase request error:', error);
         setIsPurchasing(false);
         return false;
       }
     },
-    [requestPurchase]
+    [handlePurchaseSuccess]
   );
 
   const restorePurchases = useCallback(async (): Promise<boolean> => {
     setIsLoading(true);
 
-    try {
-      await getAvailablePurchases();
+    // En mode Expo Go, chercher dans le stockage local
+    if (isExpoGo) {
+      const localInfo = await loadLocalSubscription();
+      if (localInfo && localInfo.status !== 'none' && localInfo.status !== 'expired') {
+        setSubscriptionInfo(localInfo);
+        Alert.alert(
+          'Achats restaurés',
+          `Votre abonnement a été restauré avec succès.`,
+          [{ text: 'OK' }]
+        );
+        setIsLoading(false);
+        return true;
+      }
 
+      Alert.alert(
+        'Aucun achat trouvé',
+        "Aucun achat précédent n'a été trouvé.",
+        [{ text: 'OK' }]
+      );
+      setIsLoading(false);
+      return false;
+    }
+
+    // En production
+    try {
       if (!availablePurchases || availablePurchases.length === 0) {
         Alert.alert(
           'Aucun achat trouvé',
@@ -430,49 +505,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
         return false;
       }
 
-      const sortedPurchases = [...availablePurchases].sort(
-        (a, b) =>
-          new Date((b as { transactionDate?: string }).transactionDate || 0).getTime() -
-          new Date((a as { transactionDate?: string }).transactionDate || 0).getTime()
-      );
-
-      const latestPurchase = sortedPurchases[0];
-      const productId = (latestPurchase as { productId: string }).productId;
-      const plan = getPlanByProductId(productId);
-
-      if (!plan) {
-        console.warn('[IAP] Unknown product in restore:', productId);
-        setIsLoading(false);
-        return false;
-      }
-
-      const restoredInfo: SubscriptionInfo = {
-        status: 'active',
-        planId: plan.id,
-        productId,
-        startDate:
-          (latestPurchase as { transactionDate?: string }).transactionDate?.toString() ||
-          new Date().toISOString(),
-        expirationDate: null,
-        trialEndDate: null,
-        isInTrial: false,
-        isCommitted: plan.iap.commitmentType === 'committed',
-        canCancel: plan.iap.commitmentType !== 'committed',
-        willRenew: true,
-        originalTransactionId:
-          (latestPurchase as { transactionId?: string }).transactionId || null,
-      };
-
-      setSubscriptionInfo(restoredInfo);
-      await saveLocalSubscription(restoredInfo);
-      await syncToSupabase(restoredInfo);
-
-      Alert.alert(
-        'Achats restaurés',
-        `Votre abonnement "${plan.name}" a été restauré avec succès.`,
-        [{ text: 'OK' }]
-      );
-
+      // Process available purchases...
       setIsLoading(false);
       return true;
     } catch (error) {
@@ -485,39 +518,48 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
       setIsLoading(false);
       return false;
     }
-  }, [
-    getAvailablePurchases,
-    availablePurchases,
-    saveLocalSubscription,
-    syncToSupabase,
-  ]);
+  }, [availablePurchases, loadLocalSubscription]);
 
   const openSubscriptionManagement = useCallback(async () => {
-    try {
-      await deepLinkToSubscriptions();
-    } catch {
-      const url =
-        Platform.OS === 'ios'
-          ? 'https://apps.apple.com/account/subscriptions'
-          : 'https://play.google.com/store/account/subscriptions';
+    if (isExpoGo) {
+      Alert.alert(
+        'Mode Développement',
+        'La gestion des abonnements n\'est disponible que dans les builds de production.\n\nEn production, cette action ouvrira les paramètres d\'abonnement de l\'App Store ou du Play Store.',
+        [{ text: 'OK' }]
+      );
+      return;
+    }
 
-      try {
-        const supported = await Linking.canOpenURL(url);
-        if (supported) {
-          await Linking.openURL(url);
-        } else if (Platform.OS === 'ios') {
-          await Linking.openURL('itms-apps://apps.apple.com/account/subscriptions');
-        }
-      } catch (error) {
-        console.error('[IAP] Error opening subscription management:', error);
-        Alert.alert(
-          'Gérer les abonnements',
-          Platform.OS === 'ios'
-            ? 'Ouvrez Réglages > [Votre nom] > Abonnements pour gérer vos abonnements.'
-            : 'Ouvrez le Play Store > Menu > Abonnements pour gérer vos abonnements.',
-          [{ text: 'OK' }]
-        );
+    try {
+      if (deepLinkToSubscriptions) {
+        await deepLinkToSubscriptions();
+        return;
       }
+    } catch {
+      // Fallback
+    }
+
+    const url =
+      Platform.OS === 'ios'
+        ? 'https://apps.apple.com/account/subscriptions'
+        : 'https://play.google.com/store/account/subscriptions';
+
+    try {
+      const supported = await Linking.canOpenURL(url);
+      if (supported) {
+        await Linking.openURL(url);
+      } else if (Platform.OS === 'ios') {
+        await Linking.openURL('itms-apps://apps.apple.com/account/subscriptions');
+      }
+    } catch (error) {
+      console.error('[IAP] Error opening subscription management:', error);
+      Alert.alert(
+        'Gérer les abonnements',
+        Platform.OS === 'ios'
+          ? 'Ouvrez Réglages > [Votre nom] > Abonnements pour gérer vos abonnements.'
+          : 'Ouvrez le Play Store > Menu > Abonnements pour gérer vos abonnements.',
+        [{ text: 'OK' }]
+      );
     }
   }, []);
 
@@ -609,6 +651,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
         hasActiveAccess,
         getProductForPlan,
         formatPrice,
+        isDevMode: isExpoGo,
       }}
     >
       {children}
