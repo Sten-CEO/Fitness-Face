@@ -783,16 +783,32 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
     try {
       const supabaseInfo = await loadFromSupabase();
       const localInfo = await loadLocalSubscription();
-      const currentInfo = supabaseInfo || localInfo || defaultSubscriptionInfo;
+
+      // IMPORTANT: Pour un utilisateur authentifié, Supabase est la source de vérité
+      // Ne PAS utiliser le cache local comme fallback (pourrait être d'un autre utilisateur)
+      // Le cache local n'est utilisé que si l'utilisateur n'est pas connecté
+      let currentInfo: SubscriptionInfo;
+
+      if (userIdRef.current) {
+        // Utilisateur connecté : utiliser Supabase ou default (PAS le cache local)
+        currentInfo = supabaseInfo || defaultSubscriptionInfo;
+        console.log('[IAP] User authenticated, using Supabase data:', currentInfo.status);
+      } else {
+        // Utilisateur non connecté : utiliser cache local si disponible
+        currentInfo = localInfo || defaultSubscriptionInfo;
+      }
+
       const validatedInfo = validateSubscription(currentInfo);
 
       setSubscriptionInfo(validatedInfo);
 
+      // Sauvegarder en local seulement si différent
       if (JSON.stringify(validatedInfo) !== JSON.stringify(localInfo)) {
         await saveLocalSubscription(validatedInfo);
       }
 
-      if (JSON.stringify(validatedInfo) !== JSON.stringify(supabaseInfo)) {
+      // Sync vers Supabase si différent et utilisateur connecté
+      if (userIdRef.current && JSON.stringify(validatedInfo) !== JSON.stringify(supabaseInfo)) {
         await syncToSupabase(validatedInfo);
       }
     } catch (error) {
@@ -801,6 +817,24 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
       setIsLoading(false);
     }
   }, [loadFromSupabase, loadLocalSubscription, validateSubscription, saveLocalSubscription, syncToSupabase]);
+
+  // Track user changes to reset local subscription cache
+  const previousUserIdRef = useRef<string | null>(null);
+
+  // Reset subscription when user changes (prevents cached data from previous user)
+  useEffect(() => {
+    const currentUserId = user?.id || null;
+
+    // If user changed (including logout → login with different account)
+    if (previousUserIdRef.current !== null && previousUserIdRef.current !== currentUserId) {
+      console.log('[IAP] User changed, resetting subscription state');
+      setSubscriptionInfo(defaultSubscriptionInfo);
+      // Clear local storage to prevent stale data
+      secureStorage.delete(SECURE_KEYS.SUBSCRIPTION_INFO).catch(() => {});
+    }
+
+    previousUserIdRef.current = currentUserId;
+  }, [user?.id]);
 
   // Load subscription on init
   useEffect(() => {
