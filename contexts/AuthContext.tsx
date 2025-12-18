@@ -218,50 +218,40 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   // Supprimer le compte et toutes les données
   const deleteAccount = async (): Promise<{ error: Error | null }> => {
-    if (!user) {
+    if (!user || !session) {
       return { error: new Error('Non authentifié') };
     }
 
     try {
-      const userId = user.id;
+      // Appeler l'Edge Function pour supprimer complètement le compte
+      // Cette fonction utilise l'API admin pour supprimer l'utilisateur auth
+      const { data, error: functionError } = await supabase.functions.invoke('delete-account', {
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      });
 
-      // 1. Supprimer l'historique des routines
-      await supabase
-        .from('routine_history')
-        .delete()
-        .eq('user_id', userId);
+      if (functionError) {
+        console.error('Delete account function error:', functionError);
+        return { error: new Error(functionError.message || 'Erreur lors de la suppression du compte') };
+      }
 
-      // 2. Supprimer les paramètres
-      await supabase
-        .from('settings')
-        .delete()
-        .eq('user_id', userId);
+      if (data?.error) {
+        console.error('Delete account error:', data.error);
+        return { error: new Error(data.error) };
+      }
 
-      // 3. Supprimer la progression
-      await supabase
-        .from('user_progress')
-        .delete()
-        .eq('user_id', userId);
-
-      // 4. Supprimer le profil
-      await supabase
-        .from('profiles')
-        .delete()
-        .eq('id', userId);
-
-      // 5. Déconnecter l'utilisateur
-      await supabase.auth.signOut();
-
-      // Note: La suppression complète du compte auth nécessite une fonction Edge
-      // ou l'API admin Supabase. Les données utilisateur sont supprimées,
-      // le compte auth sera nettoyé automatiquement ou via le dashboard.
-
+      // Nettoyer l'état local
       setUser(null);
       setSession(null);
       setProfile(null);
 
+      // Déconnecter localement (le compte auth est déjà supprimé côté serveur)
+      await supabase.auth.signOut();
+
       return { error: null };
     } catch (error) {
+      console.error('Delete account exception:', error);
       return { error: error as Error };
     }
   };
