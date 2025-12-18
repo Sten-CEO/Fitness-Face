@@ -1,8 +1,6 @@
 import { Session, User, AuthError } from '@supabase/supabase-js';
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { supabase, Profile } from '../lib/supabase';
-import { secureStorage, SECURE_KEYS, STORAGE_KEYS } from '../lib/secureStorage';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface AuthContextType {
   // État
@@ -67,168 +65,112 @@ export function AuthProvider({ children }: AuthProviderProps) {
     };
   }, []);
 
-  // Créer un profil local minimal (fallback)
-  const createLocalProfile = (userId: string, email: string): Profile => ({
-    id: userId,
-    email,
-    created_at: new Date().toISOString(),
-    program_type: null,
-    start_date: null,
-    timezone: 'Europe/Paris',
-  });
-
-  // Récupérer ou créer le profil utilisateur avec timeout
+  // Récupérer ou créer le profil utilisateur
   const fetchOrCreateProfile = async (userId: string, email: string) => {
-    // Timeout de 10 secondes pour éviter les blocages
-    const timeout = new Promise<never>((_, reject) =>
-      setTimeout(() => reject(new Error('Profile fetch timeout')), 10000)
-    );
-
     try {
-      const fetchProfile = async () => {
-        // Essayer de récupérer ou créer le profil
-        const { data: upsertedProfile, error: upsertError } = await supabase
-          .from('profiles')
-          .upsert(
-            { id: userId, email },
-            { onConflict: 'id', ignoreDuplicates: true }
-          )
-          .select()
-          .maybeSingle();
+      // Utiliser upsert pour créer ou mettre à jour le profil
+      const { data: upsertedProfile, error: upsertError } = await supabase
+        .from('profiles')
+        .upsert(
+          { id: userId, email },
+          { onConflict: 'id', ignoreDuplicates: true }
+        )
+        .select()
+        .maybeSingle();
 
-        if (upsertError) {
-          console.warn('[Auth] Profile upsert error:', upsertError.message);
-          return createLocalProfile(userId, email);
-        }
-
-        if (upsertedProfile) {
-          return upsertedProfile;
-        }
-
+      if (upsertError) {
+        // En cas d'erreur, créer un profil local minimal
+        setProfile({
+          id: userId,
+          email,
+          created_at: new Date().toISOString(),
+          program_type: null,
+          start_date: null,
+          timezone: 'Europe/Paris',
+        });
+      } else if (upsertedProfile) {
+        setProfile(upsertedProfile);
+      } else {
         // Essayer de récupérer le profil existant
-        const { data: existingProfile, error: fetchError } = await supabase
+        const { data: existingProfile } = await supabase
           .from('profiles')
           .select('*')
           .eq('id', userId)
           .maybeSingle();
 
-        if (fetchError) {
-          console.warn('[Auth] Profile fetch error:', fetchError.message);
+        if (existingProfile) {
+          setProfile(existingProfile);
+        } else {
+          // Fallback: profil local minimal
+          setProfile({
+            id: userId,
+            email,
+            created_at: new Date().toISOString(),
+            program_type: null,
+            start_date: null,
+            timezone: 'Europe/Paris',
+          });
         }
+      }
 
-        return existingProfile || createLocalProfile(userId, email);
-      };
+      // S'assurer que user_progress et settings existent
+      await supabase
+        .from('user_progress')
+        .upsert({ user_id: userId }, { onConflict: 'user_id', ignoreDuplicates: true });
 
-      // Race entre le fetch et le timeout
-      const profileData = await Promise.race([fetchProfile(), timeout]);
-      setProfile(profileData);
+      await supabase
+        .from('settings')
+        .upsert({ user_id: userId }, { onConflict: 'user_id', ignoreDuplicates: true });
 
-      // Créer user_progress et settings en arrière-plan (non bloquant)
-      Promise.all([
-        supabase
-          .from('user_progress')
-          .upsert({ user_id: userId }, { onConflict: 'user_id', ignoreDuplicates: true })
-          .then(({ error }) => {
-            if (error) console.warn('[Auth] user_progress upsert error:', error.message);
-          }),
-        supabase
-          .from('settings')
-          .upsert({ user_id: userId }, { onConflict: 'user_id', ignoreDuplicates: true })
-          .then(({ error }) => {
-            if (error) console.warn('[Auth] settings upsert error:', error.message);
-          }),
-      ]).catch(console.warn);
-
-    } catch (error) {
-      console.warn('[Auth] fetchOrCreateProfile error:', error);
-      // Fallback en cas d'erreur ou timeout
-      setProfile(createLocalProfile(userId, email));
+    } catch {
+      // Fallback en cas d'erreur
+      setProfile({
+        id: userId,
+        email,
+        created_at: new Date().toISOString(),
+        program_type: null,
+        start_date: null,
+        timezone: 'Europe/Paris',
+      });
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Inscription avec timeout
+  // Inscription
   const signUp = async (email: string, password: string) => {
     setIsLoading(true);
-
-    // IMPORTANT: Nettoyer TOUTES les données locales AVANT l'inscription
-    // pour éviter qu'un nouvel utilisateur hérite des données d'un ancien
     try {
-      await Promise.all([
-        secureStorage.deleteItem(SECURE_KEYS.SUBSCRIPTION_INFO),
-        secureStorage.deleteItem(SECURE_KEYS.TRANSACTION_RECEIPT),
-        AsyncStorage.removeItem(STORAGE_KEYS.PROGRESS),
-      ]);
-      console.log('[Auth] Cleared local data before signup');
-    } catch (clearError) {
-      console.warn('[Auth] Error clearing data before signup:', clearError);
-    }
-
-    // Timeout de 15 secondes
-    const timeout = new Promise<{ error: AuthError }>((resolve) =>
-      setTimeout(() => resolve({
-        error: { message: 'Délai dépassé. Vérifie ta connexion internet.', status: 408 } as AuthError
-      }), 15000)
-    );
-
-    try {
-      const signUpPromise = supabase.auth.signUp({ email, password });
-      const result = await Promise.race([signUpPromise, timeout]);
-
-      if (result.error) {
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+      });
+      if (error) {
         setIsLoading(false);
       }
-      // Note: Si pas d'erreur, isLoading sera mis à false par onAuthStateChange → fetchOrCreateProfile
-      return { error: result.error };
+      return { error };
     } catch (error) {
       setIsLoading(false);
       return { error: error as AuthError };
     }
   };
 
-  // Connexion avec timeout
+  // Connexion
   const signIn = async (email: string, password: string) => {
     setIsLoading(true);
-
-    // Timeout de 15 secondes
-    const timeout = new Promise<{ data: null; error: AuthError }>((resolve) =>
-      setTimeout(() => resolve({
-        data: null,
-        error: { message: 'Délai dépassé. Vérifie ta connexion internet.', status: 408 } as AuthError
-      }), 15000)
-    );
-
-    try {
-      const signInPromise = supabase.auth.signInWithPassword({ email, password });
-      const result = await Promise.race([signInPromise, timeout]);
-
-      if (result.error) {
-        setIsLoading(false);
-      }
-      return { error: result.error };
-    } catch (error) {
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+    if (error) {
       setIsLoading(false);
-      return { error: error as AuthError };
     }
+    return { error };
   };
 
-  // Déconnexion - nettoie toutes les données utilisateur
+  // Déconnexion
   const signOut = async () => {
     setIsLoading(true);
-
-    // Nettoyer les données locales de l'utilisateur
-    try {
-      await Promise.all([
-        secureStorage.deleteItem(SECURE_KEYS.SUBSCRIPTION_INFO),
-        secureStorage.deleteItem(SECURE_KEYS.TRANSACTION_RECEIPT),
-        AsyncStorage.removeItem(STORAGE_KEYS.PROGRESS),
-      ]);
-      console.log('[Auth] User data cleared on sign out');
-    } catch (error) {
-      console.warn('[Auth] Error clearing user data:', error);
-    }
-
     await supabase.auth.signOut();
     setUser(null);
     setSession(null);

@@ -26,8 +26,6 @@ import {
   Plan,
   PlanId,
   plans,
-  hasFreeTrial,
-  getTrialLabel,
 } from '../data/plans';
 import { validatePlanId } from '../lib/secureStorage';
 import { typography, textColors } from '../theme/typography';
@@ -60,21 +58,11 @@ export default function ResultScreen() {
     useSubscription();
   const { planId } = useLocalSearchParams<{ planId: string }>();
 
-  // DEBUG: Alert visible pour tracer la navigation
-  useEffect(() => {
-    Alert.alert('DEBUG', `ResultScreen chargé!\nhasActiveAccess: ${hasActiveAccess}\nstatus: ${subscriptionInfo.status}`);
-  }, []);
-
-  console.log('[NAVIGATION] ResultScreen mounted');
-  console.log('[NAVIGATION] ResultScreen - hasActiveAccess:', hasActiveAccess);
-  console.log('[NAVIGATION] ResultScreen - subscriptionInfo:', JSON.stringify(subscriptionInfo));
-  console.log('[NAVIGATION] ResultScreen - planId param:', planId);
-
   // Validate planId from URL params to prevent injection
-  const validPlanIds = plans.map(p => p.id) as PlanId[];
+  const validPlanIds = Object.keys(plans) as PlanId[];
   const selectedPlanId: PlanId = (planId && validatePlanId(planId) && validPlanIds.includes(planId as PlanId))
     ? (planId as PlanId)
-    : 'jawline_guided';
+    : 'jawline_90';
   const mainPlan = getPlanById(selectedPlanId);
   const alternativePlan = getAlternativePlan(selectedPlanId);
 
@@ -96,9 +84,12 @@ export default function ResultScreen() {
     }).start();
   }, []);
 
-  // Note: Pas de redirection automatique ici - c'est l'écran d'onboarding
-  // L'utilisateur doit explicitement choisir et acheter un abonnement
-  // La vérification d'accès se fait dans dashboard.tsx
+  // Rediriger si l'utilisateur a déjà un abonnement actif
+  useEffect(() => {
+    if (hasActiveAccess && subscriptionInfo.planId) {
+      router.replace('/(tabs)/dashboard');
+    }
+  }, [hasActiveAccess, subscriptionInfo.planId, router]);
 
   const handleTabChange = (key: string) => {
     if (key === activeTab) return;
@@ -241,13 +232,8 @@ export default function ResultScreen() {
                 <View style={styles.priceSection}>
                   <Text style={styles.priceLabel}>Tarif</Text>
                   {renderPriceInfo(currentPlan)}
-                  <Text style={[
-                    styles.tryFreeText,
-                    hasFreeTrial(currentPlan.id) && styles.trialHighlight
-                  ]}>
-                    {getTrialLabel(currentPlan.id)}
-                  </Text>
-                  {currentPlan.engagementLabel && hasFreeTrial(currentPlan.id) && (
+                  <Text style={styles.tryFreeText}>essayer gratuitement</Text>
+                  {currentPlan.engagementLabel && (
                     <Text style={styles.engagementText}>{currentPlan.engagementLabel}</Text>
                   )}
                 </View>
@@ -266,9 +252,7 @@ export default function ResultScreen() {
               )}
             </PrimaryButton>
             <Text style={styles.trialDisclaimer}>
-              {currentPlan && hasFreeTrial(currentPlan.id)
-                ? `Essai gratuit ${currentPlan.iap.trial.durationDays} jours. Annulation possible à tout moment.`
-                : 'Abonnement mensuel. Annulation possible à tout moment.'}
+              Essai gratuit 1 jour. Annulation possible avant le premier paiement.
             </Text>
           </View>
 
@@ -423,10 +407,6 @@ const styles = StyleSheet.create({
     ...typography.caption,
     color: textColors.tertiary,
     textAlign: 'right',
-  },
-  trialHighlight: {
-    color: '#22C55E', // Green for free trial highlight
-    fontWeight: '600',
   },
   engagementText: {
     ...typography.caption,

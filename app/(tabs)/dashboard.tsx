@@ -3,7 +3,6 @@ import { useRouter } from 'expo-router';
 import React, { useEffect, useRef } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   Animated,
   ScrollView,
   StyleSheet,
@@ -26,7 +25,7 @@ import { typography, textColors } from '../../theme/typography';
 export default function DashboardScreen() {
   const router = useRouter();
   const { firstName } = useUser();
-  const { hasActiveAccess, isLoading: subscriptionLoading, subscriptionInfo } = useSubscription();
+  const { hasActiveAccess, isLoading: subscriptionLoading } = useSubscription();
   const {
     selectedPlanId,
     currentDay,
@@ -42,18 +41,6 @@ export default function DashboardScreen() {
     isLoading: progressLoading,
   } = useProgress();
 
-  // DEBUG: Alert visible pour tracer la navigation
-  useEffect(() => {
-    Alert.alert('DEBUG Dashboard', `hasActiveAccess: ${hasActiveAccess}\nsubscriptionLoading: ${subscriptionLoading}\nprogressLoading: ${progressLoading}\nstatus: ${subscriptionInfo.status}`);
-  }, []);
-
-  console.log('[NAVIGATION] DashboardScreen mounted');
-  console.log('[NAVIGATION] Dashboard - hasActiveAccess:', hasActiveAccess);
-  console.log('[NAVIGATION] Dashboard - subscriptionLoading:', subscriptionLoading);
-  console.log('[NAVIGATION] Dashboard - progressLoading:', progressLoading);
-  console.log('[NAVIGATION] Dashboard - subscriptionInfo:', JSON.stringify(subscriptionInfo));
-  console.log('[NAVIGATION] Dashboard - selectedPlanId:', selectedPlanId);
-
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnims = useRef([
     new Animated.Value(30),
@@ -66,16 +53,12 @@ export default function DashboardScreen() {
   const routine = selectedPlanId ? getRoutineForPlan(selectedPlanId) : null;
   const todayTip = getTodayTip(currentDay);
 
-  // Rediriger vers la page d'achat si pas d'abonnement actif
-  // hasActiveAccess est la source de vérité (pas selectedPlanId qui peut être en cache)
+  // Rediriger vers la page d'achat si pas d'accès actif
   useEffect(() => {
-    console.log('[NAVIGATION] Dashboard useEffect - checking redirect');
-    console.log('[NAVIGATION] Dashboard - subscriptionLoading:', subscriptionLoading, 'progressLoading:', progressLoading, 'hasActiveAccess:', hasActiveAccess);
-    if (!subscriptionLoading && !progressLoading && !hasActiveAccess) {
-      console.log('[NAVIGATION] Dashboard -> redirecting to /result');
+    if (!subscriptionLoading && !progressLoading && !hasActiveAccess && !selectedPlanId) {
       router.replace('/result');
     }
-  }, [hasActiveAccess, subscriptionLoading, progressLoading, router]);
+  }, [hasActiveAccess, selectedPlanId, subscriptionLoading, progressLoading, router]);
 
   // Trophy system
   const userProgress = { completedDaysCount, streak, completedBonusesCount };
