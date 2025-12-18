@@ -5,7 +5,7 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from './AuthContext';
 import { ProgressDataSchema, validatePlanId } from '../lib/secureStorage';
 
-const STORAGE_KEY = '@fitness_face_progress';
+const STORAGE_KEY = '@jaw_prime_progress';
 
 // ============================================
 // MODE TEST - Mettre à false pour la production
