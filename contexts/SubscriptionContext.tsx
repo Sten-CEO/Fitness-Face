@@ -187,9 +187,11 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
     userIdRef.current = user?.id || null;
   }, [user?.id]);
 
-  // Use real IAP or mock based on environment
+  // Use mock IAP in Expo Go, real IAP functions are used directly in production
   const mockIAP = useMockIAP();
-  const iapHook = isExpoGo || !useIAP ? mockIAP : mockIAP;
+  // Note: In production builds, we use the imported IAP functions directly (requestSubscription, etc.)
+  // The mock is only used for products list display in dev mode
+  const iapHook = mockIAP; // Products list fallback - real purchases use imported functions
 
   const {
     connected,

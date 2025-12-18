@@ -23,7 +23,7 @@ export default function WelcomeScreen() {
 
   // Build welcome text with blue word info
   const welcomePrefix = 'Bienvenue ';
-  const blueWord = firstName || 'Fitness Face';
+  const blueWord = firstName || 'Jaw Prime';
   const welcomeText = welcomePrefix + blueWord;
   const blueStartIndex = welcomePrefix.length;
 

@@ -16,12 +16,12 @@ const termsData: TermsSection[] = [
   {
     title: '1. Présentation',
     content:
-      'L\'application Jaw est une application mobile dédiée au bien-être et à l\'amélioration de la routine faciale (jawline, cou, menton), à travers des exercices guidés et des conseils quotidiens.\n\nL\'application est accessible aux utilisateurs âgés de 12 ans minimum.',
+      'L\'application Jaw Prime est une application mobile dédiée au bien-être et à l\'amélioration de la routine faciale (jawline, cou, menton), à travers des exercices guidés et des conseils quotidiens.\n\nL\'application est accessible aux utilisateurs âgés de 12 ans minimum.',
   },
   {
     title: '2. Accès à l\'application',
     content:
-      'L\'accès à certaines fonctionnalités de Jaw est gratuit.\n\nL\'accès complet aux programmes nécessite la souscription à un abonnement payant via les systèmes de paiement intégrés d\'Apple (App Store) ou Google (Google Play).',
+      'L\'accès à certaines fonctionnalités de Jaw Prime est gratuit.\n\nL\'accès complet aux programmes nécessite la souscription à un abonnement payant via les systèmes de paiement intégrés d\'Apple (App Store) ou Google (Google Play).',
   },
   {
     title: '3. Comptes utilisateurs',
@@ -31,22 +31,22 @@ const termsData: TermsSection[] = [
   {
     title: '4. Abonnements et paiements',
     content:
-      '4.1 Types d\'abonnements\nJaw propose plusieurs abonnements, avec ou sans engagement, selon le programme choisi.\n\n4.2 Paiement\nLes paiements sont effectués exclusivement via Apple App Store ou Google Play. Jaw n\'a aucun accès aux données bancaires de l\'utilisateur.\n\n4.3 Résiliation\n• Les abonnements sans engagement peuvent être résiliés à tout moment depuis les réglages de votre appareil (App Store ou Google Play)\n• Les abonnements avec engagement restent dus jusqu\'à la fin de la période engagée\n\nAucune résiliation ne peut être effectuée depuis l\'application elle-même.',
+      '4.1 Types d\'abonnements\nJaw Prime propose plusieurs abonnements, avec ou sans engagement, selon le programme choisi.\n\n4.2 Paiement\nLes paiements sont effectués exclusivement via Apple App Store ou Google Play. Jaw Prime n\'a aucun accès aux données bancaires de l\'utilisateur.\n\n4.3 Résiliation\n• Les abonnements sans engagement peuvent être résiliés à tout moment depuis les réglages de votre appareil (App Store ou Google Play)\n• Les abonnements avec engagement restent dus jusqu\'à la fin de la période engagée\n\nAucune résiliation ne peut être effectuée depuis l\'application elle-même.',
   },
   {
     title: '5. Absence de conseil médical',
     content:
-      'Jaw est une application de bien-être.\n\n⚠️ Elle ne remplace en aucun cas un avis médical.\n⚠️ Les contenus proposés ne constituent ni un diagnostic, ni un traitement médical.\n⚠️ En cas de douleur, problème de santé ou doute, l\'utilisateur doit consulter un professionnel de santé.',
+      'Jaw Prime est une application de bien-être.\n\n⚠️ Elle ne remplace en aucun cas un avis médical.\n⚠️ Les contenus proposés ne constituent ni un diagnostic, ni un traitement médical.\n⚠️ En cas de douleur, problème de santé ou doute, l\'utilisateur doit consulter un professionnel de santé.',
   },
   {
     title: '6. Responsabilité',
     content:
-      'L\'utilisateur reconnaît utiliser l\'application sous sa seule responsabilité.\n\nJaw ne saurait être tenue responsable de tout dommage résultant d\'une mauvaise utilisation de l\'application ou du non-respect des consignes.',
+      'L\'utilisateur reconnaît utiliser l\'application sous sa seule responsabilité.\n\nJaw Prime ne saurait être tenue responsable de tout dommage résultant d\'une mauvaise utilisation de l\'application ou du non-respect des consignes.',
   },
   {
     title: '7. Propriété intellectuelle',
     content:
-      'L\'ensemble des contenus (textes, exercices, images, structure, design) est la propriété exclusive de Jaw.\n\nToute reproduction ou utilisation non autorisée est interdite.',
+      'L\'ensemble des contenus (textes, exercices, images, structure, design) est la propriété exclusive de Jaw Prime.\n\nToute reproduction ou utilisation non autorisée est interdite.',
   },
   {
     title: '8. Support',
@@ -56,7 +56,7 @@ const termsData: TermsSection[] = [
   {
     title: '9. Modification des conditions',
     content:
-      'Jaw se réserve le droit de modifier les présentes conditions à tout moment.\n\nL\'utilisateur sera informé en cas de modification majeure.',
+      'Jaw Prime se réserve le droit de modifier les présentes conditions à tout moment.\n\nL\'utilisateur sera informé en cas de modification majeure.',
   },
 ];
 
@@ -88,7 +88,7 @@ export default function TermsScreen() {
 
           {/* Introduction */}
           <Text style={styles.intro}>
-            Bienvenue sur Fitness Face. Veuillez lire attentivement les conditions d'utilisation
+            Bienvenue sur Jaw Prime. Veuillez lire attentivement les conditions d'utilisation
             suivantes avant d'utiliser notre application.
           </Text>
 
@@ -103,7 +103,7 @@ export default function TermsScreen() {
           {/* Footer */}
           <View style={styles.footer}>
             <Text style={styles.footerText}>
-              En utilisant Fitness Face, vous reconnaissez avoir lu et accepté ces conditions
+              En utilisant Jaw Prime, vous reconnaissez avoir lu et accepté ces conditions
               d'utilisation.
             </Text>
           </View>

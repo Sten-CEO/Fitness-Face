@@ -16,7 +16,7 @@ const privacyData: PrivacySection[] = [
   {
     title: '1. Données collectées',
     content:
-      'Jaw collecte les données suivantes :\n\n• Adresse email (pour l\'authentification)\n• Données de progression (jours complétés, exercices effectués)\n• Préférences utilisateur (rappels, langue)\n\n⚠️ Aucune donnée biométrique, photo ou vidéo n\'est collectée par l\'application.',
+      'Jaw Prime collecte les données suivantes :\n\n• Adresse email (pour l\'authentification)\n• Données de progression (jours complétés, exercices effectués)\n• Préférences utilisateur (rappels, langue)\n\n⚠️ Aucune donnée biométrique, photo ou vidéo n\'est collectée par l\'application.',
   },
   {
     title: '2. Utilisation des données',
@@ -31,7 +31,7 @@ const privacyData: PrivacySection[] = [
   {
     title: '4. Partage des données',
     content:
-      'Jaw ne vend ni ne partage vos données personnelles à des tiers à des fins commerciales.\n\nLes seuls partenaires techniques sont :\n• Supabase (hébergement sécurisé)\n• Apple/Google (gestion des abonnements)',
+      'Jaw Prime ne vend ni ne partage vos données personnelles à des tiers à des fins commerciales.\n\nLes seuls partenaires techniques sont :\n• Supabase (hébergement sécurisé)\n• Apple/Google (gestion des abonnements)',
   },
   {
     title: '5. Notifications',
@@ -46,7 +46,7 @@ const privacyData: PrivacySection[] = [
   {
     title: '7. Âge minimum',
     content:
-      'L\'application est destinée aux personnes âgées de 12 ans et plus.\n\nEn utilisant Jaw, vous confirmez avoir l\'âge minimum requis ou avoir obtenu l\'accord d\'un parent/tuteur.',
+      'L\'application est destinée aux personnes âgées de 12 ans et plus.\n\nEn utilisant Jaw Prime, vous confirmez avoir l\'âge minimum requis ou avoir obtenu l\'accord d\'un parent/tuteur.',
   },
   {
     title: '8. Contact',
@@ -91,7 +91,7 @@ export default function PrivacyScreen() {
             <Ionicons name="shield-checkmark-outline" size={32} color={textColors.accent} />
             <Text style={styles.introTitle}>Politique de confidentialité</Text>
             <Text style={styles.introText}>
-              Jaw s'engage à protéger vos données personnelles conformément au RGPD.
+              Jaw Prime s'engage à protéger vos données personnelles conformément au RGPD.
             </Text>
           </View>
 

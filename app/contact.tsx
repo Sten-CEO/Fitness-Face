@@ -13,7 +13,7 @@ export default function ContactScreen() {
   const router = useRouter();
 
   const handleEmailPress = async () => {
-    const subject = encodeURIComponent('Support Fitness Face');
+    const subject = encodeURIComponent('Support Jaw Prime');
     const body = encodeURIComponent(
       '\n\n---\nAppareil: \nVersion app: 1.0.0\n'
     );
