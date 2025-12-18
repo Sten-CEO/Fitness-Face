@@ -28,7 +28,22 @@ export default function RootLayout() {
                       animation: 'fade',
                       animationDuration: 250,
                     }}
-                  />
+                  >
+                    {/* Désactiver le swipe back sur les tabs (dashboard) */}
+                    <Stack.Screen
+                      name="(tabs)"
+                      options={{
+                        gestureEnabled: false,
+                      }}
+                    />
+                    {/* Désactiver aussi sur transition pour éviter retour vers result */}
+                    <Stack.Screen
+                      name="transition"
+                      options={{
+                        gestureEnabled: false,
+                      }}
+                    />
+                  </Stack>
                 </ImageBackground>
               </SafeAreaProvider>
             </NotificationsProvider>
