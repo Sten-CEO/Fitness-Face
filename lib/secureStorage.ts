@@ -108,9 +108,9 @@ export const SubscriptionInfoSchema = z.object({
 export type ValidatedSubscriptionInfo = z.infer<typeof SubscriptionInfoSchema>;
 
 export const PlanIdSchema = z.enum([
-  'jawline_90',
-  'jawline_monthly',
-  'double_60',
+  'jawline_guided',
+  'jaw_prime_monthly',
+  'double_guided',
   'double_monthly',
   'all_in_one',
 ]);

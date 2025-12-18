@@ -19,8 +19,8 @@ export default function TabLayout() {
         tabBarBackground: () => (
           <View style={styles.tabBarBackground} />
         ),
+        sceneStyle: { backgroundColor: 'transparent' },
       }}
-      sceneContainerStyle={{ backgroundColor: 'transparent' }}
     >
       <Tabs.Screen
         name="dashboard"

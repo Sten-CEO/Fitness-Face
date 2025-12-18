@@ -1,7 +1,7 @@
 export type PlanId =
-  | 'jawline_90'
-  | 'jawline_monthly'
-  | 'double_60'
+  | 'jawline_guided'
+  | 'jaw_prime_monthly'
+  | 'double_guided'
   | 'double_monthly'
   | 'all_in_one';
 
@@ -17,15 +17,15 @@ export interface PlanFeature {
 
 // Configuration de l'essai gratuit
 export interface TrialConfig {
-  durationDays: number; // Durée de l'essai (1 jour par défaut)
-  canCancelDuringTrial: boolean; // Peut résilier pendant l'essai (toujours true)
+  durationDays: number; // 0 = pas d'essai, 3 = 3 jours d'essai gratuit
+  canCancelDuringTrial: boolean;
 }
 
 // Configuration In-App Purchase
 export interface IAPConfig {
-  // Product IDs pour les stores (identiques sur iOS et Android pour simplifier)
+  // Product IDs pour les stores Apple (identiques sur iOS et Android)
   productId: string;
-  // Période de facturation en mois (1 = mensuel, 3 = trimestriel, etc.)
+  // Période de facturation en mois (1 = mensuel)
   billingPeriodMonths: number;
   // Configuration de l'essai gratuit
   trial: TrialConfig;
@@ -58,10 +58,13 @@ export interface Plan {
 }
 
 export const plans: Plan[] = [
+  // ============================================
+  // PROGRAMMES GUIDÉS (avec essai gratuit 3 jours)
+  // ============================================
   {
-    id: 'jawline_90',
-    name: 'Jawline 90 jours',
-    durationLabel: 'Programme guidé sur 3 mois',
+    id: 'jawline_guided',
+    name: 'Jawline Guidé',
+    durationLabel: 'Programme guidé sur 90 jours',
     tag: 'Recommandé',
     shortDescription:
       'Un programme progressif de 90 jours pour intégrer une routine quotidienne ciblée sur la mâchoire.',
@@ -77,17 +80,17 @@ export const plans: Plan[] = [
     badges: ['Programme complet', '90 jours'],
     priceAmount: '8,99',
     priceSuffix: '/mois',
-    priceDetails: 'pendant 3 mois (26,97 € au total)',
-    engagementLabel: 'Abonnement avec engagement',
-    alternativeId: 'jawline_monthly',
+    priceDetails: '3 jours d\'essai gratuit, puis 8,99 €/mois pendant 3 mois',
+    engagementLabel: '3 jours d\'essai gratuit',
+    alternativeId: 'jaw_prime_monthly',
     isMainProgram: true,
     durationDays: 90,
     programType: 'fixed',
     iap: {
-      productId: 'com.jaw.jawline_90',
+      productId: 'com.jaw.jawline_guided',
       billingPeriodMonths: 1,
       trial: {
-        durationDays: 1,
+        durationDays: 3, // 3 jours d'essai gratuit
         canCancelDuringTrial: true,
       },
       commitmentType: 'committed',
@@ -95,42 +98,9 @@ export const plans: Plan[] = [
     },
   },
   {
-    id: 'jawline_monthly',
-    name: 'Jawline mensuel',
-    durationLabel: 'Sans engagement – Mois par mois',
-    tag: 'Flexible',
-    shortDescription:
-      'Travaille ta jawline à ton rythme, sans engagement. Parfait pour tester ou maintenir ta routine.',
-    features: [
-      { text: 'Accès mensuel renouvelable automatiquement' },
-      { text: 'Exercices ciblés mâchoire et posture' },
-      { text: 'Résiliable à tout moment en un clic' },
-      { text: 'Guides visuels pour chaque mouvement' },
-      { text: 'Suivi journalier de tes progrès' },
-      { text: 'Conseils personnalisés chaque jour' },
-    ],
-    badges: ['Sans engagement', 'Flexible'],
-    priceAmount: '10,99',
-    priceSuffix: '/mois',
-    priceDetails: 'sans engagement',
-    isMainProgram: false,
-    durationDays: null,
-    programType: 'subscription',
-    iap: {
-      productId: 'com.jaw.jawline_monthly',
-      billingPeriodMonths: 1,
-      trial: {
-        durationDays: 1,
-        canCancelDuringTrial: true,
-      },
-      commitmentType: 'none',
-      commitmentMonths: null,
-    },
-  },
-  {
-    id: 'double_60',
-    name: 'Double menton 60 jours',
-    durationLabel: 'Programme guidé sur 2 mois',
+    id: 'double_guided',
+    name: 'Double Menton Guidé',
+    durationLabel: 'Programme guidé sur 60 jours',
     tag: 'Recommandé',
     shortDescription:
       'Un programme de 60 jours avec des exercices ciblés pour la zone du cou et du menton.',
@@ -146,26 +116,63 @@ export const plans: Plan[] = [
     badges: ['Programme ciblé', '60 jours'],
     priceAmount: '9,99',
     priceSuffix: '/mois',
-    priceDetails: 'pendant 2 mois (19,98 € au total)',
-    engagementLabel: 'Abonnement avec engagement',
+    priceDetails: '3 jours d\'essai gratuit, puis 9,99 €/mois pendant 2 mois',
+    engagementLabel: '3 jours d\'essai gratuit',
     alternativeId: 'double_monthly',
     isMainProgram: true,
     durationDays: 60,
     programType: 'fixed',
     iap: {
-      productId: 'com.jaw.double_60',
+      productId: 'com.jaw.double_guided',
       billingPeriodMonths: 1,
       trial: {
-        durationDays: 1,
+        durationDays: 3, // 3 jours d'essai gratuit
         canCancelDuringTrial: true,
       },
       commitmentType: 'committed',
       commitmentMonths: 2,
     },
   },
+
+  // ============================================
+  // ABONNEMENTS MENSUELS (sans essai gratuit)
+  // ============================================
+  {
+    id: 'jaw_prime_monthly',
+    name: 'Jaw Prime Mensuel',
+    durationLabel: 'Sans engagement – Mois par mois',
+    tag: 'Flexible',
+    shortDescription:
+      'Travaille ta jawline à ton rythme, sans engagement. Parfait pour tester ou maintenir ta routine.',
+    features: [
+      { text: 'Accès mensuel renouvelable automatiquement' },
+      { text: 'Exercices ciblés mâchoire et posture' },
+      { text: 'Résiliable à tout moment en un clic' },
+      { text: 'Guides visuels pour chaque mouvement' },
+      { text: 'Suivi journalier de tes progrès' },
+      { text: 'Conseils personnalisés chaque jour' },
+    ],
+    badges: ['Sans engagement', 'Flexible'],
+    priceAmount: '10,99',
+    priceSuffix: '/mois',
+    priceDetails: 'Résiliable à tout moment',
+    isMainProgram: false,
+    durationDays: null,
+    programType: 'subscription',
+    iap: {
+      productId: 'com.jaw.jaw_prime_monthly',
+      billingPeriodMonths: 1,
+      trial: {
+        durationDays: 0, // Pas d'essai gratuit
+        canCancelDuringTrial: true,
+      },
+      commitmentType: 'none',
+      commitmentMonths: null,
+    },
+  },
   {
     id: 'double_monthly',
-    name: 'Double menton mensuel',
+    name: 'Double Menton Mensuel',
     durationLabel: 'Sans engagement – Mois par mois',
     tag: 'Flexible',
     shortDescription:
@@ -181,7 +188,7 @@ export const plans: Plan[] = [
     badges: ['Sans engagement', 'Flexible'],
     priceAmount: '10,99',
     priceSuffix: '/mois',
-    priceDetails: 'sans engagement',
+    priceDetails: 'Résiliable à tout moment',
     isMainProgram: false,
     durationDays: null,
     programType: 'subscription',
@@ -189,7 +196,7 @@ export const plans: Plan[] = [
       productId: 'com.jaw.double_monthly',
       billingPeriodMonths: 1,
       trial: {
-        durationDays: 1,
+        durationDays: 0, // Pas d'essai gratuit
         canCancelDuringTrial: true,
       },
       commitmentType: 'none',
@@ -216,7 +223,7 @@ export const plans: Plan[] = [
     badges: ['Tout inclus', 'Le plus populaire'],
     priceAmount: '14,99',
     priceSuffix: '/mois',
-    priceDetails: 'sans engagement',
+    priceDetails: 'Résiliable à tout moment',
     isMainProgram: true,
     durationDays: null,
     programType: 'subscription',
@@ -224,7 +231,7 @@ export const plans: Plan[] = [
       productId: 'com.jaw.all_in_one',
       billingPeriodMonths: 1,
       trial: {
-        durationDays: 1,
+        durationDays: 0, // Pas d'essai gratuit
         canCancelDuringTrial: true,
       },
       commitmentType: 'none',
@@ -282,5 +289,28 @@ export function getCommitmentMonths(planId: PlanId): number | null {
 // Helper: récupère la durée de l'essai gratuit en jours
 export function getTrialDays(planId: PlanId): number {
   const plan = getPlanById(planId);
-  return plan?.iap.trial.durationDays ?? 1;
+  return plan?.iap.trial.durationDays ?? 0;
+}
+
+// Helper: vérifie si le plan a un essai gratuit
+export function hasFreeTrial(planId: PlanId): boolean {
+  const plan = getPlanById(planId);
+  return (plan?.iap.trial.durationDays ?? 0) > 0;
+}
+
+// Helper: vérifie si c'est un programme guidé (avec essai)
+export function isGuidedProgram(planId: PlanId): boolean {
+  return planId === 'jawline_guided' || planId === 'double_guided';
+}
+
+// Helper: retourne le label d'essai approprié pour l'UI
+export function getTrialLabel(planId: PlanId): string {
+  const plan = getPlanById(planId);
+  if (!plan) return '';
+
+  const trialDays = plan.iap.trial.durationDays;
+  if (trialDays > 0) {
+    return `${trialDays} jours d'essai gratuit`;
+  }
+  return 'Résiliable à tout moment';
 }
