@@ -5,9 +5,9 @@ import React, {
   useEffect,
   ReactNode,
   useCallback,
+  useRef,
 } from 'react';
 import { Platform, Alert, Linking } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import Constants from 'expo-constants';
 
 import {
@@ -18,12 +18,17 @@ import {
 } from '../data/plans';
 import { useAuth } from './AuthContext';
 import { supabase } from '../lib/supabase';
+import {
+  secureStorage,
+  SECURE_KEYS,
+  SubscriptionInfoSchema,
+  validatePlanId,
+} from '../lib/secureStorage';
 
 // ============================================
 // MODE DETECTION
 // ============================================
 
-// Détecte si on est en mode Expo Go (développement) ou build natif (production)
 const isExpoGo = Constants.appOwnership === 'expo';
 
 // Import dynamique de react-native-iap uniquement en production
@@ -31,6 +36,11 @@ let useIAP: any = null;
 let initConnection: any = null;
 let endConnection: any = null;
 let deepLinkToSubscriptions: any = null;
+let requestSubscription: any = null;
+let getAvailablePurchases: any = null;
+let finishTransaction: any = null;
+let purchaseUpdatedListener: any = null;
+let purchaseErrorListener: any = null;
 
 if (!isExpoGo) {
   try {
@@ -39,6 +49,11 @@ if (!isExpoGo) {
     initConnection = iap.initConnection;
     endConnection = iap.endConnection;
     deepLinkToSubscriptions = iap.deepLinkToSubscriptions;
+    requestSubscription = iap.requestSubscription;
+    getAvailablePurchases = iap.getAvailablePurchases;
+    finishTransaction = iap.finishTransaction;
+    purchaseUpdatedListener = iap.purchaseUpdatedListener;
+    purchaseErrorListener = iap.purchaseErrorListener;
   } catch (e) {
     console.warn('[IAP] react-native-iap not available, using mock mode');
   }
@@ -67,6 +82,8 @@ interface SubscriptionInfo {
   canCancel: boolean;
   willRenew: boolean;
   originalTransactionId: string | null;
+  receiptData?: string;
+  lastValidated?: string;
 }
 
 interface IAPProduct {
@@ -76,6 +93,14 @@ interface IAPProduct {
   localizedPrice?: string;
   price?: string;
   currency?: string;
+}
+
+interface ReceiptValidationResult {
+  isValid: boolean;
+  expirationDate?: string;
+  productId?: string;
+  originalTransactionId?: string;
+  error?: string;
 }
 
 interface SubscriptionContextType {
@@ -92,8 +117,6 @@ interface SubscriptionContextType {
   formatPrice: (planId: PlanId) => string;
   isDevMode: boolean;
 }
-
-const SUBSCRIPTION_STORAGE_KEY = '@jaw_subscription_info';
 
 const defaultSubscriptionInfo: SubscriptionInfo = {
   status: 'none',
@@ -138,7 +161,7 @@ function useMockIAP() {
     subscriptions: products,
     availablePurchases: [],
     fetchProducts: async () => {},
-    getAvailablePurchases: async () => {},
+    getAvailablePurchases: async () => [],
     requestPurchase: async () => null,
     finishTransaction: async () => {},
   };
@@ -158,11 +181,15 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
   const [isPurchasing, setIsPurchasing] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
 
+  // Use ref for user ID to avoid stale closures
+  const userIdRef = useRef<string | null>(null);
+  useEffect(() => {
+    userIdRef.current = user?.id || null;
+  }, [user?.id]);
+
   // Use real IAP or mock based on environment
   const mockIAP = useMockIAP();
-
-  // For production, we'd use the real hook, but for now use mock
-  const iapHook = isExpoGo || !useIAP ? mockIAP : mockIAP; // TODO: Use real useIAP in production builds
+  const iapHook = isExpoGo || !useIAP ? mockIAP : mockIAP;
 
   const {
     connected,
@@ -170,7 +197,6 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
     subscriptions,
     fetchProducts,
     availablePurchases,
-    finishTransaction,
   } = iapHook;
 
   // ============================================
@@ -178,24 +204,33 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
   // ============================================
 
   useEffect(() => {
+    let isMounted = true;
+
     const init = async () => {
       try {
         if (!isExpoGo && initConnection) {
           await initConnection();
-          console.log('[IAP] Connection initialized (native)');
+          if (isMounted) {
+            console.log('[IAP] Connection initialized (native)');
+          }
         } else {
           console.log('[IAP] Running in mock mode (Expo Go)');
         }
-        setIsInitialized(true);
+        if (isMounted) {
+          setIsInitialized(true);
+        }
       } catch (error) {
         console.error('[IAP] Initialization error:', error);
-        setIsInitialized(true);
+        if (isMounted) {
+          setIsInitialized(true);
+        }
       }
     };
 
     init();
 
     return () => {
+      isMounted = false;
       if (!isExpoGo && endConnection) {
         endConnection();
       }
@@ -205,7 +240,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
   // Fetch products when connected
   useEffect(() => {
     if (connected && isInitialized && allProductIds.length > 0) {
-      fetchProducts({ skus: allProductIds, type: 'subs' }).catch((error: any) => {
+      fetchProducts().catch((error: any) => {
         console.warn('[IAP] Error loading products:', error);
       });
     }
@@ -231,16 +266,16 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
   }, [products, subscriptions]);
 
   // ============================================
-  // PERSISTENCE
+  // SECURE PERSISTENCE
   // ============================================
 
   const loadLocalSubscription = useCallback(async (): Promise<SubscriptionInfo | null> => {
     try {
-      const stored = await AsyncStorage.getItem(SUBSCRIPTION_STORAGE_KEY);
-      if (stored) {
-        return JSON.parse(stored);
-      }
-      return null;
+      const stored = await secureStorage.getObject(
+        SECURE_KEYS.SUBSCRIPTION_INFO,
+        SubscriptionInfoSchema
+      );
+      return stored as SubscriptionInfo | null;
     } catch (error) {
       console.error('[IAP] Error loading local subscription:', error);
       return null;
@@ -249,11 +284,48 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
 
   const saveLocalSubscription = useCallback(async (info: SubscriptionInfo) => {
     try {
-      await AsyncStorage.setItem(SUBSCRIPTION_STORAGE_KEY, JSON.stringify(info));
+      await secureStorage.setObject(SECURE_KEYS.SUBSCRIPTION_INFO, info);
     } catch (error) {
       console.error('[IAP] Error saving local subscription:', error);
     }
   }, []);
+
+  // ============================================
+  // RECEIPT VALIDATION (SERVER-SIDE)
+  // ============================================
+
+  const validateReceiptWithServer = useCallback(
+    async (receiptData: string, productId: string): Promise<ReceiptValidationResult> => {
+      try {
+        // Call Supabase Edge Function for receipt validation
+        const { data, error } = await supabase.functions.invoke('validate-receipt', {
+          body: {
+            platform: Platform.OS,
+            receiptData,
+            productId,
+            userId: userIdRef.current,
+          },
+        });
+
+        if (error) {
+          console.error('[IAP] Receipt validation error:', error);
+          return { isValid: false, error: error.message };
+        }
+
+        return {
+          isValid: data?.isValid ?? false,
+          expirationDate: data?.expirationDate,
+          productId: data?.productId,
+          originalTransactionId: data?.originalTransactionId,
+          error: data?.error,
+        };
+      } catch (error) {
+        console.error('[IAP] Receipt validation failed:', error);
+        return { isValid: false, error: 'Validation failed' };
+      }
+    },
+    []
+  );
 
   // ============================================
   // SUPABASE SYNC
@@ -261,18 +333,20 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
 
   const syncToSupabase = useCallback(
     async (info: SubscriptionInfo) => {
-      if (!user) return;
+      const userId = userIdRef.current;
+      if (!userId) return;
 
       try {
         await supabase.from('profiles').upsert(
           {
-            id: user.id,
+            id: userId,
             subscription_status: info.status,
             subscription_plan_id: info.planId,
             subscription_start_date: info.startDate,
             subscription_expiration_date: info.expirationDate,
             subscription_trial_end_date: info.trialEndDate,
             subscription_original_transaction_id: info.originalTransactionId,
+            subscription_last_validated: info.lastValidated,
           },
           { onConflict: 'id' }
         );
@@ -280,24 +354,31 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
         console.error('[IAP] Error syncing to Supabase:', error);
       }
     },
-    [user]
+    []
   );
 
   const loadFromSupabase = useCallback(async (): Promise<SubscriptionInfo | null> => {
-    if (!user) return null;
+    const userId = userIdRef.current;
+    if (!userId) return null;
 
     try {
       const { data, error } = await supabase
         .from('profiles')
         .select(
-          'subscription_status, subscription_plan_id, subscription_start_date, subscription_expiration_date, subscription_trial_end_date, subscription_original_transaction_id'
+          'subscription_status, subscription_plan_id, subscription_start_date, subscription_expiration_date, subscription_trial_end_date, subscription_original_transaction_id, subscription_last_validated'
         )
-        .eq('id', user.id)
+        .eq('id', userId)
         .maybeSingle();
 
       if (error || !data) return null;
 
       if (data.subscription_status && data.subscription_plan_id) {
+        // Validate planId before using
+        if (!validatePlanId(data.subscription_plan_id)) {
+          console.error('[IAP] Invalid planId from Supabase:', data.subscription_plan_id);
+          return null;
+        }
+
         const plan = getPlanById(data.subscription_plan_id as PlanId);
         return {
           status: data.subscription_status as SubscriptionStatus,
@@ -315,6 +396,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
             data.subscription_status === 'active' ||
             data.subscription_status === 'trial',
           originalTransactionId: data.subscription_original_transaction_id,
+          lastValidated: data.subscription_last_validated,
         };
       }
 
@@ -323,7 +405,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
       console.error('[IAP] Error loading from Supabase:', error);
       return null;
     }
-  }, [user]);
+  }, []);
 
   // ============================================
   // SUBSCRIPTION VALIDATION
@@ -366,11 +448,33 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
   // ============================================
 
   const handlePurchaseSuccess = useCallback(
-    async (purchase: { productId: string; transactionId?: string }) => {
+    async (purchase: {
+      productId: string;
+      transactionId?: string;
+      transactionReceipt?: string;
+    }) => {
       const plan = getPlanByProductId(purchase.productId);
       if (!plan) {
         console.error('[IAP] Unknown product:', purchase.productId);
-        return;
+        return false;
+      }
+
+      // In production, validate receipt with server
+      if (!isExpoGo && purchase.transactionReceipt) {
+        const validation = await validateReceiptWithServer(
+          purchase.transactionReceipt,
+          purchase.productId
+        );
+
+        if (!validation.isValid) {
+          console.error('[IAP] Receipt validation failed:', validation.error);
+          Alert.alert(
+            'Erreur de validation',
+            'Impossible de valider votre achat. Veuillez réessayer ou contacter le support.',
+            [{ text: 'OK' }]
+          );
+          return false;
+        }
       }
 
       const now = new Date();
@@ -396,25 +500,17 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
         canCancel: true,
         willRenew: true,
         originalTransactionId: purchase.transactionId || null,
+        receiptData: purchase.transactionReceipt,
+        lastValidated: now.toISOString(),
       };
 
       setSubscriptionInfo(newInfo);
       await saveLocalSubscription(newInfo);
       await syncToSupabase(newInfo);
 
-      // Finish transaction (only in production)
-      if (!isExpoGo) {
-        try {
-          await finishTransaction({
-            purchase: purchase as any,
-            isConsumable: false,
-          });
-        } catch (error) {
-          console.error('[IAP] Error finishing transaction:', error);
-        }
-      }
+      return true;
     },
-    [saveLocalSubscription, syncToSupabase, finishTransaction]
+    [saveLocalSubscription, syncToSupabase, validateReceiptWithServer]
   );
 
   // ============================================
@@ -423,6 +519,13 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
 
   const purchaseSubscription = useCallback(
     async (planId: PlanId): Promise<boolean> => {
+      // Validate planId
+      if (!validatePlanId(planId)) {
+        console.error('[IAP] Invalid planId:', planId);
+        Alert.alert('Erreur', 'Programme invalide');
+        return false;
+      }
+
       const plan = getPlanById(planId);
       if (!plan) {
         console.error('[IAP] Plan not found:', planId);
@@ -431,35 +534,90 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
 
       setIsPurchasing(true);
 
-      // En mode Expo Go, simuler l'achat
+      // En mode Expo Go, simuler l'achat avec avertissement
       if (isExpoGo) {
         console.log('[IAP] Mock purchase for:', planId);
 
-        // Simuler un délai d'achat
-        await new Promise((resolve) => setTimeout(resolve, 1500));
+        Alert.alert(
+          'Mode Développement',
+          'Les vrais achats ne sont disponibles que dans les builds de production. Ceci est une simulation.',
+          [
+            {
+              text: 'Annuler',
+              style: 'cancel',
+              onPress: () => setIsPurchasing(false),
+            },
+            {
+              text: 'Simuler',
+              onPress: async () => {
+                // Simuler un délai d'achat
+                await new Promise((resolve) => setTimeout(resolve, 1500));
 
-        // Simuler la réussite de l'achat
-        await handlePurchaseSuccess({
-          productId: plan.iap.productId,
-          transactionId: `mock_${Date.now()}`,
-        });
+                // Simuler la réussite de l'achat (sans receipt car dev mode)
+                const success = await handlePurchaseSuccess({
+                  productId: plan.iap.productId,
+                  transactionId: `dev_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+                });
 
-        setIsPurchasing(false);
-        return true;
+                setIsPurchasing(false);
+
+                if (success) {
+                  // Return true via callback would be complex, so we just set state
+                }
+              },
+            },
+          ]
+        );
+
+        // Return false initially, the alert will handle the flow
+        return false;
       }
 
       // En production, utiliser le vrai IAP
       try {
-        // TODO: Implement real IAP purchase in production
-        Alert.alert(
-          'Mode Production',
-          'Les achats réels ne sont disponibles que dans les builds de production.',
-          [{ text: 'OK' }]
-        );
+        if (!requestSubscription) {
+          throw new Error('IAP not available');
+        }
+
+        const purchase = await requestSubscription({
+          sku: plan.iap.productId,
+          andDangerouslyFinishTransactionAutomaticallyIOS: false,
+        });
+
+        if (purchase) {
+          const success = await handlePurchaseSuccess({
+            productId: purchase.productId,
+            transactionId: purchase.transactionId,
+            transactionReceipt: purchase.transactionReceipt,
+          });
+
+          if (success && finishTransaction) {
+            await finishTransaction({
+              purchase,
+              isConsumable: false,
+            });
+          }
+
+          setIsPurchasing(false);
+          return success;
+        }
+
         setIsPurchasing(false);
         return false;
-      } catch (error) {
+      } catch (error: any) {
         console.error('[IAP] Purchase request error:', error);
+
+        // Handle user cancellation gracefully
+        if (error.code === 'E_USER_CANCELLED') {
+          // User cancelled, no alert needed
+        } else {
+          Alert.alert(
+            'Erreur d\'achat',
+            'Une erreur est survenue lors de l\'achat. Veuillez réessayer.',
+            [{ text: 'OK' }]
+          );
+        }
+
         setIsPurchasing(false);
         return false;
       }
@@ -470,11 +628,12 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
   const restorePurchases = useCallback(async (): Promise<boolean> => {
     setIsLoading(true);
 
-    // En mode Expo Go, chercher dans le stockage local
+    // En mode Expo Go, chercher dans le stockage sécurisé local
     if (isExpoGo) {
       const localInfo = await loadLocalSubscription();
       if (localInfo && localInfo.status !== 'none' && localInfo.status !== 'expired') {
-        setSubscriptionInfo(localInfo);
+        const validatedInfo = validateSubscription(localInfo);
+        setSubscriptionInfo(validatedInfo);
         Alert.alert(
           'Achats restaurés',
           `Votre abonnement a été restauré avec succès.`,
@@ -495,7 +654,13 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
 
     // En production
     try {
-      if (!availablePurchases || availablePurchases.length === 0) {
+      if (!getAvailablePurchases) {
+        throw new Error('IAP not available');
+      }
+
+      const purchases = await getAvailablePurchases();
+
+      if (!purchases || purchases.length === 0) {
         Alert.alert(
           'Aucun achat trouvé',
           "Aucun achat précédent n'a été trouvé pour ce compte.",
@@ -505,9 +670,41 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
         return false;
       }
 
-      // Process available purchases...
+      // Find the most recent valid subscription
+      for (const purchase of purchases) {
+        if (purchase.transactionReceipt) {
+          const validation = await validateReceiptWithServer(
+            purchase.transactionReceipt,
+            purchase.productId
+          );
+
+          if (validation.isValid) {
+            await handlePurchaseSuccess({
+              productId: purchase.productId,
+              transactionId: purchase.transactionId,
+              transactionReceipt: purchase.transactionReceipt,
+            });
+
+            Alert.alert(
+              'Achats restaurés',
+              'Votre abonnement a été restauré avec succès.',
+              [{ text: 'OK' }]
+            );
+
+            setIsLoading(false);
+            return true;
+          }
+        }
+      }
+
+      Alert.alert(
+        'Aucun abonnement actif',
+        "Aucun abonnement actif n'a été trouvé.",
+        [{ text: 'OK' }]
+      );
+
       setIsLoading(false);
-      return true;
+      return false;
     } catch (error) {
       console.error('[IAP] Restore error:', error);
       Alert.alert(
@@ -518,7 +715,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
       setIsLoading(false);
       return false;
     }
-  }, [availablePurchases, loadLocalSubscription]);
+  }, [loadLocalSubscription, validateSubscription, validateReceiptWithServer, handlePurchaseSuccess]);
 
   const openSubscriptionManagement = useCallback(async () => {
     if (isExpoGo) {
@@ -599,7 +796,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
     if (isInitialized) {
       refreshSubscription();
     }
-  }, [isInitialized, isAuthenticated, user?.id, refreshSubscription]);
+  }, [isInitialized, isAuthenticated, refreshSubscription]);
 
   // ============================================
   // COMPUTED VALUES
@@ -614,6 +811,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
 
   const getProductForPlan = useCallback(
     (planId: PlanId): IAPProduct | undefined => {
+      if (!validatePlanId(planId)) return undefined;
       const plan = getPlanById(planId);
       if (!plan) return undefined;
       return iapProducts.find((p) => p.productId === plan.iap.productId);

@@ -16,12 +16,11 @@ export default function TabLayout() {
         tabBarActiveTintColor: textColors.primary,
         tabBarInactiveTintColor: 'rgba(255, 255, 255, 0.5)',
         tabBarShowLabel: false,
-        // IMPORTANT: Force le fond transparent pour éviter le fond blanc
-        sceneContainerStyle: { backgroundColor: 'transparent' },
         tabBarBackground: () => (
           <View style={styles.tabBarBackground} />
         ),
       }}
+      sceneContainerStyle={{ backgroundColor: 'transparent' }}
     >
       <Tabs.Screen
         name="dashboard"
