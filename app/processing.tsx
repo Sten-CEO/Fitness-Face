@@ -1,6 +1,6 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useRef } from 'react';
-import { Animated, Easing, StyleSheet, Text, View } from 'react-native';
+import { Alert, Animated, Easing, StyleSheet, Text, View } from 'react-native';
 
 import TransitionBackground from '../components/TransitionBackground';
 import type { PlanId } from '../data/plans';
@@ -18,6 +18,8 @@ export default function ProcessingScreen() {
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
+    // DEBUG ALERT
+    Alert.alert('DEBUG Processing', `Processing screen loaded!\nplanId: ${planId}`);
     console.log('[NAVIGATION] ProcessingScreen useEffect running');
 
     Animated.timing(fadeAnim, {
