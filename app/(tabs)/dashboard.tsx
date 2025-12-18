@@ -25,7 +25,7 @@ import { typography, textColors } from '../../theme/typography';
 export default function DashboardScreen() {
   const router = useRouter();
   const { firstName } = useUser();
-  const { hasActiveAccess, isLoading: subscriptionLoading } = useSubscription();
+  const { hasActiveAccess, isLoading: subscriptionLoading, subscriptionInfo } = useSubscription();
   const {
     selectedPlanId,
     currentDay,
@@ -40,6 +40,13 @@ export default function DashboardScreen() {
     completedRoutines,
     isLoading: progressLoading,
   } = useProgress();
+
+  console.log('[NAVIGATION] DashboardScreen mounted');
+  console.log('[NAVIGATION] Dashboard - hasActiveAccess:', hasActiveAccess);
+  console.log('[NAVIGATION] Dashboard - subscriptionLoading:', subscriptionLoading);
+  console.log('[NAVIGATION] Dashboard - progressLoading:', progressLoading);
+  console.log('[NAVIGATION] Dashboard - subscriptionInfo:', JSON.stringify(subscriptionInfo));
+  console.log('[NAVIGATION] Dashboard - selectedPlanId:', selectedPlanId);
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnims = useRef([
@@ -56,7 +63,10 @@ export default function DashboardScreen() {
   // Rediriger vers la page d'achat si pas d'abonnement actif
   // hasActiveAccess est la source de vérité (pas selectedPlanId qui peut être en cache)
   useEffect(() => {
+    console.log('[NAVIGATION] Dashboard useEffect - checking redirect');
+    console.log('[NAVIGATION] Dashboard - subscriptionLoading:', subscriptionLoading, 'progressLoading:', progressLoading, 'hasActiveAccess:', hasActiveAccess);
     if (!subscriptionLoading && !progressLoading && !hasActiveAccess) {
+      console.log('[NAVIGATION] Dashboard -> redirecting to /result');
       router.replace('/result');
     }
   }, [hasActiveAccess, subscriptionLoading, progressLoading, router]);
