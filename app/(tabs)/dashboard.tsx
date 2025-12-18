@@ -54,11 +54,12 @@ export default function DashboardScreen() {
   const todayTip = getTodayTip(currentDay);
 
   // Rediriger vers la page d'achat si pas d'accès actif
+  // hasActiveAccess est la source de vérité (pas selectedPlanId qui peut être en cache)
   useEffect(() => {
-    if (!subscriptionLoading && !progressLoading && !hasActiveAccess && !selectedPlanId) {
+    if (!subscriptionLoading && !progressLoading && !hasActiveAccess) {
       router.replace('/result');
     }
-  }, [hasActiveAccess, selectedPlanId, subscriptionLoading, progressLoading, router]);
+  }, [hasActiveAccess, subscriptionLoading, progressLoading, router]);
 
   // Trophy system
   const userProgress = { completedDaysCount, streak, completedBonusesCount };
