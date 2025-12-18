@@ -778,11 +778,15 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
   // ============================================
 
   const refreshSubscription = useCallback(async () => {
+    console.log('🔄 [SUBSCRIPTION] refreshSubscription called, userId:', userIdRef.current);
     setIsLoading(true);
 
     try {
       const supabaseInfo = await loadFromSupabase();
       const localInfo = await loadLocalSubscription();
+
+      console.log('🔄 [SUBSCRIPTION] supabaseInfo:', supabaseInfo?.status || 'null');
+      console.log('🔄 [SUBSCRIPTION] localInfo:', localInfo?.status || 'null');
 
       // IMPORTANT: Pour un utilisateur authentifié, Supabase est la source de vérité
       // Ne PAS utiliser le cache local comme fallback (pourrait être d'un autre utilisateur)
@@ -792,13 +796,18 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
       if (userIdRef.current) {
         // Utilisateur connecté : utiliser Supabase ou default (PAS le cache local)
         currentInfo = supabaseInfo || defaultSubscriptionInfo;
-        console.log('[IAP] User authenticated, using Supabase data:', currentInfo.status);
+        console.log('🔄 [SUBSCRIPTION] User authenticated → using:', currentInfo.status);
       } else {
         // Utilisateur non connecté : utiliser cache local si disponible
         currentInfo = localInfo || defaultSubscriptionInfo;
+        console.log('🔄 [SUBSCRIPTION] User NOT authenticated → using:', currentInfo.status);
       }
 
       const validatedInfo = validateSubscription(currentInfo);
+      const hasAccess = validatedInfo.status === 'trial' || validatedInfo.status === 'active' ||
+        (validatedInfo.status === 'cancelled' && validatedInfo.expirationDate != null && new Date(validatedInfo.expirationDate) > new Date());
+
+      console.log('🔄 [SUBSCRIPTION] Final status:', validatedInfo.status, '→ hasActiveAccess:', hasAccess);
 
       setSubscriptionInfo(validatedInfo);
 

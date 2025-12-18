@@ -1,21 +1,27 @@
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import React, { useEffect, useRef } from 'react';
+import { useLocalSearchParams } from 'expo-router';
+import React, { useEffect, useRef, useState } from 'react';
 import { Animated, Easing, StyleSheet, Text, View } from 'react-native';
 
 import TransitionBackground from '../components/TransitionBackground';
 import type { PlanId } from '../data/plans';
+import { useOnboardingRouter } from '../hooks/useOnboardingRouter';
 import { typography, textColors } from '../theme/typography';
 
 export default function ProcessingScreen() {
-  const router = useRouter();
   const { planId } = useLocalSearchParams<{ planId: PlanId }>();
+  const { isReady, subscriptionLoading, hasActiveAccess, routeAfterOnboarding } = useOnboardingRouter();
+  const [animationDone, setAnimationDone] = useState(false);
+  const hasRoutedRef = useRef(false);
 
   const dot1 = useRef(new Animated.Value(0)).current;
   const dot2 = useRef(new Animated.Value(0)).current;
   const dot3 = useRef(new Animated.Value(0)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
+  // Animation effect
   useEffect(() => {
+    console.log('🟡 [PROCESSING] Screen mounted with planId:', planId);
+
     Animated.timing(fadeAnim, {
       toValue: 1,
       duration: 400,
@@ -50,14 +56,10 @@ export default function ProcessingScreen() {
     anim2.start();
     anim3.start();
 
-    console.log('🟡 [PROCESSING] Screen mounted with planId:', planId);
-
+    // Timer minimum d'animation (2.5s)
     const timeout = setTimeout(() => {
-      console.log('🟢 [PROCESSING] Timer done → navigating to /result with planId:', planId || 'all_in_one');
-      router.replace({
-        pathname: '/result',
-        params: { planId: planId || 'all_in_one' },
-      });
+      console.log('🟢 [PROCESSING] Animation timer done');
+      setAnimationDone(true);
     }, 2500);
 
     return () => {
@@ -67,6 +69,18 @@ export default function ProcessingScreen() {
       clearTimeout(timeout);
     };
   }, [planId]);
+
+  // Navigation effect: route quand animation ET subscription sont prêts
+  useEffect(() => {
+    console.log('🟢 [PROCESSING] Check routing - animationDone:', animationDone, 'isReady:', isReady, 'hasRouted:', hasRoutedRef.current);
+
+    if (animationDone && isReady && !hasRoutedRef.current) {
+      hasRoutedRef.current = true;
+      console.log('🟢 [PROCESSING] Calling routeAfterOnboarding with planId:', planId || 'jawline_guided');
+      console.log('🟢 [PROCESSING] subscriptionLoading:', subscriptionLoading, 'hasActiveAccess:', hasActiveAccess);
+      routeAfterOnboarding(planId || 'jawline_guided');
+    }
+  }, [animationDone, isReady, planId, routeAfterOnboarding, subscriptionLoading, hasActiveAccess]);
 
   const renderDot = (anim: Animated.Value) => (
     <Animated.View
