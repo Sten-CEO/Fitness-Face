@@ -84,12 +84,9 @@ export default function ResultScreen() {
     }).start();
   }, []);
 
-  // Rediriger si l'utilisateur a déjà un abonnement actif
-  useEffect(() => {
-    if (hasActiveAccess && subscriptionInfo.planId) {
-      router.replace('/(tabs)/dashboard');
-    }
-  }, [hasActiveAccess, subscriptionInfo.planId, router]);
+  // Note: Pas de redirection automatique ici - c'est l'écran d'onboarding
+  // L'utilisateur doit explicitement choisir et acheter un abonnement
+  // La vérification d'accès se fait dans dashboard.tsx
 
   const handleTabChange = (key: string) => {
     if (key === activeTab) return;
