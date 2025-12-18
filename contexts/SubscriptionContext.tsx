@@ -180,8 +180,29 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
   const purchaseErrorSubscription = useRef<EmitterSubscription | null>(null);
   const pendingPurchaseResolve = useRef<((success: boolean) => void) | null>(null);
 
+  // Track previous user ID to detect user changes
+  const prevUserIdRef = useRef<string | null>(null);
+
   useEffect(() => {
     userIdRef.current = user?.id || null;
+  }, [user?.id]);
+
+  // Clear subscription data when user changes (logout/login with different account)
+  useEffect(() => {
+    const currentUserId = user?.id || null;
+    const previousUserId = prevUserIdRef.current;
+
+    // If user changed (not just initial load), reset subscription state
+    if (previousUserId !== null && currentUserId !== previousUserId) {
+      console.log('[IAP] User changed - clearing cached subscription data');
+      setSubscriptionInfo(defaultSubscriptionInfo);
+      setIsLoading(true);
+
+      // Clear local storage subscription data
+      secureStorage.deleteItem(SECURE_KEYS.SUBSCRIPTION_INFO).catch(console.warn);
+    }
+
+    prevUserIdRef.current = currentUserId;
   }, [user?.id]);
 
   // ============================================
