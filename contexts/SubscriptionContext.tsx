@@ -798,9 +798,15 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
         currentInfo = supabaseInfo || defaultSubscriptionInfo;
         console.log('🔄 [SUBSCRIPTION] User authenticated → using:', currentInfo.status);
       } else {
-        // Utilisateur non connecté : utiliser cache local si disponible
-        currentInfo = localInfo || defaultSubscriptionInfo;
-        console.log('🔄 [SUBSCRIPTION] User NOT authenticated → using:', currentInfo.status);
+        // Utilisateur NON connecté : JAMAIS utiliser le cache (pourrait être d'un ancien user)
+        // Toujours retourner defaultSubscriptionInfo (status: 'none', hasActiveAccess: false)
+        currentInfo = defaultSubscriptionInfo;
+        console.log('🔄 [SUBSCRIPTION] User NOT authenticated → using default (none)');
+        // Nettoyer le cache local s'il existe
+        if (localInfo) {
+          console.log('🔄 [SUBSCRIPTION] Clearing stale local cache');
+          secureStorage.deleteItem(SECURE_KEYS.SUBSCRIPTION_INFO).catch(() => {});
+        }
       }
 
       const validatedInfo = validateSubscription(currentInfo);
@@ -839,7 +845,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
       console.log('[IAP] User changed, resetting subscription state');
       setSubscriptionInfo(defaultSubscriptionInfo);
       // Clear local storage to prevent stale data
-      secureStorage.delete(SECURE_KEYS.SUBSCRIPTION_INFO).catch(() => {});
+      secureStorage.deleteItem(SECURE_KEYS.SUBSCRIPTION_INFO).catch(() => {});
     }
 
     previousUserIdRef.current = currentUserId;
