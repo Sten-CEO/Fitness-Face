@@ -1,15 +1,19 @@
 {
   "expo": {
-    "name": "fitness-face",
-    "slug": "fitness-face",
+    "name": "Jaw",
+    "slug": "jaw-app",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "fitnessface",
+    "scheme": "jaw",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.jaw.app",
+      "infoPlist": {
+        "SKAdNetworkItems": []
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -19,7 +23,11 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.jaw.app",
+      "permissions": [
+        "com.android.vending.BILLING"
+      ]
     },
     "web": {
       "output": "static",
@@ -43,6 +51,11 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "eas": {
+        "projectId": "your-project-id"
+      }
     }
   }
 }

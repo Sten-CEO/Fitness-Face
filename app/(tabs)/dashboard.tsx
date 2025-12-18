@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useRef } from 'react';
 import {
+  ActivityIndicator,
   Animated,
   ScrollView,
   StyleSheet,
@@ -14,15 +15,17 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import CleanCard from '../../components/CleanCard';
 import TabBackground from '../../components/TabBackground';
 import { useProgress } from '../../contexts/ProgressContext';
+import { useSubscription } from '../../contexts/SubscriptionContext';
 import { useUser } from '../../contexts/UserContext';
 import { getRoutineForPlan } from '../../data/routines';
 import { getTodayTip } from '../../data/tips';
-import { getActiveTrophy, getTrophyProgress, TROPHIES } from '../../data/trophies';
+import { getActiveTrophy, getTrophyProgress } from '../../data/trophies';
 import { typography, textColors } from '../../theme/typography';
 
 export default function DashboardScreen() {
   const router = useRouter();
   const { firstName } = useUser();
+  const { hasActiveAccess, isLoading: subscriptionLoading } = useSubscription();
   const {
     selectedPlanId,
     currentDay,
@@ -35,6 +38,7 @@ export default function DashboardScreen() {
     daysRemaining,
     hasCompletedTodayRoutine,
     completedRoutines,
+    isLoading: progressLoading,
   } = useProgress();
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -48,6 +52,13 @@ export default function DashboardScreen() {
 
   const routine = selectedPlanId ? getRoutineForPlan(selectedPlanId) : null;
   const todayTip = getTodayTip(currentDay);
+
+  // Rediriger vers la page d'achat si pas d'accès actif
+  useEffect(() => {
+    if (!subscriptionLoading && !progressLoading && !hasActiveAccess && !selectedPlanId) {
+      router.replace('/result');
+    }
+  }, [hasActiveAccess, selectedPlanId, subscriptionLoading, progressLoading, router]);
 
   // Trophy system
   const userProgress = { completedDaysCount, streak, completedBonusesCount };
@@ -72,6 +83,19 @@ export default function DashboardScreen() {
       }).start();
     });
   }, []);
+
+  // Afficher un loader pendant le chargement
+  if (subscriptionLoading || progressLoading) {
+    return (
+      <TabBackground>
+        <SafeAreaView style={styles.safeArea} edges={['top']}>
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color={textColors.accent} />
+          </View>
+        </SafeAreaView>
+      </TabBackground>
+    );
+  }
 
   return (
     <TabBackground>
@@ -314,6 +338,11 @@ const styles = StyleSheet.create({
   },
   safeArea: {
     flex: 1,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   scrollView: {
     flex: 1,

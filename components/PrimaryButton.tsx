@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { ReactNode, useRef } from 'react';
 import {
   Animated,
   TouchableWithoutFeedback,
@@ -17,6 +17,7 @@ interface PrimaryButtonProps {
   style?: ViewStyle;
   textStyle?: TextStyle;
   disabled?: boolean;
+  children?: ReactNode;
 }
 
 export default function PrimaryButton({
@@ -25,6 +26,7 @@ export default function PrimaryButton({
   style,
   textStyle,
   disabled = false,
+  children,
 }: PrimaryButtonProps) {
   const scaleAnim = useRef(new Animated.Value(1)).current;
 
@@ -60,9 +62,11 @@ export default function PrimaryButton({
         style,
       ]}>
         <View style={styles.buttonInner}>
-          <Text style={[styles.text, textStyle]}>
-            {title}
-          </Text>
+          {children || (
+            <Text style={[styles.text, textStyle]}>
+              {title}
+            </Text>
+          )}
         </View>
       </Animated.View>
     </TouchableWithoutFeedback>
