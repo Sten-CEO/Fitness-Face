@@ -60,6 +60,11 @@ export default function ResultScreen() {
     useSubscription();
   const { planId } = useLocalSearchParams<{ planId: string }>();
 
+  // DEBUG: Alert visible pour tracer la navigation
+  useEffect(() => {
+    Alert.alert('DEBUG', `ResultScreen chargé!\nhasActiveAccess: ${hasActiveAccess}\nstatus: ${subscriptionInfo.status}`);
+  }, []);
+
   console.log('[NAVIGATION] ResultScreen mounted');
   console.log('[NAVIGATION] ResultScreen - hasActiveAccess:', hasActiveAccess);
   console.log('[NAVIGATION] ResultScreen - subscriptionInfo:', JSON.stringify(subscriptionInfo));

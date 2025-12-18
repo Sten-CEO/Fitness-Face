@@ -3,6 +3,7 @@ import { useRouter } from 'expo-router';
 import React, { useEffect, useRef } from 'react';
 import {
   ActivityIndicator,
+  Alert,
   Animated,
   ScrollView,
   StyleSheet,
@@ -40,6 +41,11 @@ export default function DashboardScreen() {
     completedRoutines,
     isLoading: progressLoading,
   } = useProgress();
+
+  // DEBUG: Alert visible pour tracer la navigation
+  useEffect(() => {
+    Alert.alert('DEBUG Dashboard', `hasActiveAccess: ${hasActiveAccess}\nsubscriptionLoading: ${subscriptionLoading}\nprogressLoading: ${progressLoading}\nstatus: ${subscriptionInfo.status}`);
+  }, []);
 
   console.log('[NAVIGATION] DashboardScreen mounted');
   console.log('[NAVIGATION] Dashboard - hasActiveAccess:', hasActiveAccess);
