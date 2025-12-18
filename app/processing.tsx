@@ -50,7 +50,10 @@ export default function ProcessingScreen() {
     anim2.start();
     anim3.start();
 
+    console.log('🟡 [PROCESSING] Screen mounted with planId:', planId);
+
     const timeout = setTimeout(() => {
+      console.log('🟢 [PROCESSING] Timer done → navigating to /result with planId:', planId || 'all_in_one');
       router.replace({
         pathname: '/result',
         params: { planId: planId || 'all_in_one' },

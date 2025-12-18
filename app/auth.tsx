@@ -87,6 +87,7 @@ export default function AuthScreen() {
         } else {
           // Connexion réussie - aller vers result pour vérifier l'abonnement
           // Si l'utilisateur a un abonnement actif, result.tsx le redirigera vers le dashboard
+          console.log('🔵 [AUTH] LOGIN SUCCESS → navigating to /result');
           router.replace('/result');
         }
       } else {
@@ -100,6 +101,7 @@ export default function AuthScreen() {
           }
         } else {
           // Inscription réussie - sauvegarder le prénom et aller vers welcome
+          console.log('🔵 [AUTH] SIGNUP SUCCESS → navigating to /welcome');
           setFirstName(firstName.trim());
           router.replace('/welcome');
         }
