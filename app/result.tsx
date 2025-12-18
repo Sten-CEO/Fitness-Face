@@ -59,10 +59,10 @@ export default function ResultScreen() {
   const { planId } = useLocalSearchParams<{ planId: string }>();
 
   // Validate planId from URL params to prevent injection
-  const validPlanIds = Object.keys(plans) as PlanId[];
+  const validPlanIds = plans.map(p => p.id);
   const selectedPlanId: PlanId = (planId && validatePlanId(planId) && validPlanIds.includes(planId as PlanId))
     ? (planId as PlanId)
-    : 'jawline_90';
+    : 'jawline_guided';
   const mainPlan = getPlanById(selectedPlanId);
   const alternativePlan = getAlternativePlan(selectedPlanId);
 
@@ -84,12 +84,8 @@ export default function ResultScreen() {
     }).start();
   }, []);
 
-  // Rediriger si l'utilisateur a déjà un abonnement actif
-  useEffect(() => {
-    if (hasActiveAccess && subscriptionInfo.planId) {
-      router.replace('/(tabs)/dashboard');
-    }
-  }, [hasActiveAccess, subscriptionInfo.planId, router]);
+  // NOTE: Pas de redirection automatique vers le dashboard ici
+  // C'est l'écran d'onboarding - l'utilisateur doit choisir son abonnement
 
   const handleTabChange = (key: string) => {
     if (key === activeTab) return;
