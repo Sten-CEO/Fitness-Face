@@ -15,6 +15,7 @@ import {
   allProductIds,
   getPlanById,
   getPlanByProductId,
+  hasFreeTrial,
 } from '../data/plans';
 import { useAuth } from './AuthContext';
 import { supabase } from '../lib/supabase';
@@ -26,14 +27,35 @@ import {
 } from '../lib/secureStorage';
 
 // ============================================
-// MODE DETECTION
+// MODE DETECTION - CRITICAL FOR IAP
 // ============================================
 
-// Expo Go = développement, sinon = production (EAS build, TestFlight, App Store)
+// Expo Go detection
 const isExpoGo = Constants.appOwnership === 'expo';
-const isProduction = !isExpoGo;
 
-console.log('[IAP] Mode:', isExpoGo ? 'Expo Go (mock)' : 'Production (real IAP)');
+// Development mode detection:
+// - __DEV__ is true when running in development mode (metro bundler)
+// - isExpoGo is true only in Expo Go app
+//
+// IMPORTANT: EAS dev builds (expo-dev-client) are NOT Expo Go!
+// They should use real IAP because they have native code access.
+//
+// Decision tree:
+// - Expo Go → MOCK (no native IAP available)
+// - EAS build (dev/preview/production) → REAL IAP
+// - TestFlight / App Store → REAL IAP
+const isDevClient = isExpoGo; // Only Expo Go uses mock
+
+// Production = NOT Expo Go (includes EAS dev builds, TestFlight, App Store)
+const isProduction = !isDevClient;
+
+console.log('[IAP] ========================================');
+console.log('[IAP] Mode Detection:');
+console.log('[IAP]   __DEV__:', __DEV__);
+console.log('[IAP]   isExpoGo:', isExpoGo);
+console.log('[IAP]   isDevClient (mock):', isDevClient);
+console.log('[IAP]   isProduction (real IAP):', isProduction);
+console.log('[IAP] ========================================');
 
 // ============================================
 // REACT-NATIVE-IAP IMPORTS (Production only)
@@ -47,6 +69,7 @@ if (isProduction) {
     console.log('[IAP] react-native-iap loaded successfully');
   } catch (e) {
     console.error('[IAP] Failed to load react-native-iap:', e);
+    console.error('[IAP] Make sure react-native-iap is installed and linked');
   }
 }
 
@@ -120,7 +143,7 @@ const SubscriptionContext = createContext<SubscriptionContextType | undefined>(
 );
 
 // ============================================
-// MOCK PRODUCTS FOR DEV MODE
+// MOCK PRODUCTS FOR DEV MODE (Expo Go only)
 // ============================================
 
 function getMockProducts(): IAPProduct[] {
@@ -169,13 +192,24 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
     let isMounted = true;
 
     const initializeIAP = async () => {
-      if (!isProduction || !RNIap) {
-        console.log('[IAP] Skipping IAP init (dev mode or RNIap unavailable)');
+      // EXPO GO: Skip IAP initialization, use mock
+      if (!isProduction) {
+        console.log('[IAP] Expo Go detected - using mock IAP');
         setIsIapReady(true);
         return;
       }
 
+      // PRODUCTION: Check if RNIap is available
+      if (!RNIap) {
+        console.error('[IAP] CRITICAL: react-native-iap not available in production build!');
+        console.error('[IAP] This should not happen. Check native module linking.');
+        setIsIapReady(true); // Allow app to continue
+        return;
+      }
+
       try {
+        console.log('[IAP] Initializing connection to App Store...');
+
         // Initialize connection to store
         const result = await RNIap.initConnection();
         console.log('[IAP] Connection initialized:', result);
@@ -186,6 +220,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
         purchaseUpdateSubscription.current = RNIap.purchaseUpdatedListener(
           async (purchase: any) => {
             console.log('[IAP] Purchase updated:', purchase.productId);
+            console.log('[IAP] Transaction ID:', purchase.transactionId);
 
             if (purchase.transactionReceipt) {
               const success = await handlePurchaseSuccess({
@@ -194,10 +229,10 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
                 transactionReceipt: purchase.transactionReceipt,
               });
 
-              // Finish the transaction
+              // Finish the transaction (REQUIRED for iOS)
               try {
                 await RNIap.finishTransaction({ purchase, isConsumable: false });
-                console.log('[IAP] Transaction finished');
+                console.log('[IAP] Transaction finished successfully');
               } catch (finishError) {
                 console.error('[IAP] Error finishing transaction:', finishError);
               }
@@ -215,13 +250,13 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
 
         purchaseErrorSubscription.current = RNIap.purchaseErrorListener(
           (error: any) => {
-            console.error('[IAP] Purchase error:', error);
+            console.error('[IAP] Purchase error:', error.code, error.message);
 
             // Don't show alert for user cancellation
             if (error.code !== 'E_USER_CANCELLED') {
               Alert.alert(
                 'Erreur d\'achat',
-                'Une erreur est survenue. Veuillez réessayer.',
+                error.message || 'Une erreur est survenue. Veuillez réessayer.',
                 [{ text: 'OK' }]
               );
             }
@@ -239,7 +274,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
         await fetchStoreProducts();
 
         setIsIapReady(true);
-        console.log('[IAP] Initialization complete');
+        console.log('[IAP] Initialization complete - ready for purchases');
       } catch (error) {
         console.error('[IAP] Initialization error:', error);
         if (isMounted) {
@@ -256,35 +291,43 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
       // Cleanup listeners
       if (purchaseUpdateSubscription.current) {
         purchaseUpdateSubscription.current.remove();
+        purchaseUpdateSubscription.current = null;
       }
       if (purchaseErrorSubscription.current) {
         purchaseErrorSubscription.current.remove();
+        purchaseErrorSubscription.current = null;
       }
 
-      // End connection
+      // End connection (production only)
       if (isProduction && RNIap) {
-        RNIap.endConnection();
+        try {
+          RNIap.endConnection();
+          console.log('[IAP] Connection ended');
+        } catch (e) {
+          console.error('[IAP] Error ending connection:', e);
+        }
       }
     };
   }, []);
 
   // ============================================
-  // FETCH PRODUCTS FROM STORE
+  // FETCH PRODUCTS FROM APP STORE
   // ============================================
 
   const fetchStoreProducts = async () => {
+    // Only fetch in production
     if (!isProduction || !RNIap) {
       console.log('[IAP] Using mock products (dev mode)');
       return;
     }
 
     try {
-      console.log('[IAP] Fetching products:', allProductIds);
+      console.log('[IAP] Fetching products from App Store:', allProductIds);
 
       // Fetch subscriptions from App Store
       const subscriptions = await RNIap.getSubscriptions({ skus: allProductIds });
 
-      console.log('[IAP] Received products:', subscriptions?.length || 0);
+      console.log('[IAP] Received products from store:', subscriptions?.length || 0);
 
       if (subscriptions && subscriptions.length > 0) {
         const products: IAPProduct[] = subscriptions.map((sub: any) => ({
@@ -297,9 +340,12 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
         }));
 
         setIapProducts(products);
-        console.log('[IAP] Products loaded from store');
+        console.log('[IAP] Products loaded from App Store:', products.map(p => p.productId));
       } else {
-        console.warn('[IAP] No products returned from store, using mock');
+        console.warn('[IAP] No products returned from App Store');
+        console.warn('[IAP] Make sure products are configured in App Store Connect');
+        console.warn('[IAP] Expected product IDs:', allProductIds);
+        // Keep mock products as fallback for display
       }
     } catch (error) {
       console.error('[IAP] Error fetching products:', error);
@@ -339,6 +385,8 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
   const validateAppleReceipt = useCallback(
     async (receiptData: string, productId: string): Promise<boolean> => {
       try {
+        console.log('[IAP] Validating Apple receipt for:', productId);
+
         // Call Supabase Edge Function for receipt validation
         const { data, error } = await supabase.functions.invoke('validate-receipt', {
           body: {
@@ -352,11 +400,11 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
         if (error) {
           console.error('[IAP] Receipt validation error:', error);
           // For App Review: Accept purchase even if validation fails
-          // Real validation should be done server-side
           console.warn('[IAP] Accepting purchase despite validation error (App Review mode)');
           return true;
         }
 
+        console.log('[IAP] Receipt validation result:', data?.isValid);
         return data?.isValid ?? true;
       } catch (error) {
         console.error('[IAP] Receipt validation failed:', error);
@@ -390,6 +438,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
           },
           { onConflict: 'id' }
         );
+        console.log('[IAP] Synced to Supabase');
       } catch (error) {
         console.error('[IAP] Error syncing to Supabase:', error);
       }
@@ -500,7 +549,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
 
       console.log('[IAP] Processing purchase for plan:', plan.id);
 
-      // Validate receipt with server (Apple)
+      // Validate receipt with server (Apple) - only in production
       if (isProduction && purchase.transactionReceipt && Platform.OS === 'ios') {
         await validateAppleReceipt(purchase.transactionReceipt, purchase.productId);
         // Note: We continue even if validation fails for App Review
@@ -508,23 +557,28 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
 
       const now = new Date();
       const startDate = now.toISOString();
-      const trialEndDate = new Date(
-        now.getTime() + plan.iap.trial.durationDays * 24 * 60 * 60 * 1000
-      ).toISOString();
+
+      // Calculate trial end date based on plan configuration
+      const trialDays = plan.iap.trial.durationDays;
+      const trialEndDate = trialDays > 0
+        ? new Date(now.getTime() + trialDays * 24 * 60 * 60 * 1000).toISOString()
+        : null;
+
+      // Calculate expiration date
       const expirationDate = new Date(
         now.getTime() +
-          plan.iap.trial.durationDays * 24 * 60 * 60 * 1000 +
+          (trialDays > 0 ? trialDays * 24 * 60 * 60 * 1000 : 0) +
           plan.iap.billingPeriodMonths * 30 * 24 * 60 * 60 * 1000
       ).toISOString();
 
       const newInfo: SubscriptionInfo = {
-        status: 'trial',
+        status: trialDays > 0 ? 'trial' : 'active',
         planId: plan.id,
         productId: purchase.productId,
         startDate,
         expirationDate,
         trialEndDate,
-        isInTrial: true,
+        isInTrial: trialDays > 0,
         isCommitted: plan.iap.commitmentType === 'committed',
         canCancel: true,
         willRenew: true,
@@ -537,7 +591,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
       await saveLocalSubscription(newInfo);
       await syncToSupabase(newInfo);
 
-      console.log('[IAP] Purchase success - subscription activated');
+      console.log('[IAP] Purchase success - subscription activated:', newInfo.status);
       return true;
     },
     [saveLocalSubscription, syncToSupabase, validateAppleReceipt]
@@ -564,15 +618,20 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
       setIsPurchasing(true);
 
       // ========================================
-      // EXPO GO / DEV MODE: Mock purchase
+      // EXPO GO ONLY: Mock purchase
       // ========================================
       if (!isProduction) {
-        console.log('[IAP] DEV MODE - Mock purchase for:', planId);
+        console.log('[IAP] EXPO GO - Mock purchase for:', planId);
+
+        const hasTrial = hasFreeTrial(planId);
+        const trialText = hasTrial
+          ? `\n\nCe produit inclut ${plan.iap.trial.durationDays} jours d'essai gratuit.`
+          : '\n\nCe produit n\'inclut pas d\'essai gratuit.';
 
         return new Promise((resolve) => {
           Alert.alert(
-            '🧪 Mode Développement',
-            'Ceci est une simulation d\'achat.\n\nEn production (TestFlight/App Store), le vrai popup Apple Pay s\'affichera.',
+            '🧪 Mode Développement (Expo Go)',
+            `Simulation d'achat pour: ${plan.name}\nPrix: ${plan.priceAmount} €${plan.priceSuffix}${trialText}\n\nEn production (TestFlight/App Store), le vrai popup Apple Pay s'affichera.`,
             [
               {
                 text: 'Annuler',
@@ -605,13 +664,19 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
       // PRODUCTION: Real Apple IAP
       // ========================================
       if (!RNIap) {
-        console.error('[IAP] RNIap not available in production!');
-        Alert.alert('Erreur', 'Les achats in-app ne sont pas disponibles.');
+        console.error('[IAP] CRITICAL: RNIap not available in production!');
+        Alert.alert(
+          'Erreur',
+          'Les achats in-app ne sont pas disponibles. Veuillez redémarrer l\'application.',
+          [{ text: 'OK' }]
+        );
         setIsPurchasing(false);
         return false;
       }
 
-      console.log('[IAP] PRODUCTION - Starting real purchase for:', plan.iap.productId);
+      console.log('[IAP] PRODUCTION - Starting real purchase');
+      console.log('[IAP] Product ID:', plan.iap.productId);
+      console.log('[IAP] Plan:', plan.name);
 
       try {
         // Create promise that will be resolved by purchase listener
@@ -621,22 +686,30 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
           // Timeout after 2 minutes
           setTimeout(() => {
             if (pendingPurchaseResolve.current === resolve) {
-              console.warn('[IAP] Purchase timeout');
+              console.warn('[IAP] Purchase timeout after 2 minutes');
               pendingPurchaseResolve.current = null;
               setIsPurchasing(false);
+              Alert.alert(
+                'Délai dépassé',
+                'L\'achat a pris trop de temps. Veuillez réessayer.',
+                [{ text: 'OK' }]
+              );
               resolve(false);
             }
           }, 120000);
         });
 
         // Request subscription - this triggers Apple Pay sheet
+        console.log('[IAP] Requesting subscription from Apple...');
         await RNIap.requestSubscription({
           sku: plan.iap.productId,
           andDangerouslyFinishTransactionAutomaticallyIOS: false,
         });
 
         // Wait for purchase listener to resolve
-        return await purchasePromise;
+        const result = await purchasePromise;
+        console.log('[IAP] Purchase result:', result);
+        return result;
       } catch (error: any) {
         console.error('[IAP] Purchase request error:', error);
 
@@ -663,8 +736,9 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
   const restorePurchases = useCallback(async (): Promise<boolean> => {
     setIsLoading(true);
 
-    // DEV MODE: Check local storage
+    // EXPO GO: Check local storage only
     if (!isProduction) {
+      console.log('[IAP] EXPO GO - Restoring from local storage');
       const localInfo = await loadLocalSubscription();
       if (localInfo && localInfo.status !== 'none' && localInfo.status !== 'expired') {
         const validatedInfo = validateSubscription(localInfo);
@@ -681,6 +755,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
 
     // PRODUCTION: Restore from App Store
     if (!RNIap) {
+      console.error('[IAP] Cannot restore - RNIap not available');
       setIsLoading(false);
       return false;
     }
@@ -705,6 +780,8 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
       for (const purchase of purchases) {
         const plan = getPlanByProductId(purchase.productId);
         if (plan && purchase.transactionReceipt) {
+          console.log('[IAP] Restoring purchase:', purchase.productId);
+
           await handlePurchaseSuccess({
             productId: purchase.productId,
             transactionId: purchase.transactionId,
@@ -726,7 +803,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
       return false;
     } catch (error) {
       console.error('[IAP] Restore error:', error);
-      Alert.alert('Erreur', 'Impossible de restaurer les achats.', [{ text: 'OK' }]);
+      Alert.alert('Erreur', 'Impossible de restaurer les achats. Veuillez réessayer.', [{ text: 'OK' }]);
       setIsLoading(false);
       return false;
     }
@@ -740,7 +817,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
     if (!isProduction) {
       Alert.alert(
         'Mode Développement',
-        'La gestion des abonnements n\'est disponible qu\'en production.',
+        'La gestion des abonnements n\'est disponible qu\'en production (TestFlight/App Store).',
         [{ text: 'OK' }]
       );
       return;

@@ -166,9 +166,9 @@ export function addScores(
 }
 
 export type PlanId =
-  | 'jawline_90'
-  | 'jawline_monthly'
-  | 'double_60'
+  | 'jawline_guided'
+  | 'jaw_prime_monthly'
+  | 'double_guided'
   | 'double_monthly'
   | 'all_in_one';
 
@@ -180,8 +180,8 @@ export function calculateRecommendedPlan(scores: ScoreBuckets): PlanId {
   }
 
   if (jawline >= doubleChin) {
-    return 'jawline_90';
+    return 'jawline_guided';
   } else {
-    return 'double_60';
+    return 'double_guided';
   }
 }

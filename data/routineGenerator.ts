@@ -350,11 +350,11 @@ export function generateAllInOneRoutine(dayNumber: number): DailyRoutine {
 
 export function getDailyRoutine(planId: PlanId, dayNumber: number): DailyRoutine {
   switch (planId) {
-    case 'jawline_90':
+    case 'jawline_guided':
       return generateJawlineRoutine(dayNumber, 90);
-    case 'jawline_monthly':
+    case 'jaw_prime_monthly':
       return generateJawlineRoutine(dayNumber, 30);
-    case 'double_60':
+    case 'double_guided':
       return generateDoubleChinRoutine(dayNumber, 60);
     case 'double_monthly':
       return generateDoubleChinRoutine(dayNumber, 30);

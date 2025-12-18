@@ -26,6 +26,8 @@ import {
   Plan,
   PlanId,
   plans,
+  hasFreeTrial,
+  getTrialLabel,
 } from '../data/plans';
 import { validatePlanId } from '../lib/secureStorage';
 import { typography, textColors } from '../theme/typography';
@@ -59,10 +61,10 @@ export default function ResultScreen() {
   const { planId } = useLocalSearchParams<{ planId: string }>();
 
   // Validate planId from URL params to prevent injection
-  const validPlanIds = Object.keys(plans) as PlanId[];
+  const validPlanIds = plans.map(p => p.id) as PlanId[];
   const selectedPlanId: PlanId = (planId && validatePlanId(planId) && validPlanIds.includes(planId as PlanId))
     ? (planId as PlanId)
-    : 'jawline_90';
+    : 'jawline_guided';
   const mainPlan = getPlanById(selectedPlanId);
   const alternativePlan = getAlternativePlan(selectedPlanId);
 
@@ -229,8 +231,13 @@ export default function ResultScreen() {
                 <View style={styles.priceSection}>
                   <Text style={styles.priceLabel}>Tarif</Text>
                   {renderPriceInfo(currentPlan)}
-                  <Text style={styles.tryFreeText}>essayer gratuitement</Text>
-                  {currentPlan.engagementLabel && (
+                  <Text style={[
+                    styles.tryFreeText,
+                    hasFreeTrial(currentPlan.id) && styles.trialHighlight
+                  ]}>
+                    {getTrialLabel(currentPlan.id)}
+                  </Text>
+                  {currentPlan.engagementLabel && hasFreeTrial(currentPlan.id) && (
                     <Text style={styles.engagementText}>{currentPlan.engagementLabel}</Text>
                   )}
                 </View>
@@ -249,7 +256,9 @@ export default function ResultScreen() {
               )}
             </PrimaryButton>
             <Text style={styles.trialDisclaimer}>
-              Essai gratuit 1 jour. Annulation possible avant le premier paiement.
+              {currentPlan && hasFreeTrial(currentPlan.id)
+                ? `Essai gratuit ${currentPlan.iap.trial.durationDays} jours. Annulation possible à tout moment.`
+                : 'Abonnement mensuel. Annulation possible à tout moment.'}
             </Text>
           </View>
 
@@ -404,6 +413,10 @@ const styles = StyleSheet.create({
     ...typography.caption,
     color: textColors.tertiary,
     textAlign: 'right',
+  },
+  trialHighlight: {
+    color: '#22C55E', // Green for free trial highlight
+    fontWeight: '600',
   },
   engagementText: {
     ...typography.caption,
