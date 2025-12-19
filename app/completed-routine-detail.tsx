@@ -62,7 +62,7 @@ export default function CompletedRoutineDetailScreen() {
   }, [selectedPlanId, day]);
 
   // Trouver le bonus complete pour ce jour
-  const bonusInfo = completedBonuses.find((b) => b.dayNumber === day);
+  const bonusInfo = (completedBonuses || []).find((b) => b.dayNumber === day);
 
   useEffect(() => {
     Animated.timing(fadeAnim, {

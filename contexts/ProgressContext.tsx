@@ -161,8 +161,8 @@ function calculateCurrentDay(programStartDate: string | null): number {
  * En mode test: le jour actuel = dernier jour complété + 1
  * Permet de tester les routines sans attendre
  */
-function calculateCurrentDayTestMode(completedRoutines: CompletedRoutine[]): number {
-  if (completedRoutines.length === 0) return 1;
+function calculateCurrentDayTestMode(completedRoutines: CompletedRoutine[] | undefined | null): number {
+  if (!completedRoutines || !Array.isArray(completedRoutines) || completedRoutines.length === 0) return 1;
 
   const maxCompletedDay = Math.max(...completedRoutines.map(r => r.dayNumber));
   return maxCompletedDay + 1;
@@ -284,8 +284,8 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
             : calculateCurrentDay(data.programStartDate),
           streak: data.streak,
           last_completed_date: data.lastCompletedParisDate,
-          days_completed: data.completedRoutines.map(r => r.dayNumber),
-          bonus_completed: data.completedBonuses.map(b => b.dayNumber),
+          days_completed: (data.completedRoutines || []).map(r => r.dayNumber),
+          bonus_completed: (data.completedBonuses || []).map(b => b.dayNumber),
         });
 
     } catch {
@@ -373,8 +373,12 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
           delete parsed.lastCompletedDate;
         }
         // Migration: ajouter completedBonuses si absent
-        if (!parsed.completedBonuses) {
+        if (!parsed.completedBonuses || !Array.isArray(parsed.completedBonuses)) {
           parsed.completedBonuses = [];
+        }
+        // Migration: ajouter completedRoutines si absent
+        if (!parsed.completedRoutines || !Array.isArray(parsed.completedRoutines)) {
+          parsed.completedRoutines = [];
         }
 
         // Validate with Zod schema
@@ -441,7 +445,7 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
             finalData = localData;
             await saveToSupabase(user.id, localData);
             // Aussi sync les routines manquantes vers Supabase
-            for (const routine of localData.completedRoutines) {
+            for (const routine of (localData.completedRoutines || [])) {
               await saveRoutineToSupabase(user.id, routine, localData.selectedPlanId!);
             }
           } else {
@@ -455,7 +459,7 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
           // Seulement local a un programme - sync vers cloud
           finalData = localData;
           await saveToSupabase(user.id, localData);
-          for (const routine of localData.completedRoutines) {
+          for (const routine of (localData.completedRoutines || [])) {
             await saveRoutineToSupabase(user.id, routine, localData.selectedPlanId!);
           }
         } else if (cloudData) {
@@ -576,7 +580,7 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
     const yesterdayParis = getYesterdayParisDate();
 
     // Vérifier si ce jour a déjà été complété
-    const alreadyCompleted = progress.completedRoutines.some(
+    const alreadyCompleted = (progress.completedRoutines || []).some(
       (r) => r.dayNumber === dayNumber
     );
     if (alreadyCompleted) {
@@ -588,7 +592,7 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
 
     if (TEST_MODE) {
       // En mode test: streak basé sur les jours consécutifs complétés
-      const previousDayCompleted = progress.completedRoutines.some(
+      const previousDayCompleted = (progress.completedRoutines || []).some(
         (r) => r.dayNumber === dayNumber - 1
       );
       if (previousDayCompleted) {
@@ -616,7 +620,7 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
 
     const newProgress: ProgressData = {
       ...progress,
-      completedRoutines: [...progress.completedRoutines, newRoutine],
+      completedRoutines: [...(progress.completedRoutines || []), newRoutine],
       streak: newStreak,
       lastCompletedParisDate: todayParis,
     };
@@ -631,7 +635,7 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
 
   const completeBonusExercise = async (dayNumber: number, exerciseName: string) => {
     // Vérifier si le bonus de ce jour a déjà été complété
-    const alreadyCompleted = progress.completedBonuses.some(
+    const alreadyCompleted = (progress.completedBonuses || []).some(
       (b) => b.dayNumber === dayNumber
     );
     if (alreadyCompleted) {
@@ -645,7 +649,7 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
     };
 
     // Mettre à jour la routine correspondante si elle existe
-    const updatedRoutines = progress.completedRoutines.map((routine) => {
+    const updatedRoutines = (progress.completedRoutines || []).map((routine) => {
       if (routine.dayNumber === dayNumber) {
         return { ...routine, bonusCompleted: true };
       }
@@ -655,7 +659,7 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
     const newProgress: ProgressData = {
       ...progress,
       completedRoutines: updatedRoutines,
-      completedBonuses: [...progress.completedBonuses, newBonus],
+      completedBonuses: [...(progress.completedBonuses || []), newBonus],
     };
 
     await saveProgress(newProgress);
@@ -687,15 +691,18 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
     ? isFixedDurationPlan(progress.selectedPlanId)
     : false;
 
+  const safeCompletedRoutines = progress.completedRoutines || [];
+  const safeCompletedBonuses = progress.completedBonuses || [];
+
   const currentDay = TEST_MODE
-    ? calculateCurrentDayTestMode(progress.completedRoutines)
+    ? calculateCurrentDayTestMode(safeCompletedRoutines)
     : calculateCurrentDay(progress.programStartDate);
 
-  const completedDaysCount = progress.completedRoutines.length;
-  const completedBonusesCount = progress.completedBonuses.length;
-  const completedDayNumbers = progress.completedRoutines.map((r) => r.dayNumber);
+  const completedDaysCount = safeCompletedRoutines.length;
+  const completedBonusesCount = safeCompletedBonuses.length;
+  const completedDayNumbers = safeCompletedRoutines.map((r) => r.dayNumber);
   const hasCompletedTodayRoutine = completedDayNumbers.includes(currentDay);
-  const hasCompletedTodayBonus = progress.completedBonuses.some(
+  const hasCompletedTodayBonus = safeCompletedBonuses.some(
     (b) => b.dayNumber === currentDay
   );
 
