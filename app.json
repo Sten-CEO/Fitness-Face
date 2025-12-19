@@ -7,9 +7,11 @@
     "icon": "./assets/images/icon.png",
     "scheme": "jaw",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
+    "jsEngine": "jsc",
+    "newArchEnabled": false,
     "ios": {
-      "supportsTablet": true,
+      "supportsTablet": false,
+      "usesAppleSignIn": false,
       "bundleIdentifier": "com.jaw.app",
       "infoPlist": {
         "SKAdNetworkItems": []
@@ -49,8 +51,7 @@
       ]
     ],
     "experiments": {
-      "typedRoutes": true,
-      "reactCompiler": true
+      "typedRoutes": true
     },
     "extra": {
       "eas": {
