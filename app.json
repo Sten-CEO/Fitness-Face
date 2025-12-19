@@ -51,8 +51,20 @@
           }
         }
       ],
-      "react-native-iap"
+      "react-native-iap",
+      [
+        "expo-build-properties",
+        {
+          "ios": {
+            "newArchEnabled": false
+          },
+          "android": {
+            "newArchEnabled": false
+          }
+        }
+      ]
     ],
+    "jsEngine": "jsc",
     "experiments": {
       "typedRoutes": true
     },
