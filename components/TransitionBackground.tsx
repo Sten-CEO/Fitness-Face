@@ -2,8 +2,8 @@ import React from 'react';
 import { ImageBackground, StyleSheet, View, ViewStyle } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-// Utilise le format JPG pour eviter les problemes de metadata C2PA
-const transitionBg = require('../assets/images/transition-bg.jpg');
+// Utilise le background commun de l'app
+const transitionBg = require('../assets/images/background.jpeg');
 
 interface TransitionBackgroundProps {
   children: React.ReactNode;
