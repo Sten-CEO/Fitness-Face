@@ -82,6 +82,9 @@ const doubleMentonImages: ExerciseImageRegistry = {
 // ============================================
 
 export function getExerciseImagesFromRegistry(exerciseId: string): ImageSourcePropType[] {
+  // Guard contre null/undefined pour éviter crash Hermes
+  if (!exerciseId || typeof exerciseId !== 'string') return [];
+
   if (exerciseId.startsWith('jaw_')) {
     return jawlineImages[exerciseId] || [];
   }
@@ -104,6 +107,9 @@ export function getImageCount(exerciseId: string): number {
 // ============================================
 
 export function getExerciseVideoFromRegistry(exerciseId: string): number | null {
+  // Guard contre null/undefined pour éviter crash Hermes
+  if (!exerciseId || typeof exerciseId !== 'string') return null;
+
   if (exerciseId.startsWith('jaw_')) {
     return jawlineVideos[exerciseId] || null;
   }

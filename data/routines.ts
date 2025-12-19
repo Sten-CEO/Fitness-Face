@@ -73,9 +73,12 @@ export const routines: Routine[] = [
 ];
 
 export function getRoutineForPlan(planId: PlanId): Routine {
-  if (planId.includes('jawline')) {
+  // Guard contre null/undefined pour éviter crash Hermes
+  const safePlanId = typeof planId === 'string' ? planId : '';
+
+  if (safePlanId.includes('jawline')) {
     return routines.find(r => r.planType === 'jawline')!;
-  } else if (planId.includes('double')) {
+  } else if (safePlanId.includes('double')) {
     return routines.find(r => r.planType === 'double_chin')!;
   } else {
     return routines.find(r => r.planType === 'full_face')!;

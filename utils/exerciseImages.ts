@@ -11,6 +11,9 @@ const MAX_IMAGES_PER_EXERCISE = 3;
 
 // Map exercise IDs to folder names
 export function getExerciseImageFolder(exerciseId: string): { category: string; folder: string } | null {
+  // Guard contre null/undefined pour éviter crash Hermes
+  if (!exerciseId || typeof exerciseId !== 'string') return null;
+
   // Jawline exercises: jaw_1 → jawline-exo-1, jaw_2 → jawline-exo-2, etc.
   if (exerciseId.startsWith('jaw_')) {
     const num = exerciseId.replace('jaw_', '');
