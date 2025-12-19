@@ -8,11 +8,11 @@
     "scheme": "jaw",
     "userInterfaceStyle": "automatic",
     "jsEngine": "jsc",
-    "newArchEnabled": false,
     "ios": {
       "supportsTablet": false,
       "usesAppleSignIn": false,
       "bundleIdentifier": "com.jaw.app",
+      "newArchEnabled": false,
       "infoPlist": {
         "SKAdNetworkItems": []
       }
@@ -27,6 +27,7 @@
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
       "package": "com.jaw.app",
+      "newArchEnabled": false,
       "permissions": [
         "com.android.vending.BILLING"
       ]
