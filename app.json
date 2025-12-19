@@ -8,13 +8,17 @@
     "scheme": "jaw",
     "userInterfaceStyle": "automatic",
     "jsEngine": "jsc",
+    "newArchEnabled": false,
     "ios": {
       "supportsTablet": false,
       "usesAppleSignIn": false,
       "bundleIdentifier": "com.jaw.app",
       "newArchEnabled": false,
       "infoPlist": {
-        "SKAdNetworkItems": []
+        "SKAdNetworkItems": [],
+        "UIApplicationSceneManifest": {
+          "UIApplicationSupportsMultipleScenes": false
+        }
       }
     },
     "android": {
