@@ -80,10 +80,12 @@ export default function AuthScreen() {
         // Connexion
         const { error } = await signIn(email, password);
         if (error) {
-          if (error.message.includes('Invalid login credentials')) {
+          // Guard contre error.message undefined
+          const errorMsg = error.message || '';
+          if (errorMsg.includes('Invalid login credentials')) {
             Alert.alert('Erreur', 'Email ou mot de passe incorrect');
           } else {
-            Alert.alert('Erreur', error.message);
+            Alert.alert('Erreur', errorMsg || 'Une erreur est survenue');
           }
         } else {
           // Connexion réussie - vérifier le statut d'abonnement
@@ -122,10 +124,12 @@ export default function AuthScreen() {
         // Inscription
         const { error } = await signUp(email, password);
         if (error) {
-          if (error.message.includes('already registered')) {
+          // Guard contre error.message undefined
+          const errorMsg = error.message || '';
+          if (errorMsg.includes('already registered')) {
             Alert.alert('Erreur', 'Un compte existe déjà avec cette adresse email');
           } else {
-            Alert.alert('Erreur', error.message);
+            Alert.alert('Erreur', errorMsg || 'Une erreur est survenue');
           }
         } else {
           // Inscription réussie - sauvegarder le prénom et aller vers welcome

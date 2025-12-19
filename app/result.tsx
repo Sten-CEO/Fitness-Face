@@ -59,14 +59,16 @@ export default function ResultScreen() {
   const { planId } = useLocalSearchParams<{ planId: string }>();
 
   // Validate planId from URL params to prevent injection
+  // Guard contre null/undefined pour éviter crash Hermes
   const validPlanIds = plans.map(p => p.id);
-  const selectedPlanId: PlanId = (planId && validatePlanId(planId) && validPlanIds.includes(planId as PlanId))
-    ? (planId as PlanId)
+  const safePlanId = typeof planId === 'string' ? planId : '';
+  const selectedPlanId: PlanId = (safePlanId && validatePlanId(safePlanId) && validPlanIds.includes(safePlanId as PlanId))
+    ? (safePlanId as PlanId)
     : 'jawline_guided';
   const mainPlan = getPlanById(selectedPlanId);
   const alternativePlan = getAlternativePlan(selectedPlanId);
 
-  const isMonthlyPlan = selectedPlanId.includes('monthly');
+  const isMonthlyPlan = selectedPlanId ? selectedPlanId.includes('monthly') : false;
   const planMain = isMonthlyPlan ? alternativePlan : mainPlan;
   const planMonthly = isMonthlyPlan ? mainPlan : alternativePlan;
 
@@ -159,7 +161,7 @@ export default function ResultScreen() {
     );
   }
 
-  const is60DayProgram = selectedPlanId.includes('double');
+  const is60DayProgram = selectedPlanId ? selectedPlanId.includes('double') : false;
   const tabs = [
     { key: 'main', label: is60DayProgram ? '60 jours' : '90 jours', badge: 'Conseillé' },
     { key: 'monthly', label: 'Mensuel' },
