@@ -28,20 +28,10 @@
     "production": {
       "autoIncrement": true,
       "ios": {
-        "buildConfiguration": "Release",
-        "image": "latest"
+        "buildConfiguration": "Release"
       },
       "android": {
         "buildType": "app-bundle"
-      }
-    }
-  },
-  "submit": {
-    "production": {
-      "ios": {
-        "appleId": "",
-        "ascAppId": "",
-        "appleTeamId": ""
       }
     }
   }
