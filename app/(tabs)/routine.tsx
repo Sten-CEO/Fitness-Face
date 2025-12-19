@@ -68,7 +68,7 @@ export default function RoutineHistoryScreen() {
 
   // Filter and sort routines
   const filteredRoutines = useMemo(() => {
-    let filtered = [...completedRoutines];
+    let filtered = [...(completedRoutines || [])];
 
     if (filter === 'week') {
       filtered = filtered.filter((r) => isWithinDays(r.completedAt, 7));
@@ -97,7 +97,7 @@ export default function RoutineHistoryScreen() {
     return Object.entries(groups);
   }, [filteredRoutines]);
 
-  const bonusCount = completedRoutines.filter((r) => r.bonusCompleted).length;
+  const bonusCount = (completedRoutines || []).filter((r) => r.bonusCompleted).length;
 
   return (
     <TabBackground>

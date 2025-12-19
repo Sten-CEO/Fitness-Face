@@ -34,7 +34,7 @@ export default function ProgressScreen() {
   } = useProgress();
 
   // Set des jours avec bonus complété pour lookup rapide
-  const bonusDays = new Set(completedBonuses.map((b) => b.dayNumber));
+  const bonusDays = new Set((completedBonuses || []).map((b) => b.dayNumber));
 
   // Generate 30-day grid starting from TODAY (first position)
   const generateDaysGrid = () => {
