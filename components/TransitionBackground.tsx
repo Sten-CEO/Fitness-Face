@@ -2,8 +2,7 @@ import React from 'react';
 import { ImageBackground, StyleSheet, View, ViewStyle } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-// Utilise le background de transition
-const transitionBg = require('../assets/images/transition-bg.png');
+const transitionBg = require('../assets/images/transition.bg.png');
 
 interface TransitionBackgroundProps {
   children: React.ReactNode;

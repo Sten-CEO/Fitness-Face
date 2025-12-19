@@ -15,7 +15,8 @@
         "SKAdNetworkItems": [],
         "UIApplicationSceneManifest": {
           "UIApplicationSupportsMultipleScenes": false
-        }
+        },
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
@@ -54,6 +55,12 @@
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "aa41f7cc-ae1c-46a3-972a-31c1515a32ec"
+      }
     }
   }
 }
