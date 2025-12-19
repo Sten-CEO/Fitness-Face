@@ -7,7 +7,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import PrimaryButton from '../components/PrimaryButton';
 import { typography, textColors } from '../theme/typography';
 
-const firstPageBg = require('../assets/images/first-page.png');
+const firstPageBg = require('../assets/images/background.jpeg');
 
 export default function HomeScreen() {
   const router = useRouter();
