@@ -56,11 +56,11 @@
         "expo-build-properties",
         {
           "ios": {
-            "newArchEnabled": false,
+            "newArchEnabled": true,
             "jsEngine": "jsc"
           },
           "android": {
-            "newArchEnabled": false,
+            "newArchEnabled": true,
             "jsEngine": "jsc"
           }
         }
