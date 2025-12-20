@@ -754,28 +754,16 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
           }, 120000);
         });
 
-        // Request subscription - essayer différentes API selon la version
+        // Request subscription - format v14
         if (hasRequestSubscription) {
-          // Essayer le nouveau format v14 d'abord
-          try {
-            await RNIap.requestSubscription({
-              request: {
-                apple: { sku: plan.iap.productId },
-              },
-            });
-          } catch (e: any) {
-            // Si ça échoue, essayer l'ancien format
-            console.log('[IAP] New format failed, trying legacy format');
-            await RNIap.requestSubscription({
-              sku: plan.iap.productId,
-            });
-          }
+          console.log('[IAP] Calling requestSubscription with sku:', plan.iap.productId);
+          await RNIap.requestSubscription({
+            sku: plan.iap.productId,
+          });
         } else if (hasRequestPurchase) {
-          // Utiliser requestPurchase comme fallback
+          console.log('[IAP] Calling requestPurchase with sku:', plan.iap.productId);
           await RNIap.requestPurchase({
-            request: {
-              apple: { sku: plan.iap.productId },
-            },
+            sku: plan.iap.productId,
             type: 'subs',
           });
         }
