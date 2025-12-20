@@ -28,8 +28,8 @@
     "production": {
       "autoIncrement": true,
       "env": {
-        "EXPO_PUBLIC_SUPABASE_URL": "https://TON-PROJECT-ID.supabase.co",
-        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "TON-ANON-KEY"
+        "EXPO_PUBLIC_SUPABASE_URL": "https://yaoppytvxdnkneygiuen.supabase.co",
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inlhb3BweXR2eGRua25leWdpdWVuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU3MzUwMDEsImV4cCI6MjA4MTMxMTAwMX0.jH3Mute3OqrpuBeHxLEy7Lws8hADqIEQ28utXvGdcTg"
       },
       "ios": {
         "buildConfiguration": "Release"

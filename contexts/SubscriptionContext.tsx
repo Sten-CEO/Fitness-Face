@@ -68,7 +68,25 @@ function getIapModule(): any {
 
   try {
     // Charger le module de manière sécurisée
-    RNIapModule = require('react-native-iap');
+    const iapModule = require('react-native-iap');
+
+    // Debug: Log available methods
+    console.log('[IAP] react-native-iap loaded. Available methods:', Object.keys(iapModule || {}));
+
+    // Vérifier que le module a les méthodes essentielles
+    if (!iapModule || typeof iapModule.initConnection !== 'function') {
+      console.error('[IAP] Module loaded but initConnection is missing');
+      // Essayer d'accéder aux exports par défaut
+      if (iapModule.default && typeof iapModule.default.initConnection === 'function') {
+        console.log('[IAP] Using default export');
+        RNIapModule = iapModule.default;
+      } else {
+        RNIapModule = null;
+      }
+    } else {
+      RNIapModule = iapModule;
+    }
+
     console.log('[IAP] react-native-iap loaded successfully (lazy)');
     return RNIapModule;
   } catch (e) {
@@ -681,6 +699,14 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
       if (!RNIap) {
         console.error('[IAP] RNIap not available in production!');
         Alert.alert('Erreur', 'Les achats in-app ne sont pas disponibles.');
+        setIsPurchasing(false);
+        return false;
+      }
+
+      // Vérifier que la méthode requestSubscription existe
+      if (typeof RNIap.requestSubscription !== 'function') {
+        console.error('[IAP] requestSubscription is not a function');
+        Alert.alert('Erreur', 'Module IAP incompatible. Veuillez mettre à jour l\'app.');
         setIsPurchasing(false);
         return false;
       }
