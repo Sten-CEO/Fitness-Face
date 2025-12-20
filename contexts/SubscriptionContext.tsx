@@ -852,8 +852,21 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
     setIsLoading(true);
 
     try {
-      const supabaseInfo = await loadFromSupabase();
-      const localInfo = await loadLocalSubscription();
+      // Wrap each call individually to prevent crashes
+      let supabaseInfo: SubscriptionInfo | null = null;
+      let localInfo: SubscriptionInfo | null = null;
+
+      try {
+        supabaseInfo = await loadFromSupabase();
+      } catch (e) {
+        console.warn('[IAP] loadFromSupabase failed:', e);
+      }
+
+      try {
+        localInfo = await loadLocalSubscription();
+      } catch (e) {
+        console.warn('[IAP] loadLocalSubscription failed:', e);
+      }
 
       console.log('🔄 [SUBSCRIPTION] supabaseInfo:', supabaseInfo?.status || 'null');
       console.log('🔄 [SUBSCRIPTION] localInfo:', localInfo?.status || 'null');
@@ -923,17 +936,29 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
 
   // NE PAS initialiser IAP au boot - seulement charger les données de subscription
   // IAP sera initialisé à la demande (quand l'utilisateur veut acheter)
+  // IMPORTANT: On ne fait RIEN au boot pour éviter les crashs Hermes
   useEffect(() => {
-    // Délai pour laisser l'app se charger complètement
-    const timer = setTimeout(() => {
-      // Charger le statut de subscription (depuis Supabase, pas IAP)
-      refreshSubscription().then(() => {
-        setIsIapReady(true);
-      });
-    }, 500);
+    // Marquer immédiatement comme prêt sans aucune opération native
+    // Le status de subscription sera chargé quand nécessaire (lazy)
+    setIsLoading(false);
+    setIsIapReady(true);
 
-    return () => clearTimeout(timer);
-  }, [isAuthenticated]);
+    // Charger le statut de subscription SEULEMENT si authentifié et après un délai plus long
+    if (isAuthenticated && user?.id) {
+      const timer = setTimeout(() => {
+        // Wrap dans try-catch pour éviter tout crash
+        try {
+          refreshSubscription().catch((e) => {
+            console.warn('[IAP] Refresh failed:', e);
+          });
+        } catch (e) {
+          console.warn('[IAP] Refresh error:', e);
+        }
+      }, 2000); // 2 secondes au lieu de 500ms
+
+      return () => clearTimeout(timer);
+    }
+  }, [isAuthenticated, user?.id]);
 
   // ============================================
   // COMPUTED VALUES

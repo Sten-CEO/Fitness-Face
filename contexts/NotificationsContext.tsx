@@ -56,15 +56,20 @@ const NotificationsContext = createContext<NotificationsContextType | undefined>
 // ============================================
 
 // Configure le comportement des notifications
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: true,
-    shouldSetBadge: false,
-    shouldShowBanner: true,
-    shouldShowList: true,
-  }),
-});
+// IMPORTANT: Wrappé dans try-catch car c'est exécuté au chargement du module
+try {
+  Notifications.setNotificationHandler({
+    handleNotification: async () => ({
+      shouldShowAlert: true,
+      shouldPlaySound: true,
+      shouldSetBadge: false,
+      shouldShowBanner: true,
+      shouldShowList: true,
+    }),
+  });
+} catch (e) {
+  console.warn('[Notifications] Failed to set handler:', e);
+}
 
 // ============================================
 // PROVIDER
@@ -74,9 +79,15 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
   const [settings, setSettings] = useState<NotificationSettings>(defaultSettings);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Load settings on mount
+  // Load settings on mount - with delay to avoid boot crash
   useEffect(() => {
-    loadSettings();
+    const timer = setTimeout(() => {
+      loadSettings().catch((e) => {
+        console.warn('[Notifications] Load failed:', e);
+        setIsLoading(false);
+      });
+    }, 1000); // 1 seconde de délai
+    return () => clearTimeout(timer);
   }, []);
 
   const loadSettings = async () => {
