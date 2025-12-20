@@ -27,6 +27,10 @@
     },
     "production": {
       "autoIncrement": true,
+      "env": {
+        "EXPO_PUBLIC_SUPABASE_URL": "https://TON-PROJECT-ID.supabase.co",
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "TON-ANON-KEY"
+      },
       "ios": {
         "buildConfiguration": "Release"
       },
