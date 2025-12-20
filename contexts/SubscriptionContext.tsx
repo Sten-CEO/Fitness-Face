@@ -30,8 +30,18 @@ import {
 // ============================================
 
 // Expo Go = développement, sinon = production (EAS build, TestFlight, App Store)
-const isExpoGo = Constants.appOwnership === 'expo';
-const isProduction = !isExpoGo;
+// IMPORTANT: Wrap in try-catch to prevent crash at module load
+let isExpoGo = false;
+let isProduction = true;
+try {
+  isExpoGo = Constants.appOwnership === 'expo';
+  isProduction = !isExpoGo;
+} catch (e) {
+  console.warn('[IAP] Failed to detect app ownership:', e);
+  // Default to production mode for safety
+  isExpoGo = false;
+  isProduction = true;
+}
 
 // ============================================
 // LAZY IAP LOADING - NE PAS CHARGER AU BOOT

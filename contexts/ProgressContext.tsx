@@ -540,9 +540,18 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
   }, []);
 
   // Charger les données au montage et quand l'auth change
+  // IMPORTANT: Délai pour éviter crash TurboModule au boot
   useEffect(() => {
     if (!authLoading && isMountedRef.current) {
-      loadProgress();
+      const timer = setTimeout(() => {
+        if (isMountedRef.current) {
+          loadProgress().catch((e) => {
+            console.warn('[Progress] Load failed:', e);
+            setIsLoading(false);
+          });
+        }
+      }, 1500); // 1.5 secondes de délai pour éviter crash boot
+      return () => clearTimeout(timer);
     }
   }, [authLoading, isAuthenticated, user?.id, loadProgress]);
 

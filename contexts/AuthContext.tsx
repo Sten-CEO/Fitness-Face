@@ -33,35 +33,58 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [isLoading, setIsLoading] = useState(true);
 
   // Initialiser et écouter les changements de session
+  // IMPORTANT: Délai pour éviter crash TurboModule au boot
   useEffect(() => {
-    // Récupérer la session actuelle
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        fetchOrCreateProfile(session.user.id, session.user.email || '');
-      } else {
-        setIsLoading(false);
-      }
-    });
+    let subscription: { unsubscribe: () => void } | null = null;
+    let mounted = true;
 
-    // Écouter les changements d'état d'authentification
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+    const initAuth = async () => {
+      try {
+        // Récupérer la session actuelle
+        const { data: { session } } = await supabase.auth.getSession();
+
+        if (!mounted) return;
+
         setSession(session);
         setUser(session?.user ?? null);
-
         if (session?.user) {
-          await fetchOrCreateProfile(session.user.id, session.user.email || '');
+          fetchOrCreateProfile(session.user.id, session.user.email || '');
         } else {
-          setProfile(null);
+          setIsLoading(false);
+        }
+
+        // Écouter les changements d'état d'authentification
+        const { data } = supabase.auth.onAuthStateChange(
+          async (event, session) => {
+            if (!mounted) return;
+
+            setSession(session);
+            setUser(session?.user ?? null);
+
+            if (session?.user) {
+              await fetchOrCreateProfile(session.user.id, session.user.email || '');
+            } else {
+              setProfile(null);
+              setIsLoading(false);
+            }
+          }
+        );
+        subscription = data.subscription;
+      } catch (e) {
+        console.warn('[Auth] Init failed:', e);
+        if (mounted) {
           setIsLoading(false);
         }
       }
-    );
+    };
+
+    // Délai de 1 seconde avant d'initialiser l'auth
+    const timer = setTimeout(initAuth, 1000);
 
     return () => {
-      subscription.unsubscribe();
+      mounted = false;
+      clearTimeout(timer);
+      subscription?.unsubscribe();
     };
   }, []);
 
