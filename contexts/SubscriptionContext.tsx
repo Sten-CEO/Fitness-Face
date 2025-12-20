@@ -70,24 +70,40 @@ function getIapModule(): any {
     // Charger le module de manière sécurisée
     const iapModule = require('react-native-iap');
 
-    // Debug: Log available methods
-    console.log('[IAP] react-native-iap loaded. Available methods:', Object.keys(iapModule || {}));
+    // Debug: Log all available exports
+    console.log('[IAP] react-native-iap loaded. Keys:', Object.keys(iapModule || {}));
 
-    // Vérifier que le module a les méthodes essentielles
-    if (!iapModule || typeof iapModule.initConnection !== 'function') {
-      console.error('[IAP] Module loaded but initConnection is missing');
-      // Essayer d'accéder aux exports par défaut
-      if (iapModule.default && typeof iapModule.default.initConnection === 'function') {
-        console.log('[IAP] Using default export');
-        RNIapModule = iapModule.default;
-      } else {
-        RNIapModule = null;
+    // v14 peut exporter les fonctions directement ou via default
+    // Essayons d'abord l'export direct
+    if (iapModule && typeof iapModule.setup === 'function') {
+      console.log('[IAP] Found setup function - v14 Nitro module detected');
+      // v14 Nitro - appeler setup() d'abord
+      try {
+        iapModule.setup({ storekitMode: 'STOREKIT2_MODE' });
+        console.log('[IAP] Setup completed');
+      } catch (setupErr) {
+        console.warn('[IAP] Setup failed, trying without:', setupErr);
       }
-    } else {
       RNIapModule = iapModule;
+      return RNIapModule;
     }
 
-    console.log('[IAP] react-native-iap loaded successfully (lazy)');
+    // Vérifier que le module a les méthodes essentielles
+    if (iapModule && typeof iapModule.initConnection === 'function') {
+      console.log('[IAP] Using direct export (has initConnection)');
+      RNIapModule = iapModule;
+    } else if (iapModule?.default && typeof iapModule.default.initConnection === 'function') {
+      console.log('[IAP] Using default export');
+      RNIapModule = iapModule.default;
+    } else {
+      console.error('[IAP] No valid IAP module found');
+      console.log('[IAP] Available in module:', Object.keys(iapModule || {}));
+      console.log('[IAP] Available in default:', Object.keys(iapModule?.default || {}));
+      RNIapModule = iapModule; // Try anyway
+    }
+
+    console.log('[IAP] react-native-iap loaded successfully');
+    console.log('[IAP] Available methods:', Object.keys(RNIapModule || {}));
     return RNIapModule;
   } catch (e) {
     console.error('[IAP] Failed to load react-native-iap:', e);
@@ -703,10 +719,19 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
         return false;
       }
 
-      // Vérifier que la méthode requestSubscription existe
-      if (typeof RNIap.requestSubscription !== 'function') {
-        console.error('[IAP] requestSubscription is not a function');
-        Alert.alert('Erreur', 'Module IAP incompatible. Veuillez mettre à jour l\'app.');
+      // Log available methods for debugging
+      console.log('[IAP] RNIap methods:', Object.keys(RNIap || {}));
+
+      // Déterminer quelle méthode utiliser (v14 vs v13)
+      const hasRequestSubscription = typeof RNIap.requestSubscription === 'function';
+      const hasRequestPurchase = typeof RNIap.requestPurchase === 'function';
+
+      console.log('[IAP] hasRequestSubscription:', hasRequestSubscription);
+      console.log('[IAP] hasRequestPurchase:', hasRequestPurchase);
+
+      if (!hasRequestSubscription && !hasRequestPurchase) {
+        console.error('[IAP] No purchase method available');
+        Alert.alert('Erreur', 'Module IAP incompatible.');
         setIsPurchasing(false);
         return false;
       }
@@ -729,11 +754,31 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
           }, 120000);
         });
 
-        // Request subscription - this triggers Apple Pay sheet
-        await RNIap.requestSubscription({
-          sku: plan.iap.productId,
-          andDangerouslyFinishTransactionAutomaticallyIOS: false,
-        });
+        // Request subscription - essayer différentes API selon la version
+        if (hasRequestSubscription) {
+          // Essayer le nouveau format v14 d'abord
+          try {
+            await RNIap.requestSubscription({
+              request: {
+                apple: { sku: plan.iap.productId },
+              },
+            });
+          } catch (e: any) {
+            // Si ça échoue, essayer l'ancien format
+            console.log('[IAP] New format failed, trying legacy format');
+            await RNIap.requestSubscription({
+              sku: plan.iap.productId,
+            });
+          }
+        } else if (hasRequestPurchase) {
+          // Utiliser requestPurchase comme fallback
+          await RNIap.requestPurchase({
+            request: {
+              apple: { sku: plan.iap.productId },
+            },
+            type: 'subs',
+          });
+        }
 
         // Wait for purchase listener to resolve
         return await purchasePromise;
