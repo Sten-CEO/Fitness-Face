@@ -754,18 +754,37 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
           }, 120000);
         });
 
-        // Request subscription - format v14
+        // Request subscription - format v14 avec StoreKit 2
+        const productId = plan.iap.productId;
+        console.log('[IAP] Requesting subscription for:', productId);
+
+        // Trouver le produit dans la liste pour avoir les infos d'offre
+        const product = iapProducts.find(p => p.productId === productId);
+        console.log('[IAP] Found product:', product ? 'yes' : 'no');
+
         if (hasRequestSubscription) {
-          console.log('[IAP] Calling requestSubscription with sku:', plan.iap.productId);
-          await RNIap.requestSubscription({
-            sku: plan.iap.productId,
-          });
+          // Format pour react-native-iap v14
+          // Essayer plusieurs formats car l'API varie selon les versions
+          try {
+            // Format 1: Objet avec sku uniquement (le plus simple)
+            console.log('[IAP] Trying format: { sku }');
+            await RNIap.requestSubscription({ sku: productId });
+          } catch (e1: any) {
+            console.log('[IAP] Format 1 failed:', e1.message);
+            try {
+              // Format 2: SKU comme string directement
+              console.log('[IAP] Trying format: string');
+              await RNIap.requestSubscription(productId);
+            } catch (e2: any) {
+              console.log('[IAP] Format 2 failed:', e2.message);
+              // Format 3: Array de SKUs
+              console.log('[IAP] Trying format: [sku]');
+              await RNIap.requestSubscription([productId]);
+            }
+          }
         } else if (hasRequestPurchase) {
-          console.log('[IAP] Calling requestPurchase with sku:', plan.iap.productId);
-          await RNIap.requestPurchase({
-            sku: plan.iap.productId,
-            type: 'subs',
-          });
+          console.log('[IAP] Using requestPurchase fallback');
+          await RNIap.requestPurchase({ sku: productId });
         }
 
         // Wait for purchase listener to resolve
