@@ -1,5 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { createClient } from '@supabase/supabase-js';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
 // Récupérer les variables d'environnement Expo
 const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL || '';
@@ -12,13 +12,51 @@ if (!supabaseUrl || !supabaseAnonKey) {
   );
 }
 
-// Créer le client Supabase avec persistance de session via AsyncStorage
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-  auth: {
-    storage: AsyncStorage,
-    autoRefreshToken: true,
-    persistSession: true,
-    detectSessionInUrl: false, // Important pour React Native
+// ============================================
+// LAZY SUPABASE CLIENT - NE PAS CRÉER AU BOOT
+// ============================================
+
+let _supabaseClient: SupabaseClient | null = null;
+
+/**
+ * Get the Supabase client (lazy initialization)
+ * This prevents TurboModule crash at boot
+ */
+function getSupabaseClient(): SupabaseClient {
+  if (!_supabaseClient) {
+    try {
+      _supabaseClient = createClient(supabaseUrl, supabaseAnonKey, {
+        auth: {
+          storage: AsyncStorage,
+          autoRefreshToken: true,
+          persistSession: true,
+          detectSessionInUrl: false, // Important pour React Native
+        },
+      });
+    } catch (e) {
+      console.error('[Supabase] Failed to create client:', e);
+      // Create a minimal client without storage as fallback
+      _supabaseClient = createClient(supabaseUrl, supabaseAnonKey, {
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false,
+          detectSessionInUrl: false,
+        },
+      });
+    }
+  }
+  return _supabaseClient;
+}
+
+// Export a proxy object that lazily initializes the client
+export const supabase = new Proxy({} as SupabaseClient, {
+  get(_, prop) {
+    const client = getSupabaseClient();
+    const value = (client as any)[prop];
+    if (typeof value === 'function') {
+      return value.bind(client);
+    }
+    return value;
   },
 });
 
