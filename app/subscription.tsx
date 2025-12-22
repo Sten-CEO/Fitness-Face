@@ -4,6 +4,7 @@ import React from 'react';
 import {
   ActivityIndicator,
   Alert,
+  Linking,
   ScrollView,
   StyleSheet,
   Text,
@@ -17,6 +18,12 @@ import { useProgress } from '../contexts/ProgressContext';
 import { useSubscription } from '../contexts/SubscriptionContext';
 import { getPlanById } from '../data/plans';
 import { textColors, typography } from '../theme/typography';
+
+// URLs des pages légales
+const LEGAL_URLS = {
+  terms: 'https://www.jaw-app.com/terms.html',
+  privacy: 'https://www.jaw-app.com/privacy-policy.html',
+};
 
 export default function SubscriptionScreen() {
   const router = useRouter();
@@ -308,6 +315,17 @@ export default function SubscriptionScreen() {
             </Text>
           </View>
 
+          {/* Legal links */}
+          <View style={styles.legalLinks}>
+            <TouchableOpacity onPress={() => Linking.openURL(LEGAL_URLS.terms)}>
+              <Text style={styles.legalLinkText}>Conditions d'utilisation</Text>
+            </TouchableOpacity>
+            <Text style={styles.legalSeparator}>•</Text>
+            <TouchableOpacity onPress={() => Linking.openURL(LEGAL_URLS.privacy)}>
+              <Text style={styles.legalLinkText}>Politique de confidentialité</Text>
+            </TouchableOpacity>
+          </View>
+
           <View style={styles.bottomSpacer} />
         </ScrollView>
       </SafeAreaView>
@@ -529,5 +547,21 @@ const styles = StyleSheet.create({
   },
   bottomSpacer: {
     height: 40,
+  },
+  legalLinks: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 16,
+    gap: 8,
+  },
+  legalLinkText: {
+    ...typography.caption,
+    color: textColors.accent,
+    textDecorationLine: 'underline',
+  },
+  legalSeparator: {
+    ...typography.caption,
+    color: textColors.tertiary,
   },
 });

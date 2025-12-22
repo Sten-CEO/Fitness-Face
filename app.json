@@ -11,7 +11,7 @@
       "supportsTablet": false,
       "usesAppleSignIn": false,
       "bundleIdentifier": "com.jaw.app",
-      "buildNumber": "24",
+      "buildNumber": "25",
       "infoPlist": {
         "SKAdNetworkItems": [],
         "UIApplicationSceneManifest": {
