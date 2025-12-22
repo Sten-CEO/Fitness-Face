@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View, ActivityIndicator } from 'react-native';
+import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View, ActivityIndicator, Linking } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import CleanCard from '../../components/CleanCard';
@@ -10,6 +10,12 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useProgress } from '../../contexts/ProgressContext';
 import { useUser } from '../../contexts/UserContext';
 import { typography, textColors } from '../../theme/typography';
+
+// URLs des pages légales
+const LEGAL_URLS = {
+  terms: 'https://www.jaw-app.com/terms.html',
+  privacy: 'https://www.jaw-app.com/privacy-policy.html',
+};
 
 export default function ProfileScreen() {
   const router = useRouter();
@@ -187,20 +193,20 @@ export default function ProfileScreen() {
               <Ionicons name="chevron-forward" size={20} color={textColors.tertiary} />
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.menuItem} onPress={() => router.push('/terms')}>
+            <TouchableOpacity style={styles.menuItem} onPress={() => Linking.openURL(LEGAL_URLS.terms)}>
               <View style={styles.menuIcon}>
                 <Ionicons name="document-text-outline" size={20} color={textColors.accent} />
               </View>
               <Text style={styles.menuText}>Conditions d'utilisation</Text>
-              <Ionicons name="chevron-forward" size={20} color={textColors.tertiary} />
+              <Ionicons name="open-outline" size={16} color={textColors.tertiary} />
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.menuItem} onPress={() => router.push('/privacy')}>
+            <TouchableOpacity style={styles.menuItem} onPress={() => Linking.openURL(LEGAL_URLS.privacy)}>
               <View style={styles.menuIcon}>
                 <Ionicons name="shield-checkmark-outline" size={20} color={textColors.accent} />
               </View>
               <Text style={styles.menuText}>Politique de confidentialité</Text>
-              <Ionicons name="chevron-forward" size={20} color={textColors.tertiary} />
+              <Ionicons name="open-outline" size={16} color={textColors.tertiary} />
             </TouchableOpacity>
           </View>
 

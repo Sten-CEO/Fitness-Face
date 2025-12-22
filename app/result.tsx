@@ -6,6 +6,7 @@ import {
   Alert,
   Animated,
   Dimensions,
+  Linking,
   ScrollView,
   StyleSheet,
   Text,
@@ -31,6 +32,12 @@ import { validatePlanId } from '../lib/secureStorage';
 import { typography, textColors } from '../theme/typography';
 
 const { width } = Dimensions.get('window');
+
+// URLs des pages légales
+const LEGAL_URLS = {
+  terms: 'https://www.jaw-app.com/terms.html',
+  privacy: 'https://www.jaw-app.com/privacy-policy.html',
+};
 
 // Render price with proper formatting: bold for amount and /mois, normal for decimals
 function renderPriceInfo(plan: Plan) {
@@ -275,6 +282,17 @@ export default function ResultScreen() {
               Voir tous les programmes
             </Text>
           </TouchableOpacity>
+
+          {/* Legal links - requis par Apple */}
+          <View style={styles.legalLinks}>
+            <TouchableOpacity onPress={() => Linking.openURL(LEGAL_URLS.terms)}>
+              <Text style={styles.legalLinkText}>Conditions d'utilisation</Text>
+            </TouchableOpacity>
+            <Text style={styles.legalSeparator}>•</Text>
+            <TouchableOpacity onPress={() => Linking.openURL(LEGAL_URLS.privacy)}>
+              <Text style={styles.legalLinkText}>Politique de confidentialité</Text>
+            </TouchableOpacity>
+          </View>
         </Animated.View>
       </ScrollView>
     </BackgroundScreen>
@@ -451,5 +469,22 @@ const styles = StyleSheet.create({
     ...typography.body,
     color: '#EF4444',
     textAlign: 'center',
+  },
+  legalLinks: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 16,
+    marginBottom: 24,
+    gap: 8,
+  },
+  legalLinkText: {
+    ...typography.caption,
+    color: textColors.accent,
+    textDecorationLine: 'underline',
+  },
+  legalSeparator: {
+    ...typography.caption,
+    color: textColors.tertiary,
   },
 });
