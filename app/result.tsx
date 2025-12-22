@@ -39,8 +39,35 @@ const LEGAL_URLS = {
   privacy: 'https://www.jaw-app.com/privacy-policy.html',
 };
 
-// Render price with proper formatting: bold for amount and /mois, normal for decimals
-function renderPriceInfo(plan: Plan) {
+// Texte Apple standard pour les abonnements auto-renouvelables
+const APPLE_SUBSCRIPTION_DISCLAIMER =
+  "L'abonnement est renouvelé automatiquement sauf annulation au moins 24 heures avant la fin de la période en cours. " +
+  "Le compte sera débité via l'App Store. La gestion et l'annulation se font dans les réglages de l'App Store.";
+
+interface DisplayPrice {
+  priceText: string;
+  priceSuffix: string;
+  isFromApple: boolean;
+}
+
+// Render price with proper formatting - priorité au prix Apple
+function renderPriceInfo(plan: Plan, displayPrice?: DisplayPrice) {
+  // Si on a un prix Apple, l'afficher directement
+  if (displayPrice?.isFromApple) {
+    return (
+      <View style={styles.priceContainer}>
+        <View style={styles.priceMainRow}>
+          <Text style={styles.priceApple}>{displayPrice.priceText}</Text>
+          <Text style={styles.priceSuffix}>{displayPrice.priceSuffix}</Text>
+        </View>
+        {plan.priceDetails && (
+          <Text style={styles.priceDetails}>{plan.priceDetails}</Text>
+        )}
+      </View>
+    );
+  }
+
+  // Fallback: prix hardcodé du plan
   const [intPart, decPart] = plan.priceAmount.split(',');
 
   return (
@@ -61,9 +88,39 @@ export default function ResultScreen() {
   const router = useRouter();
   const { firstName } = useUser();
   const { completePurchase } = useProgress();
-  const { purchaseSubscription, isPurchasing, hasActiveAccess, subscriptionInfo, restorePurchases, isLoading: subscriptionLoading } =
-    useSubscription();
+  const {
+    purchaseSubscription,
+    isPurchasing,
+    hasActiveAccess,
+    subscriptionInfo,
+    restorePurchases,
+    isLoading: subscriptionLoading,
+    getProductForPlan,
+  } = useSubscription();
   const { planId } = useLocalSearchParams<{ planId: string }>();
+
+  // Helper: obtenir le prix à afficher (Apple en priorité, sinon fallback)
+  const getDisplayPrice = (plan: Plan | undefined): DisplayPrice | undefined => {
+    if (!plan) return undefined;
+
+    const product = getProductForPlan(plan.id);
+
+    // Si on a un prix Apple (localizedPrice), l'utiliser
+    if (product?.localizedPrice) {
+      return {
+        priceText: product.localizedPrice,
+        priceSuffix: plan.priceSuffix,
+        isFromApple: true,
+      };
+    }
+
+    // Sinon fallback sur le prix du plan
+    return {
+      priceText: `${plan.priceAmount} €`,
+      priceSuffix: plan.priceSuffix,
+      isFromApple: false,
+    };
+  };
 
   // Validate planId from URL params to prevent injection
   // Guard contre null/undefined pour éviter crash Hermes
@@ -235,12 +292,15 @@ export default function ResultScreen() {
 
               <View style={styles.separator} />
 
-              {/* Price section */}
+              {/* Price section - Apple 3.1.2 compliant */}
               {currentPlan && (
                 <View style={styles.priceSection}>
                   <Text style={styles.priceLabel}>Tarif</Text>
-                  {renderPriceInfo(currentPlan)}
-                  <Text style={styles.tryFreeText}>essayer gratuitement</Text>
+                  {renderPriceInfo(currentPlan, getDisplayPrice(currentPlan))}
+                  <Text style={styles.durationText}>
+                    Durée : {currentPlan.durationLabel}
+                  </Text>
+                  <Text style={styles.tryFreeText}>Essai gratuit 1 jour</Text>
                   {currentPlan.engagementLabel && (
                     <Text style={styles.engagementText}>{currentPlan.engagementLabel}</Text>
                   )}
@@ -260,7 +320,7 @@ export default function ResultScreen() {
               )}
             </PrimaryButton>
             <Text style={styles.trialDisclaimer}>
-              Essai gratuit 1 jour. Annulation possible avant le premier paiement.
+              Essai gratuit 1 jour, puis {getDisplayPrice(currentPlan)?.priceText || currentPlan?.priceAmount + ' €'}{currentPlan?.priceSuffix}
             </Text>
           </View>
 
@@ -283,15 +343,23 @@ export default function ResultScreen() {
             </Text>
           </TouchableOpacity>
 
-          {/* Legal links - requis par Apple */}
-          <View style={styles.legalLinks}>
-            <TouchableOpacity onPress={() => Linking.openURL(LEGAL_URLS.terms)}>
-              <Text style={styles.legalLinkText}>Conditions d'utilisation</Text>
-            </TouchableOpacity>
-            <Text style={styles.legalSeparator}>•</Text>
-            <TouchableOpacity onPress={() => Linking.openURL(LEGAL_URLS.privacy)}>
-              <Text style={styles.legalLinkText}>Politique de confidentialité</Text>
-            </TouchableOpacity>
+          {/* Legal section - Apple 3.1.2 compliant */}
+          <View style={styles.legalSection}>
+            {/* Links */}
+            <View style={styles.legalLinks}>
+              <TouchableOpacity onPress={() => Linking.openURL(LEGAL_URLS.terms)}>
+                <Text style={styles.legalLinkText}>Conditions d'utilisation</Text>
+              </TouchableOpacity>
+              <Text style={styles.legalSeparator}>•</Text>
+              <TouchableOpacity onPress={() => Linking.openURL(LEGAL_URLS.privacy)}>
+                <Text style={styles.legalLinkText}>Politique de confidentialité</Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* Apple subscription disclaimer */}
+            <Text style={styles.appleDisclaimer}>
+              {APPLE_SUBSCRIPTION_DISCLAIMER}
+            </Text>
           </View>
         </Animated.View>
       </ScrollView>
@@ -470,12 +538,16 @@ const styles = StyleSheet.create({
     color: '#EF4444',
     textAlign: 'center',
   },
+  legalSection: {
+    marginTop: 16,
+    marginBottom: 24,
+    paddingHorizontal: 8,
+  },
   legalLinks: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 16,
-    marginBottom: 24,
+    marginBottom: 12,
     gap: 8,
   },
   legalLinkText: {
@@ -486,5 +558,23 @@ const styles = StyleSheet.create({
   legalSeparator: {
     ...typography.caption,
     color: textColors.tertiary,
+  },
+  appleDisclaimer: {
+    ...typography.caption,
+    color: textColors.tertiary,
+    textAlign: 'center',
+    lineHeight: 16,
+    fontSize: 10,
+  },
+  priceApple: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: textColors.accent,
+  },
+  durationText: {
+    ...typography.caption,
+    color: textColors.secondary,
+    textAlign: 'right',
+    marginTop: 4,
   },
 });

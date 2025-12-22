@@ -1,9 +1,10 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Animated,
+  Linking,
   ScrollView,
   StyleSheet,
   Text,
@@ -26,6 +27,7 @@ export default function DashboardScreen() {
   const router = useRouter();
   const { firstName } = useUser();
   const { hasActiveAccess, isLoading: subscriptionLoading } = useSubscription();
+  const [showSources, setShowSources] = useState(false);
   const {
     selectedPlanId,
     currentDay,
@@ -238,6 +240,41 @@ export default function DashboardScreen() {
                   />
                 </View>
                 <Text style={styles.tipText}>{todayTip.text}</Text>
+
+                {/* Sources section */}
+                <TouchableOpacity
+                  style={styles.sourcesToggle}
+                  onPress={() => setShowSources(!showSources)}
+                >
+                  <Ionicons
+                    name={showSources ? 'chevron-up' : 'information-circle-outline'}
+                    size={16}
+                    color={textColors.tertiary}
+                  />
+                  <Text style={styles.sourcesToggleText}>
+                    {showSources ? 'Masquer les sources' : 'Sources'}
+                  </Text>
+                </TouchableOpacity>
+
+                {showSources && todayTip.sources && todayTip.sources.length > 0 && (
+                  <View style={styles.sourcesContainer}>
+                    {todayTip.sources.map((source, index) => (
+                      <TouchableOpacity
+                        key={index}
+                        style={styles.sourceLink}
+                        onPress={() => Linking.openURL(source.url)}
+                      >
+                        <Ionicons name="link-outline" size={14} color={textColors.accent} />
+                        <Text style={styles.sourceLinkText}>{source.label}</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                )}
+
+                {/* Medical disclaimer */}
+                <Text style={styles.medicalDisclaimer}>
+                  Jaw Prime est une application de bien-être et ne remplace pas un avis médical.
+                </Text>
               </CleanCard>
             </Animated.View>
 
@@ -511,6 +548,42 @@ const styles = StyleSheet.create({
     ...typography.body,
     color: textColors.secondary,
     lineHeight: 22,
+  },
+  sourcesToggle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 12,
+    paddingTop: 10,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  sourcesToggleText: {
+    ...typography.caption,
+    color: textColors.tertiary,
+  },
+  sourcesContainer: {
+    marginTop: 10,
+    gap: 8,
+  },
+  sourceLink: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  sourceLinkText: {
+    ...typography.caption,
+    color: textColors.accent,
+    textDecorationLine: 'underline',
+    flex: 1,
+  },
+  medicalDisclaimer: {
+    ...typography.caption,
+    color: textColors.tertiary,
+    fontStyle: 'italic',
+    marginTop: 12,
+    textAlign: 'center',
+    opacity: 0.8,
   },
   progressCard: {
     marginBottom: 16,
