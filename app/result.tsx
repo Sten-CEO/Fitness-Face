@@ -92,6 +92,9 @@ export default function ResultScreen() {
     restorePurchases,
     isLoading: subscriptionLoading,
     getProductForPlan,
+    initializeIAP,
+    isIapReady,
+    areProductsLoaded,
   } = useSubscription();
   const { planId } = useLocalSearchParams<{ planId: string }>();
 
@@ -141,15 +144,35 @@ export default function ResultScreen() {
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(0)).current;
 
+  // Initialiser IAP dès le montage du paywall (CRITIQUE pour Apple)
   useEffect(() => {
     console.log('🟣 [RESULT] Screen mounted - planId:', planId, 'selectedPlanId:', selectedPlanId);
     console.log('🟣 [RESULT] subscriptionLoading:', subscriptionLoading, 'hasActiveAccess:', hasActiveAccess);
+
+    // CRITIQUE: Initialiser IAP AVANT que l'utilisateur clique sur "Commencer"
+    // Cela charge les produits depuis l'App Store
+    console.log('🟣 [RESULT] 🔄 Initializing IAP on paywall mount...');
+    initializeIAP().then(() => {
+      console.log('🟣 [RESULT] ✅ IAP initialized, isIapReady:', isIapReady);
+    }).catch((err) => {
+      console.error('🟣 [RESULT] ❌ IAP init error:', err);
+    });
+
     Animated.timing(fadeAnim, {
       toValue: 1,
       duration: 400,
       useNativeDriver: true,
     }).start();
   }, []);
+
+  // Log quand les produits sont chargés
+  useEffect(() => {
+    console.log('🟣 [RESULT] 📦 Products state changed - areProductsLoaded:', areProductsLoaded);
+    if (currentPlan) {
+      const product = getProductForPlan(currentPlan.id);
+      console.log('🟣 [RESULT] 📦 Current plan product:', product?.productId, '→', product?.localizedPrice);
+    }
+  }, [areProductsLoaded, currentPlan]);
 
   // PAS DE REDIRECTION AUTOMATIQUE VERS LE DASHBOARD
   // L'utilisateur doit toujours voir l'écran de choix de programme
@@ -178,14 +201,36 @@ export default function ResultScreen() {
   };
 
   const handleSelectPlan = async (selectedPlan: Plan | undefined) => {
+    console.log('🟣 [RESULT] 🛒 handleSelectPlan called');
+    console.log('🟣 [RESULT] 🛒 selectedPlan:', selectedPlan?.id);
+    console.log('🟣 [RESULT] 🛒 productId:', selectedPlan?.iap?.productId);
+    console.log('🟣 [RESULT] 🛒 areProductsLoaded:', areProductsLoaded);
+    console.log('🟣 [RESULT] 🛒 isIapReady:', isIapReady);
+
     if (!selectedPlan) {
       Alert.alert('Erreur', 'Aucun plan sélectionné');
       return;
     }
 
+    // Vérifier que le produit Apple est disponible
+    const storeProduct = getProductForPlan(selectedPlan.id);
+    console.log('🟣 [RESULT] 🛒 storeProduct:', storeProduct);
+
+    if (!storeProduct && areProductsLoaded) {
+      console.error('🟣 [RESULT] ❌ Product not found in store for plan:', selectedPlan.id);
+      Alert.alert(
+        'Produit indisponible',
+        'Ce produit n\'est pas disponible actuellement. Veuillez réessayer plus tard.',
+        [{ text: 'OK' }]
+      );
+      return;
+    }
+
     try {
       // Lancer l'achat natif (popup Apple Pay / Google Pay)
+      console.log('🟣 [RESULT] 🚀 Calling purchaseSubscription...');
       const success = await purchaseSubscription(selectedPlan.id);
+      console.log('🟣 [RESULT] 🛒 Purchase result:', success);
 
       if (success) {
         // Enregistrer l'achat dans le contexte de progression
@@ -201,7 +246,8 @@ export default function ResultScreen() {
           },
         });
       }
-    } catch {
+    } catch (error) {
+      console.error('🟣 [RESULT] ❌ Purchase error:', error);
       Alert.alert('Erreur', 'Une erreur est survenue. Réessaie.');
     }
   };
@@ -310,11 +356,11 @@ export default function ResultScreen() {
 
           <View style={styles.ctaContainer}>
             <PrimaryButton
-              title={isPurchasing ? '' : 'Commencer'}
+              title={isPurchasing ? '' : (!areProductsLoaded ? 'Chargement...' : 'Commencer')}
               onPress={() => handleSelectPlan(currentPlan)}
-              disabled={isPurchasing}
+              disabled={isPurchasing || !areProductsLoaded}
             >
-              {isPurchasing && (
+              {(isPurchasing || !areProductsLoaded) && (
                 <ActivityIndicator color="#FFFFFF" size="small" />
               )}
             </PrimaryButton>
@@ -323,6 +369,11 @@ export default function ResultScreen() {
                 ? `Essai gratuit 1 jour, puis ${getDisplayPrice(currentPlan)?.priceText}${currentPlan?.priceSuffix}`
                 : 'Essai gratuit 1 jour'}
             </Text>
+            {!areProductsLoaded && (
+              <Text style={styles.loadingHint}>
+                Connexion à l'App Store en cours...
+              </Text>
+            )}
           </View>
 
           {/* Restore purchases */}
@@ -510,6 +561,13 @@ const styles = StyleSheet.create({
     ...typography.caption,
     color: textColors.tertiary,
     marginTop: 10,
+  },
+  loadingHint: {
+    ...typography.caption,
+    color: textColors.tertiary,
+    marginTop: 6,
+    fontStyle: 'italic',
+    opacity: 0.7,
   },
   restoreButton: {
     alignItems: 'center',
