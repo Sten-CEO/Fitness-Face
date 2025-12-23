@@ -27,6 +27,8 @@ import {
   Plan,
   PlanId,
   plans,
+  hasFreeTrial,
+  getTrialDays,
 } from '../data/plans';
 import { validatePlanId } from '../lib/secureStorage';
 import { typography, textColors } from '../theme/typography';
@@ -345,7 +347,11 @@ export default function ResultScreen() {
                   <Text style={styles.durationText}>
                     Durée : {currentPlan.durationLabel}
                   </Text>
-                  <Text style={styles.tryFreeText}>Essai gratuit 1 jour</Text>
+                  {hasFreeTrial(currentPlan.id) && (
+                    <Text style={styles.tryFreeText}>
+                      {getTrialDays(currentPlan.id)} jours d'essai gratuit
+                    </Text>
+                  )}
                   {currentPlan.engagementLabel && (
                     <Text style={styles.engagementText}>{currentPlan.engagementLabel}</Text>
                   )}
@@ -364,11 +370,13 @@ export default function ResultScreen() {
                 <ActivityIndicator color="#FFFFFF" size="small" />
               )}
             </PrimaryButton>
-            <Text style={styles.trialDisclaimer}>
-              {getDisplayPrice(currentPlan)?.isFromApple
-                ? `Essai gratuit 1 jour, puis ${getDisplayPrice(currentPlan)?.priceText}${currentPlan?.priceSuffix}`
-                : 'Essai gratuit 1 jour'}
-            </Text>
+            {currentPlan && hasFreeTrial(currentPlan.id) && (
+              <Text style={styles.trialDisclaimer}>
+                {getDisplayPrice(currentPlan)?.isFromApple
+                  ? `${getTrialDays(currentPlan.id)} jours d'essai gratuit, puis ${getDisplayPrice(currentPlan)?.priceText}${currentPlan?.priceSuffix}`
+                  : `${getTrialDays(currentPlan.id)} jours d'essai gratuit`}
+              </Text>
+            )}
             {!areProductsLoaded && (
               <Text style={styles.loadingHint}>
                 Connexion à l'App Store en cours...

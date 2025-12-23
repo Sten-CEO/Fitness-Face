@@ -310,8 +310,7 @@ export default function SubscriptionScreen() {
               Votre abonnement est géré par l'App Store (iOS) ou Google Play (Android).
               Pour modifier ou annuler, rendez-vous dans les paramètres de votre compte.
               {'\n\n'}
-              L'essai gratuit dure 1 jour. Le paiement sera prélevé automatiquement
-              après la période d'essai, sauf si vous annulez avant.
+              Le paiement sera prélevé automatiquement selon les conditions de votre abonnement.
             </Text>
           </View>
 

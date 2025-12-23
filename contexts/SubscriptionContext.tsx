@@ -663,175 +663,103 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
   // PURCHASE SUBSCRIPTION
   // ============================================
 
+  const withTimeout = async <T,>(p: Promise<T>, ms: number, label: string): Promise<T> => {
+    return await Promise.race([
+      p,
+      new Promise<T>((_, rej) =>
+        setTimeout(() => rej(new Error(`[IAP] Timeout: ${label} (${ms}ms)`)), ms)
+      ),
+    ]);
+  };
+
   const purchaseSubscription = useCallback(
     async (planId: PlanId): Promise<boolean> => {
       console.log('[IAP] 🛒 purchaseSubscription called with planId:', planId);
 
       if (!validatePlanId(planId)) {
-        console.error('[IAP] ❌ Invalid planId:', planId);
         Alert.alert('Erreur', 'Programme invalide');
         return false;
       }
 
       const plan = getPlanById(planId);
       if (!plan) {
-        console.error('[IAP] ❌ Plan not found:', planId);
         Alert.alert('Erreur', 'Programme non trouvé');
         return false;
       }
 
       const productId = plan.iap.productId;
-      console.log('[IAP] 🛒 Target productId:', productId);
-      console.log('[IAP] 🛒 Current products in state:', iapProducts.map(p => p.productId));
-
       setIsPurchasing(true);
 
-      // ========================================
-      // EXPO GO / DEV MODE: Mock purchase
-      // ========================================
-      if (!isProduction) {
-        console.log('[IAP] 🧪 DEV MODE - Mock purchase for:', planId);
-
-        return new Promise((resolve) => {
-          Alert.alert(
-            '🧪 Mode Développement',
-            'Ceci est une simulation d\'achat.\n\nEn production (TestFlight/App Store), le vrai popup Apple Pay s\'affichera.',
-            [
-              {
-                text: 'Annuler',
-                style: 'cancel',
-                onPress: () => {
-                  setIsPurchasing(false);
-                  resolve(false);
-                },
-              },
-              {
-                text: 'Simuler l\'achat',
-                onPress: async () => {
-                  await new Promise((r) => setTimeout(r, 1000));
-
-                  const success = await handlePurchaseSuccess({
-                    productId: plan.iap.productId,
-                    transactionId: `dev_${Date.now()}`,
-                  });
-
-                  setIsPurchasing(false);
-                  resolve(success);
-                },
-              },
-            ]
-          );
-        });
-      }
-
-      // ========================================
-      // PRODUCTION: Real Apple IAP
-      // ========================================
-
-      // S'assurer que IAP est initialisé avant d'acheter
-      console.log('[IAP] 🔄 Ensuring IAP is initialized...');
-      await initializeIAP();
-
-      const RNIap = getIapModule();
-      if (!RNIap) {
-        console.error('[IAP] ❌ RNIap not available in production!');
-        Alert.alert('Erreur', 'Les achats in-app ne sont pas disponibles.');
-        setIsPurchasing(false);
-        return false;
-      }
-
-      // CRITICAL: Vérifier que le produit est chargé depuis l'App Store
-      const storeProduct = iapProducts.find(p => p.productId === productId);
-      console.log('[IAP] 🔍 Store product found:', storeProduct ? 'YES' : 'NO');
-      console.log('[IAP] 🔍 Store product details:', storeProduct);
-
-      if (!storeProduct) {
-        console.error('[IAP] ❌ Product not loaded from App Store:', productId);
-        console.error('[IAP] ❌ Available products:', iapProducts.map(p => p.productId));
-        Alert.alert(
-          'Produit non disponible',
-          'Le produit n\'a pas pu être chargé depuis l\'App Store. Veuillez réessayer dans quelques secondes.',
-          [{ text: 'OK' }]
-        );
-        setIsPurchasing(false);
-        return false;
-      }
-
-      // Log available methods for debugging
-      console.log('[IAP] 📋 RNIap methods:', Object.keys(RNIap || {}));
-
-      // Déterminer quelle méthode utiliser (v14 vs v13)
-      const hasRequestSubscription = typeof RNIap.requestSubscription === 'function';
-      const hasRequestPurchase = typeof RNIap.requestPurchase === 'function';
-
-      console.log('[IAP] hasRequestSubscription:', hasRequestSubscription);
-      console.log('[IAP] hasRequestPurchase:', hasRequestPurchase);
-
-      if (!hasRequestSubscription && !hasRequestPurchase) {
-        console.error('[IAP] ❌ No purchase method available');
-        Alert.alert('Erreur', 'Module IAP incompatible.');
-        setIsPurchasing(false);
-        return false;
-      }
-
-      console.log('[IAP] 🚀 PRODUCTION - Starting real purchase for:', productId);
-
       try {
-        // Create promise that will be resolved by purchase listener
+        // DEV MODE
+        if (!isProduction) {
+          return await new Promise((resolve) => {
+            Alert.alert(
+              'Mode Développement',
+              "Simulation d'achat (le vrai achat se fera sur TestFlight / App Store)",
+              [
+                { text: 'Annuler', style: 'cancel', onPress: () => resolve(false) },
+                { text: "Simuler l'achat", onPress: () => resolve(true) },
+              ]
+            );
+          });
+        }
+
+        // INIT IAP
+        await withTimeout(initializeIAP(), 15000, 'initializeIAP');
+
+        const RNIap = getIapModule();
+        if (!RNIap) {
+          Alert.alert('Erreur', 'Achats in-app indisponibles');
+          return false;
+        }
+
+        const storeProduct = iapProducts.find(p => p.productId === productId);
+        if (!storeProduct) {
+          Alert.alert(
+            'Produit indisponible',
+            "Le produit n'a pas pu être chargé depuis l'App Store."
+          );
+          return false;
+        }
+
+        // Attente du résultat d'achat
         const purchasePromise = new Promise<boolean>((resolve) => {
           pendingPurchaseResolve.current = resolve;
-
-          // Timeout after 2 minutes
           setTimeout(() => {
             if (pendingPurchaseResolve.current === resolve) {
-              console.warn('[IAP] ⏱️ Purchase timeout');
               pendingPurchaseResolve.current = null;
-              setIsPurchasing(false);
               resolve(false);
             }
           }, 120000);
         });
 
-        if (hasRequestSubscription) {
-          // react-native-iap v14 avec StoreKit 2
-          // Le format correct est { sku: string } ou { subscriptionOffers: [...] }
-          console.log('[IAP] 📲 Calling requestSubscription with sku:', productId);
+        await withTimeout(
+          typeof RNIap.requestSubscription === 'function'
+            ? RNIap.requestSubscription({ sku: productId })
+            : RNIap.requestPurchase({ sku: productId }),
+          15000,
+          'requestSubscription'
+        );
 
-          try {
-            // Format v14: objet avec sku
-            await RNIap.requestSubscription({ sku: productId });
-            console.log('[IAP] ✅ requestSubscription called successfully');
-          } catch (reqError: any) {
-            console.error('[IAP] ❌ requestSubscription error:', reqError.message, reqError.code);
-            throw reqError;
-          }
-        } else if (hasRequestPurchase) {
-          console.log('[IAP] 📲 Using requestPurchase fallback');
-          await RNIap.requestPurchase({ sku: productId });
-        }
-
-        // Wait for purchase listener to resolve
-        console.log('[IAP] ⏳ Waiting for purchase listener...');
         return await purchasePromise;
-      } catch (error: any) {
-        console.error('[IAP] ❌ Purchase request error:', error);
-        console.error('[IAP] ❌ Error code:', error.code);
-        console.error('[IAP] ❌ Error message:', error.message);
 
+      } catch (error: any) {
         if (error.code !== 'E_USER_CANCELLED') {
           Alert.alert(
-            'Erreur d\'achat',
-            `${error.message || 'Une erreur est survenue.'}\n\nCode: ${error.code || 'UNKNOWN'}`,
-            [{ text: 'OK' }]
+            "Erreur d'achat",
+            error?.message ?? 'Une erreur est survenue'
           );
         }
-
         pendingPurchaseResolve.current = null;
-        setIsPurchasing(false);
         return false;
+
+      } finally {
+        // ⚠️ OBLIGATOIRE : empêche le loader infini
+        setIsPurchasing(false);
       }
     },
-    [handlePurchaseSuccess, initializeIAP, iapProducts]
+    [initializeIAP, iapProducts]
   );
 
   // ============================================
