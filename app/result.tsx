@@ -97,6 +97,14 @@ export default function ResultScreen() {
     initializeIAP,
     isIapReady,
     areProductsLoaded,
+    products: iapProducts,
+    isDevMode,
+    // Debug IAP
+    iapInitStatus,
+    iapInitError,
+    lastIapLog,
+    iapLogs,
+    reloadIAP,
   } = useSubscription();
   const { planId } = useLocalSearchParams<{ planId: string }>();
 
@@ -142,9 +150,28 @@ export default function ResultScreen() {
 
   const [activeTab, setActiveTab] = useState(isMonthlyPlan ? 'monthly' : 'main');
   const [currentPlan, setCurrentPlan] = useState(mainPlan);
+  const [showDebugOverlay, setShowDebugOverlay] = useState(false);
+  const [debugTapCount, setDebugTapCount] = useState(0);
+  const debugTapTimeout = useRef<NodeJS.Timeout | null>(null);
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(0)).current;
+
+  // Triple-tap on title to toggle debug overlay
+  const handleTitleTap = () => {
+    if (debugTapTimeout.current) {
+      clearTimeout(debugTapTimeout.current);
+    }
+    const newCount = debugTapCount + 1;
+    setDebugTapCount(newCount);
+
+    if (newCount >= 5) {
+      setShowDebugOverlay(prev => !prev);
+      setDebugTapCount(0);
+    } else {
+      debugTapTimeout.current = setTimeout(() => setDebugTapCount(0), 1500);
+    }
+  };
 
   // Initialiser IAP dès le montage du paywall (CRITIQUE pour Apple)
   useEffect(() => {
@@ -287,10 +314,12 @@ export default function ResultScreen() {
       >
         <Animated.View style={{ opacity: fadeAnim }}>
           <View style={styles.header}>
-            <Text style={styles.title}>
-              Ton programme{'\n'}
-              <Text style={styles.titleBlue}>personnalisé</Text>
-            </Text>
+            <TouchableOpacity onPress={handleTitleTap} activeOpacity={1}>
+              <Text style={styles.title}>
+                Ton programme{'\n'}
+                <Text style={styles.titleBlue}>personnalisé</Text>
+              </Text>
+            </TouchableOpacity>
             <Text style={styles.subtitle}>
               {firstName ? `${firstName}, voici` : 'Voici'} ce qu'on te recommande
             </Text>
@@ -347,14 +376,15 @@ export default function ResultScreen() {
                   <Text style={styles.durationText}>
                     Durée : {currentPlan.durationLabel}
                   </Text>
-                  {hasFreeTrial(currentPlan.id) && (
-                    <Text style={styles.tryFreeText}>
+                  {/* Afficher SOIT le texte d'essai gratuit (orange) pour les programmes guidés,
+                      SOIT le engagementLabel pour les autres cas - PAS les deux */}
+                  {hasFreeTrial(currentPlan.id) ? (
+                    <Text style={styles.engagementText}>
                       {getTrialDays(currentPlan.id)} jours d'essai gratuit
                     </Text>
-                  )}
-                  {currentPlan.engagementLabel && (
+                  ) : currentPlan.engagementLabel ? (
                     <Text style={styles.engagementText}>{currentPlan.engagementLabel}</Text>
-                  )}
+                  ) : null}
                 </View>
               )}
             </CleanCard>
@@ -423,6 +453,98 @@ export default function ResultScreen() {
           </View>
         </Animated.View>
       </ScrollView>
+
+      {/* Debug Overlay - Toggle avec 5 taps sur le titre */}
+      {showDebugOverlay && (
+        <View style={styles.debugOverlay}>
+          <View style={styles.debugHeader}>
+            <Text style={styles.debugTitle}>🐛 IAP Debug</Text>
+            <TouchableOpacity onPress={() => setShowDebugOverlay(false)} style={styles.debugClose}>
+              <Ionicons name="close" size={20} color="#FFF" />
+            </TouchableOpacity>
+          </View>
+
+          <ScrollView style={styles.debugScroll} showsVerticalScrollIndicator={false}>
+            <View style={styles.debugSection}>
+              <Text style={styles.debugLabel}>ENV</Text>
+              <Text style={styles.debugValue}>{isDevMode ? '🧪 DEV (Expo Go)' : '🚀 PROD (EAS Build)'}</Text>
+            </View>
+
+            <View style={styles.debugSection}>
+              <Text style={styles.debugLabel}>iapInitStatus</Text>
+              <Text style={[styles.debugValue, iapInitStatus === 'ready' ? styles.debugGreen : iapInitStatus === 'error' ? styles.debugRed : styles.debugYellow]}>
+                {iapInitStatus}
+              </Text>
+            </View>
+
+            {iapInitError ? (
+              <View style={styles.debugSection}>
+                <Text style={styles.debugLabel}>iapInitError</Text>
+                <Text style={[styles.debugValue, styles.debugRed]}>{iapInitError}</Text>
+              </View>
+            ) : null}
+
+            <View style={styles.debugSection}>
+              <Text style={styles.debugLabel}>areProductsLoaded</Text>
+              <Text style={[styles.debugValue, areProductsLoaded ? styles.debugGreen : styles.debugRed]}>
+                {areProductsLoaded ? '✅ true' : '❌ false'}
+              </Text>
+            </View>
+
+            <View style={styles.debugSection}>
+              <Text style={styles.debugLabel}>iapProducts.length</Text>
+              <Text style={styles.debugValue}>{iapProducts.length}</Text>
+            </View>
+
+            <View style={styles.debugSection}>
+              <Text style={styles.debugLabel}>Product IDs</Text>
+              {iapProducts.map((p, i) => (
+                <Text key={i} style={styles.debugValueSmall}>
+                  {p.productId} → {p.localizedPrice || '(no price)'}
+                </Text>
+              ))}
+            </View>
+
+            <View style={styles.debugSection}>
+              <Text style={styles.debugLabel}>currentPlan</Text>
+              <Text style={styles.debugValueSmall}>ID: {currentPlan?.id}</Text>
+              <Text style={styles.debugValueSmall}>productId: {currentPlan?.iap?.productId}</Text>
+            </View>
+
+            <View style={styles.debugSection}>
+              <Text style={styles.debugLabel}>storeProduct match</Text>
+              {currentPlan ? (
+                <Text style={[styles.debugValue, getProductForPlan(currentPlan.id) ? styles.debugGreen : styles.debugRed]}>
+                  {getProductForPlan(currentPlan.id) ? '✅ FOUND' : '❌ NOT FOUND'}
+                </Text>
+              ) : <Text style={styles.debugValue}>-</Text>}
+            </View>
+
+            <View style={styles.debugSection}>
+              <Text style={styles.debugLabel}>isPurchasing</Text>
+              <Text style={[styles.debugValue, isPurchasing ? styles.debugYellow : styles.debugGreen]}>
+                {isPurchasing ? '⏳ true' : 'false'}
+              </Text>
+            </View>
+
+            <View style={styles.debugSection}>
+              <Text style={styles.debugLabel}>lastIapLog</Text>
+              <Text style={styles.debugValueSmall}>{lastIapLog || '(none)'}</Text>
+            </View>
+
+            <View style={styles.debugSection}>
+              <Text style={styles.debugLabel}>Recent Logs ({iapLogs.length})</Text>
+              {iapLogs.slice(-5).map((log, i) => (
+                <Text key={i} style={styles.debugLogLine}>{log}</Text>
+              ))}
+            </View>
+
+            <TouchableOpacity style={styles.debugButton} onPress={reloadIAP}>
+              <Text style={styles.debugButtonText}>🔄 Recharger IAP</Text>
+            </TouchableOpacity>
+          </ScrollView>
+        </View>
+      )}
     </BackgroundScreen>
   );
 }
@@ -550,11 +672,6 @@ const styles = StyleSheet.create({
     color: textColors.tertiary,
     marginTop: 2,
   },
-  tryFreeText: {
-    ...typography.caption,
-    color: textColors.tertiary,
-    textAlign: 'right',
-  },
   engagementText: {
     ...typography.caption,
     color: '#F59E0B',
@@ -648,5 +765,87 @@ const styles = StyleSheet.create({
     color: textColors.secondary,
     textAlign: 'right',
     marginTop: 4,
+  },
+  // Debug Overlay styles
+  debugOverlay: {
+    position: 'absolute',
+    top: 60,
+    left: 16,
+    right: 16,
+    bottom: 100,
+    backgroundColor: 'rgba(0, 0, 0, 0.95)',
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(59, 130, 246, 0.5)',
+    zIndex: 1000,
+  },
+  debugHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+    paddingBottom: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 255, 255, 0.2)',
+  },
+  debugTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#FFF',
+  },
+  debugClose: {
+    padding: 4,
+  },
+  debugScroll: {
+    flex: 1,
+  },
+  debugSection: {
+    marginBottom: 12,
+  },
+  debugLabel: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: 'rgba(255, 255, 255, 0.6)',
+    marginBottom: 2,
+    textTransform: 'uppercase',
+  },
+  debugValue: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#FFF',
+  },
+  debugValueSmall: {
+    fontSize: 12,
+    color: 'rgba(255, 255, 255, 0.8)',
+    fontFamily: 'monospace',
+  },
+  debugLogLine: {
+    fontSize: 10,
+    color: 'rgba(255, 255, 255, 0.7)',
+    fontFamily: 'monospace',
+    marginBottom: 2,
+  },
+  debugGreen: {
+    color: '#22C55E',
+  },
+  debugRed: {
+    color: '#EF4444',
+  },
+  debugYellow: {
+    color: '#F59E0B',
+  },
+  debugButton: {
+    backgroundColor: 'rgba(59, 130, 246, 0.3)',
+    padding: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginTop: 8,
+    marginBottom: 20,
+  },
+  debugButtonText: {
+    color: '#3B82F6',
+    fontWeight: '600',
+    fontSize: 14,
   },
 });
