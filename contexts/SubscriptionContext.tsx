@@ -160,6 +160,10 @@ interface IAPProduct {
   localizedPrice?: string;
   price?: string;
   currency?: string;
+  // StoreKit 2 subscription offer (iOS)
+  subscriptionOfferDetails?: any[];
+  // Raw product from store for purchase
+  rawProduct?: any;
 }
 
 // Types pour le debug IAP
@@ -677,6 +681,8 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
             localizedPrice,
             price: sub.price,
             currency: sub.currency,
+            subscriptionOfferDetails: sub.subscriptionOfferDetails,
+            rawProduct: sub, // Keep raw product for StoreKit 2 purchase
           };
         });
 
@@ -970,13 +976,41 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
           }, 120000);
         });
 
-        await withTimeout(
-          typeof RNIap.requestSubscription === 'function'
-            ? RNIap.requestSubscription({ sku: productId })
-            : RNIap.requestPurchase({ sku: productId }),
-          15000,
-          'requestSubscription'
-        );
+        // Request subscription purchase
+        // react-native-iap v14 with StoreKit 2 uses requestSubscription
+        console.log('[IAP] Requesting subscription for SKU:', productId);
+
+        try {
+          if (typeof RNIap.requestSubscription === 'function') {
+            // Try with just SKU first (simplest form)
+            await withTimeout(
+              RNIap.requestSubscription({ sku: productId }),
+              15000,
+              'requestSubscription'
+            );
+          } else if (typeof RNIap.requestPurchase === 'function') {
+            // Fallback to requestPurchase
+            await withTimeout(
+              RNIap.requestPurchase({ sku: productId }),
+              15000,
+              'requestPurchase'
+            );
+          } else {
+            throw new Error('No purchase method available');
+          }
+        } catch (purchaseError: any) {
+          // If "Missing purchase request configuration", try alternative method
+          if (purchaseError.message?.includes('Missing purchase request') && RNIap.requestPurchase) {
+            console.log('[IAP] Retrying with requestPurchase...');
+            await withTimeout(
+              RNIap.requestPurchase({ sku: productId }),
+              15000,
+              'requestPurchase-retry'
+            );
+          } else {
+            throw purchaseError;
+          }
+        }
 
         return await purchasePromise;
 
