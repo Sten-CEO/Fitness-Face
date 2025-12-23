@@ -476,23 +476,89 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
     return initPromise;
   }, [isIapInitialized, handlePurchaseSuccess, pushIapLog]);
 
-  // Force reload IAP (for debug)
+  // Force reload IAP (for debug) - bypasses initialization check
   const reloadIAP = useCallback(async (): Promise<void> => {
     pushIapLog('🔄 Force reloading IAP...');
 
-    // Reset ALL state
+    // Reset ALL state FIRST
     setIsIapInitialized(false);
     setIsIapReady(false);
     setAreProductsLoaded(false);
     setIapInitStatus('idle');
     setIapInitError('');
     setProductsSource('none');
-    setIapProducts([]); // Vider les produits pour voir clairement ce qui est rechargé
+    setIapProducts([]);
     iapInitPromise.current = null;
 
-    // Re-initialize
-    await initializeIAP();
-  }, [initializeIAP, pushIapLog]);
+    // End existing connection first (clean slate)
+    if (isProduction) {
+      try {
+        const RNIap = getIapModule();
+        if (RNIap?.endConnection) {
+          pushIapLog('Ending existing connection...');
+          await RNIap.endConnection();
+          pushIapLog('Connection ended');
+        }
+      } catch (e) {
+        pushIapLog(`endConnection error (ignoré): ${e}`);
+      }
+    }
+
+    // Small delay to ensure state is reset
+    await new Promise(resolve => setTimeout(resolve, 100));
+
+    // Now do full initialization inline (bypass isIapInitialized check)
+    if (!isProduction) {
+      pushIapLog('DEV MODE - skipping real IAP init');
+      setIapInitStatus('ready');
+      setIsIapReady(true);
+      setIsIapInitialized(true);
+      return;
+    }
+
+    pushIapLog('Starting fresh IAP initialization...');
+    setIapInitStatus('initializing');
+
+    try {
+      const RNIap = getIapModule();
+      if (!RNIap) {
+        pushIapLog('ERROR: RNIap module not available');
+        setIapInitStatus('error');
+        setIapInitError('RNIap module not available');
+        setIsIapReady(true);
+        setIsIapInitialized(true);
+        return;
+      }
+
+      pushIapLog('Calling initConnection...');
+      const result = await RNIap.initConnection();
+      pushIapLog(`initConnection result: ${JSON.stringify(result)}`);
+
+      // Fetch products
+      pushIapLog('Fetching products from App Store...');
+      const productsLoaded = await fetchStoreProducts(pushIapLog);
+
+      if (productsLoaded) {
+        setIapInitStatus('ready');
+        setIapInitError('');
+        pushIapLog('✅ IAP Reload complete - products ready');
+      } else {
+        setIapInitStatus('error');
+        setIapInitError('Produits App Store non disponibles');
+        pushIapLog('⚠️ IAP Reload complete but NO PRODUCTS');
+      }
+
+      setIsIapReady(true);
+      setIsIapInitialized(true);
+    } catch (error: any) {
+      const errorMsg = `${error.code ?? ''} ${error.message ?? String(error)}`.trim();
+      pushIapLog(`ERROR in reload: ${errorMsg}`);
+      setIapInitStatus('error');
+      setIapInitError(errorMsg || 'Unknown error');
+      setIsIapReady(true);
+      setIsIapInitialized(true);
+    }
+  }, [pushIapLog]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -578,6 +644,22 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
         }
       } else {
         log('⚠️ getSubscriptions function not available on RNIap module');
+      }
+
+      // Si getSubscriptions n'a rien retourné, essayer getProducts (au cas où)
+      if (!subscriptions || subscriptions.length === 0) {
+        if (typeof RNIap.getProducts === 'function') {
+          try {
+            log('Trying getProducts as fallback...');
+            const products = await RNIap.getProducts({ skus: allProductIds });
+            log(`getProducts returned: ${products?.length ?? 'null'} items`);
+            if (products && products.length > 0) {
+              subscriptions = products;
+            }
+          } catch (e3: any) {
+            log(`getProducts also failed: ${e3.code || ''} ${e3.message}`);
+          }
+        }
       }
 
       // Vérifier ce qu'on a reçu
