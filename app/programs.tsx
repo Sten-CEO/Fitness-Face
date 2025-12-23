@@ -13,7 +13,7 @@ import {
 import BackgroundScreen from '../components/BackgroundScreen';
 import CleanCard from '../components/CleanCard';
 import PrimaryButton from '../components/PrimaryButton';
-import { Plan, plans } from '../data/plans';
+import { Plan, plans, hasFreeTrial, getTrialDays } from '../data/plans';
 import { typography, textColors } from '../theme/typography';
 
 // Render price with proper formatting: bold for amount and /mois, normal for decimals
@@ -149,9 +149,11 @@ export default function ProgramsScreen() {
                         title="Choisir"
                         onPress={() => handleSelectPlan(plan)}
                       />
-                      <Text style={styles.trialDisclaimer}>
-                        Essai gratuit 1 jour. Annulation possible avant le premier paiement.
-                      </Text>
+                      {hasFreeTrial(plan.id) && (
+                        <Text style={styles.trialDisclaimer}>
+                          {getTrialDays(plan.id)} jours d'essai gratuit. Annulation possible avant le premier paiement.
+                        </Text>
+                      )}
                     </View>
                   </CleanCard>
                 </Animated.View>
