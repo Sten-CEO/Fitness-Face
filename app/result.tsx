@@ -307,6 +307,15 @@ export default function ResultScreen() {
 
   return (
     <BackgroundScreen centered={false}>
+      {/* Debug toggle button - petit bouton discret en haut à droite */}
+      <TouchableOpacity
+        style={styles.debugToggleButton}
+        onPress={() => setShowDebugOverlay(prev => !prev)}
+        activeOpacity={0.7}
+      >
+        <Text style={styles.debugToggleText}>🐛</Text>
+      </TouchableOpacity>
+
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
@@ -765,6 +774,22 @@ const styles = StyleSheet.create({
     color: textColors.secondary,
     textAlign: 'right',
     marginTop: 4,
+  },
+  // Debug toggle button (top-right corner)
+  debugToggleButton: {
+    position: 'absolute',
+    top: 50,
+    right: 16,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 999,
+  },
+  debugToggleText: {
+    fontSize: 18,
   },
   // Debug Overlay styles
   debugOverlay: {
