@@ -19,7 +19,7 @@ import CleanCard from '../components/CleanCard';
 import PrimaryButton from '../components/PrimaryButton';
 import TabSlider from '../components/TabSlider';
 import { useProgress } from '../contexts/ProgressContext';
-import { useSubscription } from '../contexts/SubscriptionContext';
+import { useSubscription, IAP_DEBUG_ENABLED } from '../contexts/SubscriptionContext';
 import { useUser } from '../contexts/UserContext';
 import {
   getAlternativePlan,
@@ -308,14 +308,16 @@ export default function ResultScreen() {
 
   return (
     <BackgroundScreen centered={false}>
-      {/* Debug toggle button - petit bouton discret en haut à droite */}
-      <TouchableOpacity
-        style={styles.debugToggleButton}
-        onPress={() => setShowDebugOverlay(prev => !prev)}
-        activeOpacity={0.7}
-      >
-        <Text style={styles.debugToggleText}>🐛</Text>
-      </TouchableOpacity>
+      {/* Debug toggle button - UNIQUEMENT en mode debug (dev ou EXPO_PUBLIC_IAP_DEBUG=1) */}
+      {IAP_DEBUG_ENABLED && (
+        <TouchableOpacity
+          style={styles.debugToggleButton}
+          onPress={() => setShowDebugOverlay(prev => !prev)}
+          activeOpacity={0.7}
+        >
+          <Text style={styles.debugToggleText}>🐛</Text>
+        </TouchableOpacity>
+      )}
 
       <ScrollView
         style={styles.scrollView}
@@ -486,8 +488,8 @@ export default function ResultScreen() {
         </Animated.View>
       </ScrollView>
 
-      {/* Debug Overlay - Toggle avec 5 taps sur le titre */}
-      {showDebugOverlay && (
+      {/* Debug Overlay - UNIQUEMENT en mode debug */}
+      {IAP_DEBUG_ENABLED && showDebugOverlay && (
         <View style={styles.debugOverlay}>
           <View style={styles.debugHeader}>
             <Text style={styles.debugTitle}>🐛 IAP Debug</Text>

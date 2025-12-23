@@ -33,15 +33,29 @@ import {
 // IMPORTANT: Wrap in try-catch to prevent crash at module load
 let isExpoGo = false;
 let isProduction = true;
+let appBundleId = 'unknown';
+let appVersion = 'unknown';
+let isTestFlight = false;
+
 try {
   isExpoGo = Constants.appOwnership === 'expo';
   isProduction = !isExpoGo;
+  // Récupérer bundleId et version pour les logs
+  appBundleId = Constants.expoConfig?.ios?.bundleIdentifier
+    || Constants.manifest?.ios?.bundleIdentifier
+    || Constants.manifest2?.extra?.expoClient?.ios?.bundleIdentifier
+    || 'unknown';
+  appVersion = Constants.expoConfig?.version || Constants.manifest?.version || 'unknown';
+  // Détecter TestFlight (heuristique: pas Expo Go mais receiptUrl contient "sandbox")
+  isTestFlight = isProduction && !isExpoGo;
 } catch (e) {
   console.warn('[IAP] Failed to detect app ownership:', e);
-  // Default to production mode for safety
   isExpoGo = false;
   isProduction = true;
 }
+
+// Debug mode: activé si __DEV__ ou EXPO_PUBLIC_IAP_DEBUG=1
+export const IAP_DEBUG_ENABLED = __DEV__ || process.env.EXPO_PUBLIC_IAP_DEBUG === '1';
 
 // ============================================
 // LAZY IAP LOADING - NE PAS CHARGER AU BOOT
@@ -510,6 +524,10 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
   // ============================================
 
   const fetchStoreProducts = async (log: (msg: string) => void): Promise<boolean> => {
+    // Log environment info pour diagnostic
+    log(`📱 ENV: bundleId=${appBundleId}, version=${appVersion}, isTestFlight=${isTestFlight}`);
+    log(`📱 Platform: ${Platform.OS}, isProduction=${isProduction}, isExpoGo=${isExpoGo}`);
+
     // DEV MODE: utiliser les mock products
     if (!isProduction) {
       log('DEV MODE - using mock products');
@@ -529,7 +547,8 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
     }
 
     try {
-      log(`Requesting products: ${allProductIds.join(', ')}`);
+      // Log les SKUs demandés
+      log(`📦 Requesting ${allProductIds.length} SKUs: ${allProductIds.join(', ')}`);
 
       // Essayer d'abord avec la signature v14 (object)
       let subscriptions: any[] | null = null;
@@ -540,8 +559,13 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
           log('Trying getSubscriptions({ skus: [...] })...');
           subscriptions = await RNIap.getSubscriptions({ skus: allProductIds });
           log(`getSubscriptions returned: ${subscriptions?.length ?? 'null'} items`);
+
+          // Log raw response pour debug
+          if (IAP_DEBUG_ENABLED && subscriptions) {
+            log(`Raw response keys: ${subscriptions.length > 0 ? Object.keys(subscriptions[0]).join(', ') : 'empty'}`);
+          }
         } catch (e1: any) {
-          log(`getSubscriptions({ skus }) failed: ${e1.message}`);
+          log(`getSubscriptions({ skus }) failed: ${e1.code || ''} ${e1.message}`);
 
           // Méthode 2: getSubscriptions([...]) - anciennes versions
           try {
@@ -549,9 +573,11 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
             subscriptions = await RNIap.getSubscriptions(allProductIds);
             log(`getSubscriptions([]) returned: ${subscriptions?.length ?? 'null'} items`);
           } catch (e2: any) {
-            log(`getSubscriptions([]) also failed: ${e2.message}`);
+            log(`getSubscriptions([]) also failed: ${e2.code || ''} ${e2.message}`);
           }
         }
+      } else {
+        log('⚠️ getSubscriptions function not available on RNIap module');
       }
 
       // Vérifier ce qu'on a reçu
@@ -582,11 +608,14 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
         setIapProducts(products);
         setProductsSource('appstore');
         setAreProductsLoaded(true);
+        log(`✅ Products loaded successfully from App Store`);
         return true;
       } else {
-        // Aucun produit reçu de l'App Store
-        log('⚠️ No products returned from App Store');
-        log('Using fallback mock products for display (purchase will fail)');
+        // Aucun produit reçu de l'App Store - LOG DÉTAILLÉ
+        log('❌ NO PRODUCTS returned from App Store');
+        log(`   → Requested SKUs: ${allProductIds.join(', ')}`);
+        log(`   → BundleId: ${appBundleId}`);
+        log(`   → Check: 1) SKUs match App Store Connect 2) App signed with correct certificate 3) Agreements signed`);
 
         // Charger les fallback pour affichage mais marquer comme non-ready
         const mocks = getMockProducts();
@@ -598,6 +627,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
     } catch (error: any) {
       const errorMsg = `${error.code ?? ''} ${error.message ?? String(error)}`.trim();
       log(`❌ Error fetching products: ${errorMsg}`);
+      log(`   → BundleId: ${appBundleId}`);
 
       // Charger les fallback pour affichage
       const mocks = getMockProducts();
