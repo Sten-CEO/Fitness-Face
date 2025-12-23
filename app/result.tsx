@@ -105,6 +105,7 @@ export default function ResultScreen() {
     lastIapLog,
     iapLogs,
     reloadIAP,
+    productsSource,
   } = useSubscription();
   const { planId } = useLocalSearchParams<{ planId: string }>();
 
@@ -400,26 +401,48 @@ export default function ResultScreen() {
           </Animated.View>
 
           <View style={styles.ctaContainer}>
-            <PrimaryButton
-              title={isPurchasing ? '' : (!areProductsLoaded ? 'Chargement...' : 'Commencer')}
-              onPress={() => handleSelectPlan(currentPlan)}
-              disabled={isPurchasing || !areProductsLoaded}
-            >
-              {(isPurchasing || !areProductsLoaded) && (
-                <ActivityIndicator color="#FFFFFF" size="small" />
-              )}
-            </PrimaryButton>
-            {currentPlan && hasFreeTrial(currentPlan.id) && (
-              <Text style={styles.trialDisclaimer}>
-                {getDisplayPrice(currentPlan)?.isFromApple
-                  ? `${getTrialDays(currentPlan.id)} jours d'essai gratuit, puis ${getDisplayPrice(currentPlan)?.priceText}${currentPlan?.priceSuffix}`
-                  : `${getTrialDays(currentPlan.id)} jours d'essai gratuit`}
-              </Text>
-            )}
-            {!areProductsLoaded && (
-              <Text style={styles.loadingHint}>
-                Connexion à l'App Store en cours...
-              </Text>
+            {/* Cas 1: Erreur App Store - afficher message + bouton Réessayer */}
+            {iapInitStatus === 'error' ? (
+              <>
+                <View style={styles.errorBox}>
+                  <Ionicons name="cloud-offline-outline" size={24} color="#EF4444" />
+                  <Text style={styles.errorText}>
+                    Produits App Store indisponibles
+                  </Text>
+                  <Text style={styles.errorHint}>
+                    Vérifie ta connexion internet et réessaie
+                  </Text>
+                </View>
+                <TouchableOpacity style={styles.reloadButton} onPress={reloadIAP}>
+                  <Ionicons name="refresh" size={18} color="#3B82F6" />
+                  <Text style={styles.reloadButtonText}>Réessayer</Text>
+                </TouchableOpacity>
+              </>
+            ) : (
+              <>
+                {/* Cas 2: Chargement ou prêt */}
+                <PrimaryButton
+                  title={isPurchasing ? '' : (iapInitStatus === 'initializing' ? 'Chargement...' : 'Commencer')}
+                  onPress={() => handleSelectPlan(currentPlan)}
+                  disabled={isPurchasing || iapInitStatus === 'initializing' || !areProductsLoaded}
+                >
+                  {(isPurchasing || iapInitStatus === 'initializing') && (
+                    <ActivityIndicator color="#FFFFFF" size="small" />
+                  )}
+                </PrimaryButton>
+                {currentPlan && hasFreeTrial(currentPlan.id) && areProductsLoaded && (
+                  <Text style={styles.trialDisclaimer}>
+                    {getDisplayPrice(currentPlan)?.isFromApple
+                      ? `${getTrialDays(currentPlan.id)} jours d'essai gratuit, puis ${getDisplayPrice(currentPlan)?.priceText}${currentPlan?.priceSuffix}`
+                      : `${getTrialDays(currentPlan.id)} jours d'essai gratuit`}
+                  </Text>
+                )}
+                {iapInitStatus === 'initializing' && (
+                  <Text style={styles.loadingHint}>
+                    Connexion à l'App Store en cours...
+                  </Text>
+                )}
+              </>
             )}
           </View>
 
@@ -501,17 +524,28 @@ export default function ResultScreen() {
             </View>
 
             <View style={styles.debugSection}>
+              <Text style={styles.debugLabel}>productsSource</Text>
+              <Text style={[styles.debugValue, productsSource === 'appstore' ? styles.debugGreen : productsSource === 'fallback' ? styles.debugYellow : styles.debugRed]}>
+                {productsSource === 'appstore' ? '🍎 App Store' : productsSource === 'fallback' ? '⚠️ Fallback (mock)' : '❌ None'}
+              </Text>
+            </View>
+
+            <View style={styles.debugSection}>
               <Text style={styles.debugLabel}>iapProducts.length</Text>
               <Text style={styles.debugValue}>{iapProducts.length}</Text>
             </View>
 
             <View style={styles.debugSection}>
-              <Text style={styles.debugLabel}>Product IDs</Text>
-              {iapProducts.map((p, i) => (
-                <Text key={i} style={styles.debugValueSmall}>
-                  {p.productId} → {p.localizedPrice || '(no price)'}
-                </Text>
-              ))}
+              <Text style={styles.debugLabel}>Product IDs ({productsSource})</Text>
+              {iapProducts.length === 0 ? (
+                <Text style={styles.debugValueSmall}>(aucun produit chargé)</Text>
+              ) : (
+                iapProducts.map((p, i) => (
+                  <Text key={i} style={styles.debugValueSmall}>
+                    {p.productId} → {p.localizedPrice || '(no price)'}
+                  </Text>
+                ))
+              )}
             </View>
 
             <View style={styles.debugSection}>
@@ -690,6 +724,44 @@ const styles = StyleSheet.create({
   ctaContainer: {
     marginBottom: 16,
     alignItems: 'center',
+  },
+  errorBox: {
+    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(239, 68, 68, 0.3)',
+    borderRadius: 12,
+    padding: 16,
+    alignItems: 'center',
+    marginBottom: 12,
+    width: '100%',
+  },
+  errorText: {
+    ...typography.body,
+    color: '#EF4444',
+    fontWeight: '600',
+    marginTop: 8,
+    textAlign: 'center',
+  },
+  errorHint: {
+    ...typography.caption,
+    color: textColors.tertiary,
+    marginTop: 4,
+    textAlign: 'center',
+  },
+  reloadButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(59, 130, 246, 0.15)',
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 8,
+    gap: 8,
+  },
+  reloadButtonText: {
+    ...typography.body,
+    color: '#3B82F6',
+    fontWeight: '600',
   },
   trialDisclaimer: {
     ...typography.caption,
