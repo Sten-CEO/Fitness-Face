@@ -50,10 +50,12 @@ interface DisplayPrice {
   isFromApple: boolean;
 }
 
-// Render price with proper formatting - priorité au prix Apple
+// Render price with proper formatting - UNIQUEMENT prix Apple (conformité 3.1.2)
+// Si le prix Apple n'est pas disponible, afficher "Chargement..."
 function renderPriceInfo(plan: Plan, displayPrice?: DisplayPrice) {
-  // Si on a un prix Apple, l'afficher directement
-  if (displayPrice?.isFromApple) {
+  // CONFORMITÉ APPLE 3.1.2: Afficher UNIQUEMENT le prix Apple (localizedPrice)
+  // AUCUN fallback hardcodé visible à l'utilisateur
+  if (displayPrice?.isFromApple && displayPrice.priceText) {
     return (
       <View style={styles.priceContainer}>
         <View style={styles.priceMainRow}>
@@ -67,19 +69,13 @@ function renderPriceInfo(plan: Plan, displayPrice?: DisplayPrice) {
     );
   }
 
-  // Fallback: prix hardcodé du plan
-  const [intPart, decPart] = plan.priceAmount.split(',');
-
+  // Prix Apple non disponible → afficher message de chargement
+  // JAMAIS de prix hardcodé visible
   return (
     <View style={styles.priceContainer}>
       <View style={styles.priceMainRow}>
-        <Text style={styles.priceIntPart}>{intPart}</Text>
-        <Text style={styles.priceDecPart}>,{decPart} €</Text>
-        <Text style={styles.priceSuffix}>{plan.priceSuffix}</Text>
+        <Text style={styles.priceLoading}>Chargement du prix...</Text>
       </View>
-      {plan.priceDetails && (
-        <Text style={styles.priceDetails}>{plan.priceDetails}</Text>
-      )}
     </View>
   );
 }
@@ -99,13 +95,15 @@ export default function ResultScreen() {
   } = useSubscription();
   const { planId } = useLocalSearchParams<{ planId: string }>();
 
-  // Helper: obtenir le prix à afficher (Apple en priorité, sinon fallback)
+  // Helper: obtenir le prix à afficher - UNIQUEMENT prix Apple (conformité 3.1.2)
+  // Retourne undefined si le prix Apple n'est pas disponible
   const getDisplayPrice = (plan: Plan | undefined): DisplayPrice | undefined => {
     if (!plan) return undefined;
 
     const product = getProductForPlan(plan.id);
 
-    // Si on a un prix Apple (localizedPrice), l'utiliser
+    // CONFORMITÉ APPLE 3.1.2: UNIQUEMENT le prix Apple (localizedPrice)
+    // JAMAIS de fallback hardcodé visible à l'utilisateur
     if (product?.localizedPrice) {
       return {
         priceText: product.localizedPrice,
@@ -114,9 +112,10 @@ export default function ResultScreen() {
       };
     }
 
-    // Sinon fallback sur le prix du plan
+    // Pas de prix Apple disponible → retourner un objet indiquant le chargement
+    // Le renderPriceInfo affichera "Chargement..."
     return {
-      priceText: `${plan.priceAmount} €`,
+      priceText: '',
       priceSuffix: plan.priceSuffix,
       isFromApple: false,
     };
@@ -320,7 +319,9 @@ export default function ResultScreen() {
               )}
             </PrimaryButton>
             <Text style={styles.trialDisclaimer}>
-              Essai gratuit 1 jour, puis {getDisplayPrice(currentPlan)?.priceText || currentPlan?.priceAmount + ' €'}{currentPlan?.priceSuffix}
+              {getDisplayPrice(currentPlan)?.isFromApple
+                ? `Essai gratuit 1 jour, puis ${getDisplayPrice(currentPlan)?.priceText}${currentPlan?.priceSuffix}`
+                : 'Essai gratuit 1 jour'}
             </Text>
           </View>
 
@@ -570,6 +571,11 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: '700',
     color: textColors.accent,
+  },
+  priceLoading: {
+    ...typography.bodySmall,
+    color: textColors.tertiary,
+    fontStyle: 'italic',
   },
   durationText: {
     ...typography.caption,
