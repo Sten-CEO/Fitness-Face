@@ -150,6 +150,7 @@ interface IAPProduct {
 
 // Types pour le debug IAP
 export type IapInitStatus = 'idle' | 'initializing' | 'ready' | 'error';
+export type ProductsSource = 'none' | 'appstore' | 'fallback';
 
 interface SubscriptionContextType {
   subscriptionInfo: SubscriptionInfo;
@@ -175,6 +176,7 @@ interface SubscriptionContextType {
   iapLogs: string[];
   pushIapLog: (msg: string) => void;
   reloadIAP: () => Promise<void>;
+  productsSource: ProductsSource;
 }
 
 const defaultSubscriptionInfo: SubscriptionInfo = {
@@ -222,7 +224,8 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
   const [subscriptionInfo, setSubscriptionInfo] = useState<SubscriptionInfo>(
     defaultSubscriptionInfo
   );
-  const [iapProducts, setIapProducts] = useState<IAPProduct[]>(getMockProducts());
+  // IMPORTANT: Ne PAS initialiser avec getMockProducts() - on veut savoir si les vrais produits sont chargés
+  const [iapProducts, setIapProducts] = useState<IAPProduct[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isPurchasing, setIsPurchasing] = useState(false);
   const [isIapReady, setIsIapReady] = useState(false);
@@ -234,6 +237,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
   const [iapInitError, setIapInitError] = useState('');
   const [lastIapLog, setLastIapLog] = useState('');
   const [iapLogs, setIapLogs] = useState<string[]>([]);
+  const [productsSource, setProductsSource] = useState<ProductsSource>('none');
 
   // Refs
   const userIdRef = useRef<string | null>(null);
@@ -426,17 +430,26 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
 
         // Fetch products from App Store
         pushIapLog('Fetching products from App Store...');
-        const productsLoaded = await fetchStoreProducts();
-        pushIapLog(`Products loaded: ${productsLoaded}`);
+        const productsLoaded = await fetchStoreProducts(pushIapLog);
 
-        setIapInitStatus('ready');
+        if (productsLoaded) {
+          setIapInitStatus('ready');
+          setIapInitError('');
+          pushIapLog('✅ IAP Initialization complete - products ready');
+        } else {
+          // Products non chargés = erreur mais on permet de continuer
+          setIapInitStatus('error');
+          setIapInitError('Produits App Store non disponibles');
+          pushIapLog('⚠️ IAP Init complete but NO PRODUCTS from App Store');
+        }
+
         setIsIapReady(true);
         setIsIapInitialized(true);
-        pushIapLog('✅ IAP Initialization complete');
       } catch (error: any) {
-        pushIapLog(`ERROR in init: ${error.message}`);
+        const errorMsg = `${error.code ?? ''} ${error.message ?? String(error)}`.trim();
+        pushIapLog(`ERROR in init: ${errorMsg}`);
         setIapInitStatus('error');
-        setIapInitError(error.message || 'Unknown error');
+        setIapInitError(errorMsg || 'Unknown error');
         // Allow app to continue even if IAP fails
         setIsIapReady(true);
         setIsIapInitialized(true);
@@ -453,12 +466,14 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
   const reloadIAP = useCallback(async (): Promise<void> => {
     pushIapLog('🔄 Force reloading IAP...');
 
-    // Reset state
+    // Reset ALL state
     setIsIapInitialized(false);
     setIsIapReady(false);
     setAreProductsLoaded(false);
     setIapInitStatus('idle');
     setIapInitError('');
+    setProductsSource('none');
+    setIapProducts([]); // Vider les produits pour voir clairement ce qui est rechargé
     iapInitPromise.current = null;
 
     // Re-initialize
@@ -494,51 +509,100 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
   // FETCH PRODUCTS FROM STORE
   // ============================================
 
-  const fetchStoreProducts = async (): Promise<boolean> => {
+  const fetchStoreProducts = async (log: (msg: string) => void): Promise<boolean> => {
+    // DEV MODE: utiliser les mock products
     if (!isProduction) {
-      console.log('[IAP] Using mock products (dev mode)');
+      log('DEV MODE - using mock products');
+      const mocks = getMockProducts();
+      setIapProducts(mocks);
+      setProductsSource('fallback');
       setAreProductsLoaded(true);
       return true;
     }
 
     const RNIap = getIapModule();
     if (!RNIap) {
-      console.log('[IAP] RNIap not available, using mock products');
+      log('ERROR: RNIap module not available');
+      setProductsSource('none');
+      setAreProductsLoaded(false);
       return false;
     }
 
     try {
-      console.log('[IAP] 📦 Fetching products from App Store:', allProductIds);
+      log(`Requesting products: ${allProductIds.join(', ')}`);
 
-      // Fetch subscriptions from App Store
-      const subscriptions = await RNIap.getSubscriptions({ skus: allProductIds });
+      // Essayer d'abord avec la signature v14 (object)
+      let subscriptions: any[] | null = null;
 
-      console.log('[IAP] 📦 Received products count:', subscriptions?.length || 0);
+      // Méthode 1: getSubscriptions({ skus: [...] }) - v14+
+      if (typeof RNIap.getSubscriptions === 'function') {
+        try {
+          log('Trying getSubscriptions({ skus: [...] })...');
+          subscriptions = await RNIap.getSubscriptions({ skus: allProductIds });
+          log(`getSubscriptions returned: ${subscriptions?.length ?? 'null'} items`);
+        } catch (e1: any) {
+          log(`getSubscriptions({ skus }) failed: ${e1.message}`);
 
-      if (subscriptions && subscriptions.length > 0) {
+          // Méthode 2: getSubscriptions([...]) - anciennes versions
+          try {
+            log('Trying getSubscriptions([...]) fallback...');
+            subscriptions = await RNIap.getSubscriptions(allProductIds);
+            log(`getSubscriptions([]) returned: ${subscriptions?.length ?? 'null'} items`);
+          } catch (e2: any) {
+            log(`getSubscriptions([]) also failed: ${e2.message}`);
+          }
+        }
+      }
+
+      // Vérifier ce qu'on a reçu
+      if (subscriptions && Array.isArray(subscriptions) && subscriptions.length > 0) {
+        log(`✅ Received ${subscriptions.length} products from App Store`);
+
         const products: IAPProduct[] = subscriptions.map((sub: any) => {
-          console.log('[IAP] 📦 Product:', sub.productId, '→', sub.localizedPrice);
+          const productId = sub.productId || sub.id;
+          const localizedPrice = sub.localizedPrice || sub.price || '(no price)';
+          log(`  → ${productId}: ${localizedPrice}`);
           return {
-            productId: sub.productId,
-            title: sub.title || sub.localizedTitle,
+            productId,
+            title: sub.title || sub.localizedTitle || sub.name,
             description: sub.description || sub.localizedDescription,
-            localizedPrice: sub.localizedPrice,
+            localizedPrice,
             price: sub.price,
             currency: sub.currency,
           };
         });
 
+        // Vérifier qu'on a bien reçu les bons IDs
+        const receivedIds = products.map(p => p.productId);
+        const missingIds = allProductIds.filter(id => !receivedIds.includes(id));
+        if (missingIds.length > 0) {
+          log(`⚠️ Missing products: ${missingIds.join(', ')}`);
+        }
+
         setIapProducts(products);
+        setProductsSource('appstore');
         setAreProductsLoaded(true);
-        console.log('[IAP] ✅ Products loaded from App Store successfully');
         return true;
       } else {
-        console.warn('[IAP] ⚠️ No products returned from App Store');
-        setAreProductsLoaded(false);
+        // Aucun produit reçu de l'App Store
+        log('⚠️ No products returned from App Store');
+        log('Using fallback mock products for display (purchase will fail)');
+
+        // Charger les fallback pour affichage mais marquer comme non-ready
+        const mocks = getMockProducts();
+        setIapProducts(mocks);
+        setProductsSource('fallback');
+        setAreProductsLoaded(false); // IMPORTANT: false car pas de vrais produits
         return false;
       }
-    } catch (error) {
-      console.error('[IAP] ❌ Error fetching products:', error);
+    } catch (error: any) {
+      const errorMsg = `${error.code ?? ''} ${error.message ?? String(error)}`.trim();
+      log(`❌ Error fetching products: ${errorMsg}`);
+
+      // Charger les fallback pour affichage
+      const mocks = getMockProducts();
+      setIapProducts(mocks);
+      setProductsSource('fallback');
       setAreProductsLoaded(false);
       return false;
     }
@@ -1132,6 +1196,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
         iapLogs,
         pushIapLog,
         reloadIAP,
+        productsSource,
       }}
     >
       {children}
