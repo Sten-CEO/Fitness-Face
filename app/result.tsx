@@ -19,7 +19,7 @@ import CleanCard from '../components/CleanCard';
 import PrimaryButton from '../components/PrimaryButton';
 import TabSlider from '../components/TabSlider';
 import { useProgress } from '../contexts/ProgressContext';
-import { useSubscription, IAP_DEBUG_ENABLED } from '../contexts/SubscriptionContext';
+import { useSubscription } from '../contexts/SubscriptionContext';
 import { useUser } from '../contexts/UserContext';
 import {
   getAlternativePlan,
@@ -89,23 +89,12 @@ export default function ResultScreen() {
   const {
     purchaseSubscription,
     isPurchasing,
-    hasActiveAccess,
     subscriptionInfo,
     restorePurchases,
-    isLoading: subscriptionLoading,
     getProductForPlan,
     initializeIAP,
-    isIapReady,
     areProductsLoaded,
-    products: iapProducts,
-    isDevMode,
-    // Debug IAP
     iapInitStatus,
-    iapInitError,
-    lastIapLog,
-    iapLogs,
-    reloadIAP,
-    productsSource,
   } = useSubscription();
   const { planId } = useLocalSearchParams<{ planId: string }>();
 
@@ -151,42 +140,13 @@ export default function ResultScreen() {
 
   const [activeTab, setActiveTab] = useState(isMonthlyPlan ? 'monthly' : 'main');
   const [currentPlan, setCurrentPlan] = useState(mainPlan);
-  const [showDebugOverlay, setShowDebugOverlay] = useState(false);
-  const [debugTapCount, setDebugTapCount] = useState(0);
-  const debugTapTimeout = useRef<NodeJS.Timeout | null>(null);
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(0)).current;
 
-  // Triple-tap on title to toggle debug overlay
-  const handleTitleTap = () => {
-    if (debugTapTimeout.current) {
-      clearTimeout(debugTapTimeout.current);
-    }
-    const newCount = debugTapCount + 1;
-    setDebugTapCount(newCount);
-
-    if (newCount >= 5) {
-      setShowDebugOverlay(prev => !prev);
-      setDebugTapCount(0);
-    } else {
-      debugTapTimeout.current = setTimeout(() => setDebugTapCount(0), 1500);
-    }
-  };
-
-  // Initialiser IAP dès le montage du paywall (CRITIQUE pour Apple)
+  // Initialiser IAP dès le montage du paywall
   useEffect(() => {
-    console.log('🟣 [RESULT] Screen mounted - planId:', planId, 'selectedPlanId:', selectedPlanId);
-    console.log('🟣 [RESULT] subscriptionLoading:', subscriptionLoading, 'hasActiveAccess:', hasActiveAccess);
-
-    // CRITIQUE: Initialiser IAP AVANT que l'utilisateur clique sur "Commencer"
-    // Cela charge les produits depuis l'App Store
-    console.log('🟣 [RESULT] 🔄 Initializing IAP on paywall mount...');
-    initializeIAP().then(() => {
-      console.log('🟣 [RESULT] ✅ IAP initialized, isIapReady:', isIapReady);
-    }).catch((err) => {
-      console.error('🟣 [RESULT] ❌ IAP init error:', err);
-    });
+    initializeIAP().catch(() => {});
 
     Animated.timing(fadeAnim, {
       toValue: 1,
@@ -194,15 +154,6 @@ export default function ResultScreen() {
       useNativeDriver: true,
     }).start();
   }, []);
-
-  // Log quand les produits sont chargés
-  useEffect(() => {
-    console.log('🟣 [RESULT] 📦 Products state changed - areProductsLoaded:', areProductsLoaded);
-    if (currentPlan) {
-      const product = getProductForPlan(currentPlan.id);
-      console.log('🟣 [RESULT] 📦 Current plan product:', product?.productId, '→', product?.localizedPrice);
-    }
-  }, [areProductsLoaded, currentPlan]);
 
   // PAS DE REDIRECTION AUTOMATIQUE VERS LE DASHBOARD
   // L'utilisateur doit toujours voir l'écran de choix de programme
@@ -231,42 +182,17 @@ export default function ResultScreen() {
   };
 
   const handleSelectPlan = async (selectedPlan: Plan | undefined) => {
-    console.log('🟣 [RESULT] 🛒 handleSelectPlan called');
-    console.log('🟣 [RESULT] 🛒 selectedPlan:', selectedPlan?.id);
-    console.log('🟣 [RESULT] 🛒 productId:', selectedPlan?.iap?.productId);
-    console.log('🟣 [RESULT] 🛒 areProductsLoaded:', areProductsLoaded);
-    console.log('🟣 [RESULT] 🛒 isIapReady:', isIapReady);
-
     if (!selectedPlan) {
       Alert.alert('Erreur', 'Aucun plan sélectionné');
       return;
     }
 
-    // Vérifier que le produit Apple est disponible
-    const storeProduct = getProductForPlan(selectedPlan.id);
-    console.log('🟣 [RESULT] 🛒 storeProduct:', storeProduct);
-
-    if (!storeProduct && areProductsLoaded) {
-      console.error('🟣 [RESULT] ❌ Product not found in store for plan:', selectedPlan.id);
-      Alert.alert(
-        'Produit indisponible',
-        'Ce produit n\'est pas disponible actuellement. Veuillez réessayer plus tard.',
-        [{ text: 'OK' }]
-      );
-      return;
-    }
-
     try {
-      // Lancer l'achat natif (popup Apple Pay / Google Pay)
-      console.log('🟣 [RESULT] 🚀 Calling purchaseSubscription...');
       const success = await purchaseSubscription(selectedPlan.id);
-      console.log('🟣 [RESULT] 🛒 Purchase result:', success);
 
       if (success) {
-        // Enregistrer l'achat dans le contexte de progression
         await completePurchase(selectedPlan.id, selectedPlan.name);
 
-        // Naviguer vers l'écran de transition (replace pour vider la stack)
         router.replace({
           pathname: '/transition',
           params: {
@@ -277,7 +203,6 @@ export default function ResultScreen() {
         });
       }
     } catch (error) {
-      console.error('🟣 [RESULT] ❌ Purchase error:', error);
       Alert.alert('Erreur', 'Une erreur est survenue. Réessaie.');
     }
   };
@@ -308,17 +233,6 @@ export default function ResultScreen() {
 
   return (
     <BackgroundScreen centered={false}>
-      {/* Debug toggle button - UNIQUEMENT en mode debug (dev ou EXPO_PUBLIC_IAP_DEBUG=1) */}
-      {IAP_DEBUG_ENABLED && (
-        <TouchableOpacity
-          style={styles.debugToggleButton}
-          onPress={() => setShowDebugOverlay(prev => !prev)}
-          activeOpacity={0.7}
-        >
-          <Text style={styles.debugToggleText}>🐛</Text>
-        </TouchableOpacity>
-      )}
-
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
@@ -326,12 +240,10 @@ export default function ResultScreen() {
       >
         <Animated.View style={{ opacity: fadeAnim }}>
           <View style={styles.header}>
-            <TouchableOpacity onPress={handleTitleTap} activeOpacity={1}>
-              <Text style={styles.title}>
-                Ton programme{'\n'}
-                <Text style={styles.titleBlue}>personnalisé</Text>
-              </Text>
-            </TouchableOpacity>
+            <Text style={styles.title}>
+              Ton programme{'\n'}
+              <Text style={styles.titleBlue}>personnalisé</Text>
+            </Text>
             <Text style={styles.subtitle}>
               {firstName ? `${firstName}, voici` : 'Voici'} ce qu'on te recommande
             </Text>
@@ -403,48 +315,21 @@ export default function ResultScreen() {
           </Animated.View>
 
           <View style={styles.ctaContainer}>
-            {/* Cas 1: Erreur App Store - afficher message + bouton Réessayer */}
-            {iapInitStatus === 'error' ? (
-              <>
-                <View style={styles.errorBox}>
-                  <Ionicons name="cloud-offline-outline" size={24} color="#EF4444" />
-                  <Text style={styles.errorText}>
-                    Produits App Store indisponibles
-                  </Text>
-                  <Text style={styles.errorHint}>
-                    Vérifie ta connexion internet et réessaie
-                  </Text>
-                </View>
-                <TouchableOpacity style={styles.reloadButton} onPress={reloadIAP}>
-                  <Ionicons name="refresh" size={18} color="#3B82F6" />
-                  <Text style={styles.reloadButtonText}>Réessayer</Text>
-                </TouchableOpacity>
-              </>
-            ) : (
-              <>
-                {/* Cas 2: Chargement ou prêt */}
-                <PrimaryButton
-                  title={isPurchasing ? '' : (iapInitStatus === 'initializing' ? 'Chargement...' : 'Commencer')}
-                  onPress={() => handleSelectPlan(currentPlan)}
-                  disabled={isPurchasing || iapInitStatus === 'initializing' || !areProductsLoaded}
-                >
-                  {(isPurchasing || iapInitStatus === 'initializing') && (
-                    <ActivityIndicator color="#FFFFFF" size="small" />
-                  )}
-                </PrimaryButton>
-                {currentPlan && hasFreeTrial(currentPlan.id) && areProductsLoaded && (
-                  <Text style={styles.trialDisclaimer}>
-                    {getDisplayPrice(currentPlan)?.isFromApple
-                      ? `${getTrialDays(currentPlan.id)} jours d'essai gratuit, puis ${getDisplayPrice(currentPlan)?.priceText}${currentPlan?.priceSuffix}`
-                      : `${getTrialDays(currentPlan.id)} jours d'essai gratuit`}
-                  </Text>
-                )}
-                {iapInitStatus === 'initializing' && (
-                  <Text style={styles.loadingHint}>
-                    Connexion à l'App Store en cours...
-                  </Text>
-                )}
-              </>
+            <PrimaryButton
+              title={isPurchasing ? '' : 'Commencer'}
+              onPress={() => handleSelectPlan(currentPlan)}
+              disabled={isPurchasing || iapInitStatus === 'initializing'}
+            >
+              {isPurchasing && (
+                <ActivityIndicator color="#FFFFFF" size="small" />
+              )}
+            </PrimaryButton>
+            {currentPlan && hasFreeTrial(currentPlan.id) && (
+              <Text style={styles.trialDisclaimer}>
+                {getDisplayPrice(currentPlan)?.isFromApple
+                  ? `${getTrialDays(currentPlan.id)} jours d'essai gratuit, puis ${getDisplayPrice(currentPlan)?.priceText}${currentPlan?.priceSuffix}`
+                  : `${getTrialDays(currentPlan.id)} jours d'essai gratuit`}
+              </Text>
             )}
           </View>
 
@@ -487,109 +372,6 @@ export default function ResultScreen() {
           </View>
         </Animated.View>
       </ScrollView>
-
-      {/* Debug Overlay - UNIQUEMENT en mode debug */}
-      {IAP_DEBUG_ENABLED && showDebugOverlay && (
-        <View style={styles.debugOverlay}>
-          <View style={styles.debugHeader}>
-            <Text style={styles.debugTitle}>🐛 IAP Debug</Text>
-            <TouchableOpacity onPress={() => setShowDebugOverlay(false)} style={styles.debugClose}>
-              <Ionicons name="close" size={20} color="#FFF" />
-            </TouchableOpacity>
-          </View>
-
-          <ScrollView style={styles.debugScroll} showsVerticalScrollIndicator={false}>
-            <View style={styles.debugSection}>
-              <Text style={styles.debugLabel}>ENV</Text>
-              <Text style={styles.debugValue}>{isDevMode ? '🧪 DEV (Expo Go)' : '🚀 PROD (EAS Build)'}</Text>
-            </View>
-
-            <View style={styles.debugSection}>
-              <Text style={styles.debugLabel}>iapInitStatus</Text>
-              <Text style={[styles.debugValue, iapInitStatus === 'ready' ? styles.debugGreen : iapInitStatus === 'error' ? styles.debugRed : styles.debugYellow]}>
-                {iapInitStatus}
-              </Text>
-            </View>
-
-            {iapInitError ? (
-              <View style={styles.debugSection}>
-                <Text style={styles.debugLabel}>iapInitError</Text>
-                <Text style={[styles.debugValue, styles.debugRed]}>{iapInitError}</Text>
-              </View>
-            ) : null}
-
-            <View style={styles.debugSection}>
-              <Text style={styles.debugLabel}>areProductsLoaded</Text>
-              <Text style={[styles.debugValue, areProductsLoaded ? styles.debugGreen : styles.debugRed]}>
-                {areProductsLoaded ? '✅ true' : '❌ false'}
-              </Text>
-            </View>
-
-            <View style={styles.debugSection}>
-              <Text style={styles.debugLabel}>productsSource</Text>
-              <Text style={[styles.debugValue, productsSource === 'appstore' ? styles.debugGreen : productsSource === 'fallback' ? styles.debugYellow : styles.debugRed]}>
-                {productsSource === 'appstore' ? '🍎 App Store' : productsSource === 'fallback' ? '⚠️ Fallback (mock)' : '❌ None'}
-              </Text>
-            </View>
-
-            <View style={styles.debugSection}>
-              <Text style={styles.debugLabel}>iapProducts.length</Text>
-              <Text style={styles.debugValue}>{iapProducts.length}</Text>
-            </View>
-
-            <View style={styles.debugSection}>
-              <Text style={styles.debugLabel}>Product IDs ({productsSource})</Text>
-              {iapProducts.length === 0 ? (
-                <Text style={styles.debugValueSmall}>(aucun produit chargé)</Text>
-              ) : (
-                iapProducts.map((p, i) => (
-                  <Text key={i} style={styles.debugValueSmall}>
-                    {p.productId} → {p.localizedPrice || '(no price)'}
-                  </Text>
-                ))
-              )}
-            </View>
-
-            <View style={styles.debugSection}>
-              <Text style={styles.debugLabel}>currentPlan</Text>
-              <Text style={styles.debugValueSmall}>ID: {currentPlan?.id}</Text>
-              <Text style={styles.debugValueSmall}>productId: {currentPlan?.iap?.productId}</Text>
-            </View>
-
-            <View style={styles.debugSection}>
-              <Text style={styles.debugLabel}>storeProduct match</Text>
-              {currentPlan ? (
-                <Text style={[styles.debugValue, getProductForPlan(currentPlan.id) ? styles.debugGreen : styles.debugRed]}>
-                  {getProductForPlan(currentPlan.id) ? '✅ FOUND' : '❌ NOT FOUND'}
-                </Text>
-              ) : <Text style={styles.debugValue}>-</Text>}
-            </View>
-
-            <View style={styles.debugSection}>
-              <Text style={styles.debugLabel}>isPurchasing</Text>
-              <Text style={[styles.debugValue, isPurchasing ? styles.debugYellow : styles.debugGreen]}>
-                {isPurchasing ? '⏳ true' : 'false'}
-              </Text>
-            </View>
-
-            <View style={styles.debugSection}>
-              <Text style={styles.debugLabel}>lastIapLog</Text>
-              <Text style={styles.debugValueSmall}>{lastIapLog || '(none)'}</Text>
-            </View>
-
-            <View style={styles.debugSection}>
-              <Text style={styles.debugLabel}>Recent Logs ({iapLogs.length})</Text>
-              {iapLogs.slice(-5).map((log, i) => (
-                <Text key={i} style={styles.debugLogLine}>{log}</Text>
-              ))}
-            </View>
-
-            <TouchableOpacity style={styles.debugButton} onPress={reloadIAP}>
-              <Text style={styles.debugButtonText}>🔄 Recharger IAP</Text>
-            </TouchableOpacity>
-          </ScrollView>
-        </View>
-      )}
     </BackgroundScreen>
   );
 }
@@ -727,55 +509,10 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     alignItems: 'center',
   },
-  errorBox: {
-    backgroundColor: 'rgba(239, 68, 68, 0.1)',
-    borderWidth: 1,
-    borderColor: 'rgba(239, 68, 68, 0.3)',
-    borderRadius: 12,
-    padding: 16,
-    alignItems: 'center',
-    marginBottom: 12,
-    width: '100%',
-  },
-  errorText: {
-    ...typography.body,
-    color: '#EF4444',
-    fontWeight: '600',
-    marginTop: 8,
-    textAlign: 'center',
-  },
-  errorHint: {
-    ...typography.caption,
-    color: textColors.tertiary,
-    marginTop: 4,
-    textAlign: 'center',
-  },
-  reloadButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(59, 130, 246, 0.15)',
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    borderRadius: 8,
-    gap: 8,
-  },
-  reloadButtonText: {
-    ...typography.body,
-    color: '#3B82F6',
-    fontWeight: '600',
-  },
   trialDisclaimer: {
     ...typography.caption,
     color: textColors.tertiary,
     marginTop: 10,
-  },
-  loadingHint: {
-    ...typography.caption,
-    color: textColors.tertiary,
-    marginTop: 6,
-    fontStyle: 'italic',
-    opacity: 0.7,
   },
   restoreButton: {
     alignItems: 'center',
@@ -848,103 +585,5 @@ const styles = StyleSheet.create({
     color: textColors.secondary,
     textAlign: 'right',
     marginTop: 4,
-  },
-  // Debug toggle button (top-right corner)
-  debugToggleButton: {
-    position: 'absolute',
-    top: 50,
-    right: 16,
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    zIndex: 999,
-  },
-  debugToggleText: {
-    fontSize: 18,
-  },
-  // Debug Overlay styles
-  debugOverlay: {
-    position: 'absolute',
-    top: 60,
-    left: 16,
-    right: 16,
-    bottom: 100,
-    backgroundColor: 'rgba(0, 0, 0, 0.95)',
-    borderRadius: 12,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(59, 130, 246, 0.5)',
-    zIndex: 1000,
-  },
-  debugHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-    paddingBottom: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255, 255, 255, 0.2)',
-  },
-  debugTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#FFF',
-  },
-  debugClose: {
-    padding: 4,
-  },
-  debugScroll: {
-    flex: 1,
-  },
-  debugSection: {
-    marginBottom: 12,
-  },
-  debugLabel: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: 'rgba(255, 255, 255, 0.6)',
-    marginBottom: 2,
-    textTransform: 'uppercase',
-  },
-  debugValue: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#FFF',
-  },
-  debugValueSmall: {
-    fontSize: 12,
-    color: 'rgba(255, 255, 255, 0.8)',
-    fontFamily: 'monospace',
-  },
-  debugLogLine: {
-    fontSize: 10,
-    color: 'rgba(255, 255, 255, 0.7)',
-    fontFamily: 'monospace',
-    marginBottom: 2,
-  },
-  debugGreen: {
-    color: '#22C55E',
-  },
-  debugRed: {
-    color: '#EF4444',
-  },
-  debugYellow: {
-    color: '#F59E0B',
-  },
-  debugButton: {
-    backgroundColor: 'rgba(59, 130, 246, 0.3)',
-    padding: 12,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginTop: 8,
-    marginBottom: 20,
-  },
-  debugButtonText: {
-    color: '#3B82F6',
-    fontWeight: '600',
-    fontSize: 14,
   },
 });
