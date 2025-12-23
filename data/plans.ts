@@ -81,7 +81,7 @@ export const plans: Plan[] = [
     priceAmount: '8,99',
     priceSuffix: '/mois',
     priceDetails: '3 jours d\'essai gratuit, puis 8,99 €/mois pendant 3 mois',
-    engagementLabel: '3 jours d\'essai gratuit',
+    // engagementLabel supprimé - utiliser getTrialLabel() pour éviter les doublons
     alternativeId: 'jaw_prime_monthly',
     isMainProgram: true,
     durationDays: 90,
@@ -117,7 +117,7 @@ export const plans: Plan[] = [
     priceAmount: '9,99',
     priceSuffix: '/mois',
     priceDetails: '3 jours d\'essai gratuit, puis 9,99 €/mois pendant 2 mois',
-    engagementLabel: '3 jours d\'essai gratuit',
+    // engagementLabel supprimé - utiliser getTrialLabel() pour éviter les doublons
     alternativeId: 'double_monthly',
     isMainProgram: true,
     durationDays: 60,
