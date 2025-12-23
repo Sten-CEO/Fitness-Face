@@ -148,6 +148,9 @@ interface IAPProduct {
   currency?: string;
 }
 
+// Types pour le debug IAP
+export type IapInitStatus = 'idle' | 'initializing' | 'ready' | 'error';
+
 interface SubscriptionContextType {
   subscriptionInfo: SubscriptionInfo;
   isLoading: boolean;
@@ -165,6 +168,13 @@ interface SubscriptionContextType {
   initializeIAP: () => Promise<void>;
   isIapReady: boolean;
   areProductsLoaded: boolean;
+  // Debug IAP
+  iapInitStatus: IapInitStatus;
+  iapInitError: string;
+  lastIapLog: string;
+  iapLogs: string[];
+  pushIapLog: (msg: string) => void;
+  reloadIAP: () => Promise<void>;
 }
 
 const defaultSubscriptionInfo: SubscriptionInfo = {
@@ -219,6 +229,12 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
   const [isIapInitialized, setIsIapInitialized] = useState(false);
   const [areProductsLoaded, setAreProductsLoaded] = useState(false);
 
+  // Debug IAP state
+  const [iapInitStatus, setIapInitStatus] = useState<IapInitStatus>('idle');
+  const [iapInitError, setIapInitError] = useState('');
+  const [lastIapLog, setLastIapLog] = useState('');
+  const [iapLogs, setIapLogs] = useState<string[]>([]);
+
   // Refs
   const userIdRef = useRef<string | null>(null);
   const purchaseUpdateSubscription = useRef<EmitterSubscription | null>(null);
@@ -229,6 +245,18 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     userIdRef.current = user?.id || null;
   }, [user?.id]);
+
+  // ============================================
+  // DEBUG IAP LOGGING
+  // ============================================
+
+  const pushIapLog = useCallback((msg: string) => {
+    const timestamp = new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    const logEntry = `[${timestamp}] ${msg}`;
+    console.log('[IAP-DEBUG]', msg);
+    setLastIapLog(logEntry);
+    setIapLogs(prev => [...prev.slice(-19), logEntry]); // Keep last 20 logs
+  }, []);
 
   // ============================================
   // PURCHASE SUCCESS HANDLER (defined early for use in IAP init)
@@ -298,44 +326,55 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
   const initializeIAP = useCallback(async (): Promise<void> => {
     // Si déjà initialisé ou en cours, retourner
     if (isIapInitialized) {
+      pushIapLog('Already initialized, skipping');
       return;
     }
 
     // Si déjà en cours d'initialisation, attendre
     if (iapInitPromise.current) {
+      pushIapLog('Init already in progress, waiting...');
       return iapInitPromise.current;
     }
 
     // En mode dev, pas besoin d'init IAP
     if (!isProduction) {
-      console.log('[IAP] Skipping IAP init (dev mode)');
+      pushIapLog('DEV MODE - skipping real IAP init');
+      setIapInitStatus('ready');
       setIsIapReady(true);
       setIsIapInitialized(true);
       return;
     }
 
-    console.log('[IAP] Initializing IAP (lazy load)...');
+    pushIapLog('Starting IAP initialization...');
+    setIapInitStatus('initializing');
+    setIapInitError('');
 
     const initPromise = (async () => {
       try {
         // Charger le module IAP de manière sécurisée
+        pushIapLog('Loading RNIap module...');
         const RNIap = getIapModule();
 
         if (!RNIap) {
-          console.warn('[IAP] RNIap module not available');
+          pushIapLog('ERROR: RNIap module not available');
+          setIapInitStatus('error');
+          setIapInitError('RNIap module not available');
           setIsIapReady(true);
           setIsIapInitialized(true);
           return;
         }
+        pushIapLog('RNIap module loaded OK');
 
         // Initialize connection to store
+        pushIapLog('Calling initConnection...');
         const result = await RNIap.initConnection();
-        console.log('[IAP] Connection initialized:', result);
+        pushIapLog(`initConnection result: ${JSON.stringify(result)}`);
 
         // Set up purchase listeners
+        pushIapLog('Setting up purchase listeners...');
         purchaseUpdateSubscription.current = RNIap.purchaseUpdatedListener(
           async (purchase: any) => {
-            console.log('[IAP] Purchase updated:', purchase.productId);
+            pushIapLog(`Purchase updated: ${purchase.productId}`);
 
             if (purchase.transactionReceipt) {
               const success = await handlePurchaseSuccess({
@@ -347,9 +386,9 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
               // Finish the transaction
               try {
                 await RNIap.finishTransaction({ purchase, isConsumable: false });
-                console.log('[IAP] Transaction finished');
-              } catch (finishError) {
-                console.error('[IAP] Error finishing transaction:', finishError);
+                pushIapLog('Transaction finished OK');
+              } catch (finishError: any) {
+                pushIapLog(`ERROR finishing transaction: ${finishError.message}`);
               }
 
               // Resolve pending purchase promise
@@ -365,7 +404,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
 
         purchaseErrorSubscription.current = RNIap.purchaseErrorListener(
           (error: any) => {
-            console.error('[IAP] Purchase error:', error);
+            pushIapLog(`Purchase error: ${error.code} - ${error.message}`);
 
             // Don't show alert for user cancellation
             if (error.code !== 'E_USER_CANCELLED') {
@@ -386,13 +425,18 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
         );
 
         // Fetch products from App Store
-        await fetchStoreProducts();
+        pushIapLog('Fetching products from App Store...');
+        const productsLoaded = await fetchStoreProducts();
+        pushIapLog(`Products loaded: ${productsLoaded}`);
 
+        setIapInitStatus('ready');
         setIsIapReady(true);
         setIsIapInitialized(true);
-        console.log('[IAP] Initialization complete');
-      } catch (error) {
-        console.error('[IAP] Initialization error:', error);
+        pushIapLog('✅ IAP Initialization complete');
+      } catch (error: any) {
+        pushIapLog(`ERROR in init: ${error.message}`);
+        setIapInitStatus('error');
+        setIapInitError(error.message || 'Unknown error');
         // Allow app to continue even if IAP fails
         setIsIapReady(true);
         setIsIapInitialized(true);
@@ -403,7 +447,23 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
 
     iapInitPromise.current = initPromise;
     return initPromise;
-  }, [isIapInitialized, handlePurchaseSuccess]);
+  }, [isIapInitialized, handlePurchaseSuccess, pushIapLog]);
+
+  // Force reload IAP (for debug)
+  const reloadIAP = useCallback(async (): Promise<void> => {
+    pushIapLog('🔄 Force reloading IAP...');
+
+    // Reset state
+    setIsIapInitialized(false);
+    setIsIapReady(false);
+    setAreProductsLoaded(false);
+    setIapInitStatus('idle');
+    setIapInitError('');
+    iapInitPromise.current = null;
+
+    // Re-initialize
+    await initializeIAP();
+  }, [initializeIAP, pushIapLog]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -1065,6 +1125,13 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
         initializeIAP,
         isIapReady,
         areProductsLoaded,
+        // Debug IAP
+        iapInitStatus,
+        iapInitError,
+        lastIapLog,
+        iapLogs,
+        pushIapLog,
+        reloadIAP,
       }}
     >
       {children}
