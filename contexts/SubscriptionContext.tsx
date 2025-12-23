@@ -159,9 +159,12 @@ interface SubscriptionContextType {
   refreshSubscription: () => Promise<void>;
   hasActiveAccess: boolean;
   getProductForPlan: (planId: PlanId) => IAPProduct | undefined;
+  getProductById: (productId: string) => IAPProduct | undefined;
   formatPrice: (planId: PlanId) => string;
   isDevMode: boolean;
   initializeIAP: () => Promise<void>;
+  isIapReady: boolean;
+  areProductsLoaded: boolean;
 }
 
 const defaultSubscriptionInfo: SubscriptionInfo = {
@@ -214,6 +217,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
   const [isPurchasing, setIsPurchasing] = useState(false);
   const [isIapReady, setIsIapReady] = useState(false);
   const [isIapInitialized, setIsIapInitialized] = useState(false);
+  const [areProductsLoaded, setAreProductsLoaded] = useState(false);
 
   // Refs
   const userIdRef = useRef<string | null>(null);
@@ -430,44 +434,53 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
   // FETCH PRODUCTS FROM STORE
   // ============================================
 
-  const fetchStoreProducts = async () => {
+  const fetchStoreProducts = async (): Promise<boolean> => {
     if (!isProduction) {
       console.log('[IAP] Using mock products (dev mode)');
-      return;
+      setAreProductsLoaded(true);
+      return true;
     }
 
     const RNIap = getIapModule();
     if (!RNIap) {
       console.log('[IAP] RNIap not available, using mock products');
-      return;
+      return false;
     }
 
     try {
-      console.log('[IAP] Fetching products:', allProductIds);
+      console.log('[IAP] 📦 Fetching products from App Store:', allProductIds);
 
       // Fetch subscriptions from App Store
       const subscriptions = await RNIap.getSubscriptions({ skus: allProductIds });
 
-      console.log('[IAP] Received products:', subscriptions?.length || 0);
+      console.log('[IAP] 📦 Received products count:', subscriptions?.length || 0);
 
       if (subscriptions && subscriptions.length > 0) {
-        const products: IAPProduct[] = subscriptions.map((sub: any) => ({
-          productId: sub.productId,
-          title: sub.title || sub.localizedTitle,
-          description: sub.description || sub.localizedDescription,
-          localizedPrice: sub.localizedPrice,
-          price: sub.price,
-          currency: sub.currency,
-        }));
+        const products: IAPProduct[] = subscriptions.map((sub: any) => {
+          console.log('[IAP] 📦 Product:', sub.productId, '→', sub.localizedPrice);
+          return {
+            productId: sub.productId,
+            title: sub.title || sub.localizedTitle,
+            description: sub.description || sub.localizedDescription,
+            localizedPrice: sub.localizedPrice,
+            price: sub.price,
+            currency: sub.currency,
+          };
+        });
 
         setIapProducts(products);
-        console.log('[IAP] Products loaded from store');
+        setAreProductsLoaded(true);
+        console.log('[IAP] ✅ Products loaded from App Store successfully');
+        return true;
       } else {
-        console.warn('[IAP] No products returned from store, using mock');
+        console.warn('[IAP] ⚠️ No products returned from App Store');
+        setAreProductsLoaded(false);
+        return false;
       }
     } catch (error) {
-      console.error('[IAP] Error fetching products:', error);
-      // Keep mock products as fallback
+      console.error('[IAP] ❌ Error fetching products:', error);
+      setAreProductsLoaded(false);
+      return false;
     }
   };
 
@@ -652,17 +665,24 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
 
   const purchaseSubscription = useCallback(
     async (planId: PlanId): Promise<boolean> => {
+      console.log('[IAP] 🛒 purchaseSubscription called with planId:', planId);
+
       if (!validatePlanId(planId)) {
-        console.error('[IAP] Invalid planId:', planId);
+        console.error('[IAP] ❌ Invalid planId:', planId);
         Alert.alert('Erreur', 'Programme invalide');
         return false;
       }
 
       const plan = getPlanById(planId);
       if (!plan) {
-        console.error('[IAP] Plan not found:', planId);
+        console.error('[IAP] ❌ Plan not found:', planId);
+        Alert.alert('Erreur', 'Programme non trouvé');
         return false;
       }
+
+      const productId = plan.iap.productId;
+      console.log('[IAP] 🛒 Target productId:', productId);
+      console.log('[IAP] 🛒 Current products in state:', iapProducts.map(p => p.productId));
 
       setIsPurchasing(true);
 
@@ -670,7 +690,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
       // EXPO GO / DEV MODE: Mock purchase
       // ========================================
       if (!isProduction) {
-        console.log('[IAP] DEV MODE - Mock purchase for:', planId);
+        console.log('[IAP] 🧪 DEV MODE - Mock purchase for:', planId);
 
         return new Promise((resolve) => {
           Alert.alert(
@@ -709,18 +729,36 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
       // ========================================
 
       // S'assurer que IAP est initialisé avant d'acheter
+      console.log('[IAP] 🔄 Ensuring IAP is initialized...');
       await initializeIAP();
 
       const RNIap = getIapModule();
       if (!RNIap) {
-        console.error('[IAP] RNIap not available in production!');
+        console.error('[IAP] ❌ RNIap not available in production!');
         Alert.alert('Erreur', 'Les achats in-app ne sont pas disponibles.');
         setIsPurchasing(false);
         return false;
       }
 
+      // CRITICAL: Vérifier que le produit est chargé depuis l'App Store
+      const storeProduct = iapProducts.find(p => p.productId === productId);
+      console.log('[IAP] 🔍 Store product found:', storeProduct ? 'YES' : 'NO');
+      console.log('[IAP] 🔍 Store product details:', storeProduct);
+
+      if (!storeProduct) {
+        console.error('[IAP] ❌ Product not loaded from App Store:', productId);
+        console.error('[IAP] ❌ Available products:', iapProducts.map(p => p.productId));
+        Alert.alert(
+          'Produit non disponible',
+          'Le produit n\'a pas pu être chargé depuis l\'App Store. Veuillez réessayer dans quelques secondes.',
+          [{ text: 'OK' }]
+        );
+        setIsPurchasing(false);
+        return false;
+      }
+
       // Log available methods for debugging
-      console.log('[IAP] RNIap methods:', Object.keys(RNIap || {}));
+      console.log('[IAP] 📋 RNIap methods:', Object.keys(RNIap || {}));
 
       // Déterminer quelle méthode utiliser (v14 vs v13)
       const hasRequestSubscription = typeof RNIap.requestSubscription === 'function';
@@ -730,13 +768,13 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
       console.log('[IAP] hasRequestPurchase:', hasRequestPurchase);
 
       if (!hasRequestSubscription && !hasRequestPurchase) {
-        console.error('[IAP] No purchase method available');
+        console.error('[IAP] ❌ No purchase method available');
         Alert.alert('Erreur', 'Module IAP incompatible.');
         setIsPurchasing(false);
         return false;
       }
 
-      console.log('[IAP] PRODUCTION - Starting real purchase for:', plan.iap.productId);
+      console.log('[IAP] 🚀 PRODUCTION - Starting real purchase for:', productId);
 
       try {
         // Create promise that will be resolved by purchase listener
@@ -746,7 +784,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
           // Timeout after 2 minutes
           setTimeout(() => {
             if (pendingPurchaseResolve.current === resolve) {
-              console.warn('[IAP] Purchase timeout');
+              console.warn('[IAP] ⏱️ Purchase timeout');
               pendingPurchaseResolve.current = null;
               setIsPurchasing(false);
               resolve(false);
@@ -754,48 +792,36 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
           }, 120000);
         });
 
-        // Request subscription - format v14 avec StoreKit 2
-        const productId = plan.iap.productId;
-        console.log('[IAP] Requesting subscription for:', productId);
-
-        // Trouver le produit dans la liste pour avoir les infos d'offre
-        const product = iapProducts.find(p => p.productId === productId);
-        console.log('[IAP] Found product:', product ? 'yes' : 'no');
-
         if (hasRequestSubscription) {
-          // Format pour react-native-iap v14
-          // Essayer plusieurs formats car l'API varie selon les versions
+          // react-native-iap v14 avec StoreKit 2
+          // Le format correct est { sku: string } ou { subscriptionOffers: [...] }
+          console.log('[IAP] 📲 Calling requestSubscription with sku:', productId);
+
           try {
-            // Format 1: Objet avec sku uniquement (le plus simple)
-            console.log('[IAP] Trying format: { sku }');
+            // Format v14: objet avec sku
             await RNIap.requestSubscription({ sku: productId });
-          } catch (e1: any) {
-            console.log('[IAP] Format 1 failed:', e1.message);
-            try {
-              // Format 2: SKU comme string directement
-              console.log('[IAP] Trying format: string');
-              await RNIap.requestSubscription(productId);
-            } catch (e2: any) {
-              console.log('[IAP] Format 2 failed:', e2.message);
-              // Format 3: Array de SKUs
-              console.log('[IAP] Trying format: [sku]');
-              await RNIap.requestSubscription([productId]);
-            }
+            console.log('[IAP] ✅ requestSubscription called successfully');
+          } catch (reqError: any) {
+            console.error('[IAP] ❌ requestSubscription error:', reqError.message, reqError.code);
+            throw reqError;
           }
         } else if (hasRequestPurchase) {
-          console.log('[IAP] Using requestPurchase fallback');
+          console.log('[IAP] 📲 Using requestPurchase fallback');
           await RNIap.requestPurchase({ sku: productId });
         }
 
         // Wait for purchase listener to resolve
+        console.log('[IAP] ⏳ Waiting for purchase listener...');
         return await purchasePromise;
       } catch (error: any) {
-        console.error('[IAP] Purchase request error:', error);
+        console.error('[IAP] ❌ Purchase request error:', error);
+        console.error('[IAP] ❌ Error code:', error.code);
+        console.error('[IAP] ❌ Error message:', error.message);
 
         if (error.code !== 'E_USER_CANCELLED') {
           Alert.alert(
             'Erreur d\'achat',
-            error.message || 'Une erreur est survenue. Veuillez réessayer.',
+            `${error.message || 'Une erreur est survenue.'}\n\nCode: ${error.code || 'UNKNOWN'}`,
             [{ text: 'OK' }]
           );
         }
@@ -805,7 +831,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
         return false;
       }
     },
-    [handlePurchaseSuccess, initializeIAP]
+    [handlePurchaseSuccess, initializeIAP, iapProducts]
   );
 
   // ============================================
@@ -1069,6 +1095,13 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
     [iapProducts]
   );
 
+  const getProductById = useCallback(
+    (productId: string): IAPProduct | undefined => {
+      return iapProducts.find((p) => p.productId === productId);
+    },
+    [iapProducts]
+  );
+
   const formatPrice = useCallback(
     (planId: PlanId): string => {
       const product = getProductForPlan(planId);
@@ -1098,9 +1131,12 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
         refreshSubscription,
         hasActiveAccess,
         getProductForPlan,
+        getProductById,
         formatPrice,
         isDevMode: !isProduction,
         initializeIAP,
+        isIapReady,
+        areProductsLoaded,
       }}
     >
       {children}
