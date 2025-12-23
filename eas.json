@@ -38,5 +38,14 @@
         "buildType": "app-bundle"
       }
     }
+  },
+  "submit": {
+    "production": {
+      "ios": {
+        "appleId": "kevinmeunier.music@gmail.com",
+        "ascAppId": "6740539109",
+        "appleTeamId": "K39ZH686H9"
+      }
+    }
   }
 }
