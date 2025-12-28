@@ -91,10 +91,11 @@ function getIapModule(): any {
     // Essayons d'abord l'export direct
     if (iapModule && typeof iapModule.setup === 'function') {
       console.log('[IAP] Found setup function - v14 Nitro module detected');
-      // v14 Nitro - appeler setup() d'abord
+      // v14 Nitro - NE PAS forcer StoreKit 2 mode (cause "Missing purchase request configuration")
+      // Laisser le module utiliser le mode par défaut
       try {
-        iapModule.setup({ storekitMode: 'STOREKIT2_MODE' });
-        console.log('[IAP] Setup completed');
+        iapModule.setup({ storekitMode: 'STOREKIT1_MODE' });
+        console.log('[IAP] Setup completed with StoreKit 1 mode');
       } catch (setupErr) {
         console.warn('[IAP] Setup failed, trying without:', setupErr);
       }
@@ -976,12 +977,21 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
           }, 120000);
         });
 
-        // Request purchase - use requestPurchase for StoreKit 2 compatibility
-        // requestSubscription has issues with "Missing purchase request configuration"
-        console.log('[IAP] Requesting purchase for SKU:', productId);
+        // Request subscription purchase
+        // Using StoreKit 1 mode - requestSubscription should work
+        console.log('[IAP] Requesting subscription for SKU:', productId);
 
-        // For StoreKit 2 on iOS, requestPurchase works better than requestSubscription
-        if (typeof RNIap.requestPurchase === 'function') {
+        if (typeof RNIap.requestSubscription === 'function') {
+          await withTimeout(
+            RNIap.requestSubscription({
+              sku: productId,
+              andDangerouslyFinishTransactionAutomaticallyIOS: false,
+            }),
+            30000,
+            'requestSubscription'
+          );
+        } else if (typeof RNIap.requestPurchase === 'function') {
+          // Fallback to requestPurchase
           await withTimeout(
             RNIap.requestPurchase({
               sku: productId,
@@ -989,13 +999,6 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
             }),
             30000,
             'requestPurchase'
-          );
-        } else if (typeof RNIap.requestSubscription === 'function') {
-          // Fallback to requestSubscription
-          await withTimeout(
-            RNIap.requestSubscription({ sku: productId }),
-            30000,
-            'requestSubscription'
           );
         } else {
           throw new Error('No purchase method available');
