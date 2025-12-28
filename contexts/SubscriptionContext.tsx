@@ -978,30 +978,26 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
         });
 
         // Request subscription purchase
-        // Using StoreKit 1 mode - requestSubscription should work
+        // react-native-iap v14 uses new API format with request.apple/google
         console.log('[IAP] Requesting subscription for SKU:', productId);
 
-        if (typeof RNIap.requestSubscription === 'function') {
+        // v14 API format
+        const purchaseRequest = {
+          request: {
+            apple: { sku: productId },
+            google: { skus: [productId] },
+          },
+          type: 'subs', // subscription type
+        };
+
+        if (typeof RNIap.requestPurchase === 'function') {
           await withTimeout(
-            RNIap.requestSubscription({
-              sku: productId,
-              andDangerouslyFinishTransactionAutomaticallyIOS: false,
-            }),
-            30000,
-            'requestSubscription'
-          );
-        } else if (typeof RNIap.requestPurchase === 'function') {
-          // Fallback to requestPurchase
-          await withTimeout(
-            RNIap.requestPurchase({
-              sku: productId,
-              andDangerouslyFinishTransactionAutomaticallyIOS: false,
-            }),
+            RNIap.requestPurchase(purchaseRequest),
             30000,
             'requestPurchase'
           );
         } else {
-          throw new Error('No purchase method available');
+          throw new Error('requestPurchase method not available');
         }
 
         return await purchasePromise;
