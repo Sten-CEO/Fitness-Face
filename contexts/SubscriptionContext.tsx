@@ -976,40 +976,29 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
           }, 120000);
         });
 
-        // Request subscription purchase
-        // react-native-iap v14 with StoreKit 2 uses requestSubscription
-        console.log('[IAP] Requesting subscription for SKU:', productId);
+        // Request purchase - use requestPurchase for StoreKit 2 compatibility
+        // requestSubscription has issues with "Missing purchase request configuration"
+        console.log('[IAP] Requesting purchase for SKU:', productId);
 
-        try {
-          if (typeof RNIap.requestSubscription === 'function') {
-            // Try with just SKU first (simplest form)
-            await withTimeout(
-              RNIap.requestSubscription({ sku: productId }),
-              15000,
-              'requestSubscription'
-            );
-          } else if (typeof RNIap.requestPurchase === 'function') {
-            // Fallback to requestPurchase
-            await withTimeout(
-              RNIap.requestPurchase({ sku: productId }),
-              15000,
-              'requestPurchase'
-            );
-          } else {
-            throw new Error('No purchase method available');
-          }
-        } catch (purchaseError: any) {
-          // If "Missing purchase request configuration", try alternative method
-          if (purchaseError.message?.includes('Missing purchase request') && RNIap.requestPurchase) {
-            console.log('[IAP] Retrying with requestPurchase...');
-            await withTimeout(
-              RNIap.requestPurchase({ sku: productId }),
-              15000,
-              'requestPurchase-retry'
-            );
-          } else {
-            throw purchaseError;
-          }
+        // For StoreKit 2 on iOS, requestPurchase works better than requestSubscription
+        if (typeof RNIap.requestPurchase === 'function') {
+          await withTimeout(
+            RNIap.requestPurchase({
+              sku: productId,
+              andDangerouslyFinishTransactionAutomaticallyIOS: false,
+            }),
+            30000,
+            'requestPurchase'
+          );
+        } else if (typeof RNIap.requestSubscription === 'function') {
+          // Fallback to requestSubscription
+          await withTimeout(
+            RNIap.requestSubscription({ sku: productId }),
+            30000,
+            'requestSubscription'
+          );
+        } else {
+          throw new Error('No purchase method available');
         }
 
         return await purchasePromise;
