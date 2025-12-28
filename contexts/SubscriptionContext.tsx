@@ -978,26 +978,37 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
         });
 
         // Request subscription purchase
-        // react-native-iap v14 uses new API format with request.apple/google
         console.log('[IAP] Requesting subscription for SKU:', productId);
 
-        // v14 API format
-        const purchaseRequest = {
-          request: {
-            apple: { sku: productId },
-            google: { skus: [productId] },
-          },
-          type: 'subs', // subscription type
-        };
-
-        if (typeof RNIap.requestPurchase === 'function') {
-          await withTimeout(
-            RNIap.requestPurchase(purchaseRequest),
-            30000,
-            'requestPurchase'
-          );
+        // For iOS subscriptions, use requestSubscription with sku at root level
+        if (Platform.OS === 'ios') {
+          if (typeof RNIap.requestSubscription === 'function') {
+            await withTimeout(
+              RNIap.requestSubscription({ sku: productId }),
+              30000,
+              'requestSubscription'
+            );
+          } else if (typeof RNIap.requestPurchase === 'function') {
+            // Fallback to requestPurchase
+            await withTimeout(
+              RNIap.requestPurchase({ sku: productId }),
+              30000,
+              'requestPurchase'
+            );
+          } else {
+            throw new Error('No purchase method available');
+          }
         } else {
-          throw new Error('requestPurchase method not available');
+          // Android
+          if (typeof RNIap.requestSubscription === 'function') {
+            await withTimeout(
+              RNIap.requestSubscription({ skus: [productId] }),
+              30000,
+              'requestSubscription'
+            );
+          } else {
+            throw new Error('requestSubscription not available');
+          }
         }
 
         return await purchasePromise;
